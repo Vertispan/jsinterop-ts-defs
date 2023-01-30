@@ -41,11 +41,11 @@ The output from this processor can be controlled by adding custom annotations to
     import jsinterop.annotations.JsPackage;
     import jsinterop.annotations.JsType;
     
-    @JsType(name = "SimpleType", namespace = "com.vertispan")
-    @TsName(name = "TypeSimple", namespace = JsPackage.GLOBAL)
-    public class SimpleJsType {
+    @TsName(name = "TypeSimple", namespace = "examples")
+    public interface SimpleJsType {
     
-        public String name;
+        @JsMethod
+        String name();
     }
     ```
     
@@ -69,12 +69,11 @@ The output from this processor can be controlled by adding custom annotations to
     import jsinterop.annotations.JsPackage;
     import jsinterop.annotations.JsType;
     
-    @JsType(name = "SimpleType", namespace = "com.vertispan")
-    @TsName(name = "TypeSimple", namespace = JsPackage.GLOBAL)
-    public class SimpleJsType {
+    @TsName(name = "TypeSimple", namespace = "examples")
+    public interface SimpleJsType {
     
         @TsTypeRef(Boolean.class)
-        public String name;
+        public String name();
     }
     ```
     
