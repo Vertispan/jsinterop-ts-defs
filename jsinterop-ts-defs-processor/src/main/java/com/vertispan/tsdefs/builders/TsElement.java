@@ -538,4 +538,38 @@ public class TsElement {
     }
     return Optional.empty();
   }
+
+  public boolean requiresPrivateConstructor() {
+    if (isJsType()) {
+      List<TsElement> constructors =
+          element.getEnclosedElements().stream()
+              .map(enclosedElement -> TsElement.of(enclosedElement, env))
+              .filter(TsElement::isConstructor)
+              .filter(
+                  tsElement -> !((ExecutableElement) tsElement.element()).getParameters().isEmpty())
+              .collect(Collectors.toList());
+      boolean allIgnored =
+          !constructors.isEmpty() && constructors.stream().allMatch(TsElement::isIgnored);
+
+      if (allIgnored) {
+        return true;
+      }
+
+    } else {
+      Optional<TsElement> jsConstructor =
+          element.getEnclosedElements().stream()
+              .map(enclosedElement -> TsElement.of(enclosedElement, env))
+              .filter(TsElement::isConstructor)
+              .filter(
+                  tsElement ->
+                      !((ExecutableElement) tsElement.element()).getParameters().isEmpty()
+                          || tsElement.isJsConstructor())
+              .filter(TsElement::isJsConstructor)
+              .findAny();
+      if (!jsConstructor.isPresent()) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

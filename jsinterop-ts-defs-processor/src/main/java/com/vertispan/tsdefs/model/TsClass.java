@@ -35,9 +35,10 @@ public class TsClass implements IsType {
   private TsConstructor constructor;
   private List<TsMethod> functions = new ArrayList<>();
   private List<TsType> typeArguments = new ArrayList<>();
-
   private TsDoc tsDoc;
   private boolean deprecated;
+
+  private boolean emitPrivateContr;
 
   private TsClassBuilder builder;
 
@@ -106,9 +107,16 @@ public class TsClass implements IsType {
             .map(property -> property.emit(indent + INDENT, END_LINE, namespace))
             .collect(Collectors.joining(NEW_LINE, optionalln(properties), optionalln(properties))));
 
-    if (nonNull(constructor)) {
+    if (nonNull(constructor) && !emitPrivateContr) {
       sb.append(NEW_LINE);
       sb.append(constructor.emit(indent + INDENT, namespace));
+      sb.append(NEW_LINE);
+    }
+
+    if (emitPrivateContr) {
+      sb.append(NEW_LINE);
+      sb.append(
+          TsConstructor.TsConstructorBuilder.privateConstructor().emit(indent + INDENT, namespace));
       sb.append(NEW_LINE);
     }
 
@@ -197,6 +205,11 @@ public class TsClass implements IsType {
       return this;
     }
 
+    public TsClassBuilder setEmitPrivateContr(boolean emit) {
+      this.tsClass.emitPrivateContr = emit;
+      return this;
+    }
+
     public TsClass build() {
       return tsClass;
     }
@@ -215,6 +228,9 @@ public class TsClass implements IsType {
       StringBuffer sb = new StringBuffer();
       if (nonNull(tsDoc)) {
         sb.append(tsDoc.emit(indent, deprecated));
+      }
+      if (!modifiers.isEmpty()) {
+        sb.append(indent);
       }
       sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining(" ")));
 
@@ -257,6 +273,10 @@ public class TsClass implements IsType {
       public TsConstructorBuilder setDeprecated(boolean deprecated) {
         this.constructor.deprecated = deprecated;
         return this;
+      }
+
+      private static TsConstructor privateConstructor() {
+        return new TsConstructorBuilder().addModifiers(TsModifier.PRIVATE).build();
       }
 
       public TsConstructor build() {
