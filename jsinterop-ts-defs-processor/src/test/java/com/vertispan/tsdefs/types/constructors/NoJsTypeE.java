@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.types.self;
+package com.vertispan.tsdefs.types.constructors;
 
-import com.vertispan.tsdefs.annotations.TsInterface;
-import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsConstructor;
+import jsinterop.annotations.JsProperty;
 
-@TsInterface
-public abstract class QueryConnectable<Self extends QueryConnectable<Self>> {
-  @JsMethod
-  public String prop() {
-    return null;
-  };
+public class NoJsTypeE {
+
+  @JsProperty public String propC;
+
+  @JsConstructor
+  public NoJsTypeE() {}
 }
