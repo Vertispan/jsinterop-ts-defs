@@ -38,7 +38,7 @@ public class TsClass implements IsType {
   private TsDoc tsDoc;
   private boolean deprecated;
 
-  private boolean emitPrivateContr;
+  private boolean emitProtectedConstructor;
 
   private TsClassBuilder builder;
 
@@ -107,16 +107,17 @@ public class TsClass implements IsType {
             .map(property -> property.emit(indent + INDENT, END_LINE, namespace))
             .collect(Collectors.joining(NEW_LINE, optionalln(properties), optionalln(properties))));
 
-    if (nonNull(constructor) && !emitPrivateContr) {
+    if (nonNull(constructor) && !emitProtectedConstructor) {
       sb.append(NEW_LINE);
       sb.append(constructor.emit(indent + INDENT, namespace));
       sb.append(NEW_LINE);
     }
 
-    if (emitPrivateContr) {
+    if (emitProtectedConstructor) {
       sb.append(NEW_LINE);
       sb.append(
-          TsConstructor.TsConstructorBuilder.privateConstructor().emit(indent + INDENT, namespace));
+          TsConstructor.TsConstructorBuilder.protectedConstructor()
+              .emit(indent + INDENT, namespace));
       sb.append(NEW_LINE);
     }
 
@@ -205,8 +206,8 @@ public class TsClass implements IsType {
       return this;
     }
 
-    public TsClassBuilder setEmitPrivateContr(boolean emit) {
-      this.tsClass.emitPrivateContr = emit;
+    public TsClassBuilder setEmitProtectedContr(boolean emit) {
+      this.tsClass.emitProtectedConstructor = emit;
       return this;
     }
 
@@ -275,8 +276,8 @@ public class TsClass implements IsType {
         return this;
       }
 
-      private static TsConstructor privateConstructor() {
-        return new TsConstructorBuilder().addModifiers(TsModifier.PRIVATE).build();
+      private static TsConstructor protectedConstructor() {
+        return new TsConstructorBuilder().addModifiers(TsModifier.PROTECTED).build();
       }
 
       public TsConstructor build() {

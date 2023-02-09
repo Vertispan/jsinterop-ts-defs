@@ -98,7 +98,7 @@ public class ClassTypeVisitor extends TsElement {
       // So we create a type on the fly on that namespace.
       buildTypesFromNamespaces(moduleBuilder, withDiffNs);
 
-      builder.setEmitPrivateContr(requiresPrivateConstructor());
+      builder.setEmitProtectedContr(requiresProtectedConstructor());
     }
   }
 
@@ -152,7 +152,7 @@ public class ClassTypeVisitor extends TsElement {
         && !superTsElement.isTsInterface()
         && !superTsElement.isTsIgnored()) {
 
-      if (superTsElement.requiresPrivateConstructor()) {
+      if (superTsElement.requiresProtectedConstructor()) {
         env.messager()
             .printMessage(
                 Diagnostic.Kind.ERROR, "Cannot extend a type with private constructor.", element);

@@ -539,7 +539,7 @@ public class TsElement {
     return Optional.empty();
   }
 
-  public boolean requiresPrivateConstructor() {
+  public boolean requiresProtectedConstructor() {
     if (isJsType()) {
       List<TsElement> constructors =
           element.getEnclosedElements().stream()
