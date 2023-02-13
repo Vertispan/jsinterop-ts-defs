@@ -76,9 +76,13 @@ public class TsClass implements IsType {
     return new TsConstructor.TsConstructorBuilder();
   }
 
+  public boolean isEmpty() {
+    return (interfaces.isEmpty()) && properties.isEmpty() && functions.isEmpty();
+  }
+
   public String emit(String indent, String parentNamespace) {
 
-    if (interfaces.isEmpty() && properties.isEmpty() && functions.isEmpty()) {
+    if (isEmpty()) {
       return "";
     }
     StringBuffer sb = new StringBuffer();
