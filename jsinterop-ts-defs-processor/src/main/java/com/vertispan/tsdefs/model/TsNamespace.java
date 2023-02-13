@@ -56,7 +56,16 @@ public class TsNamespace {
     this.tsEnums.add(tsEnum);
   }
 
+  public boolean isEmpty() {
+    return tsInterfaces.isEmpty()
+        && tsFunctions.isEmpty()
+        && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty));
+  }
+
   public String emit(String indent, String parentNamespace) {
+    if (isEmpty()) {
+      return "";
+    }
     StringBuffer sb = new StringBuffer(indent);
     sb.append(TsModifier.EXPORT.emit());
     sb.append(TsModifier.NAMESPACE.emit());
