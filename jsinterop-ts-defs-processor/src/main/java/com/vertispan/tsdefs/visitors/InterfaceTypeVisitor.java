@@ -18,9 +18,12 @@ package com.vertispan.tsdefs.visitors;
 import com.vertispan.tsdefs.HasProcessorEnv;
 import com.vertispan.tsdefs.builders.TsElement;
 import com.vertispan.tsdefs.model.TsInterface;
+import com.vertispan.tsdefs.model.TsMethod;
 import com.vertispan.tsdefs.model.TsModifier;
+import com.vertispan.tsdefs.model.TsProperty;
 import com.vertispan.tsdefs.model.TypeScriptModule;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.tools.Diagnostic;
 
 public class InterfaceTypeVisitor extends TsElement {
@@ -62,6 +65,29 @@ public class InterfaceTypeVisitor extends TsElement {
                       .visit(builder));
 
       element.getEnclosedElements().forEach(e -> visit(builder, e));
+      if (isTsInterface()) {
+        element.getEnclosedElements().stream()
+            .filter(member -> ElementKind.FIELD == member.getKind())
+            .map(field -> TsElement.of(field, env))
+            .filter(TsElement::isExportable)
+            .forEach(
+                tsElement -> {
+                  if (tsElement.isFinal()) {
+                    builder.addFunction(
+                        TsMethod.builder(tsElement.getName(), tsElement.getType())
+                            .addModifiers(TsModifier.GET)
+                            .setDocs(tsElement.getDocs())
+                            .setDeprecated(isDeprecated())
+                            .build());
+                  } else {
+                    builder.addProperty(
+                        TsProperty.builder(tsElement.getName(), tsElement.getType())
+                            .setDocs(tsElement.getDocs())
+                            .setDeprecated(isDeprecated())
+                            .build());
+                  }
+                });
+      }
       new InheritedMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
 
       moduleBuilder.addInterface(builder.build());
