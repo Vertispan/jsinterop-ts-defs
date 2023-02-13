@@ -31,6 +31,7 @@ public class TsProperty {
   private TsDoc tsDoc;
   private boolean jsOptional;
   private boolean deprecated;
+  private boolean varargs = false;
   private List<TsModifier> modifiers = new ArrayList<>();
 
   private TsProperty(String name, TsType type) {
@@ -48,6 +49,9 @@ public class TsProperty {
     }
     sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining("", "", "")));
 
+    if (varargs) {
+      sb.append("...");
+    }
     sb.append(resolveName(name));
     if (jsOptional) {
       sb.append("?");
@@ -89,6 +93,11 @@ public class TsProperty {
 
     public TsPropertyBuilder setDeprecated(boolean deprecated) {
       this.property.deprecated = deprecated;
+      return this;
+    }
+
+    public TsPropertyBuilder setVarargs(boolean varargs) {
+      this.property.varargs = varargs;
       return this;
     }
 

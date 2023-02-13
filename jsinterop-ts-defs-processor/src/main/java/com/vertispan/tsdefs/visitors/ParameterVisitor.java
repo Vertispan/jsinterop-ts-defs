@@ -73,10 +73,16 @@ public class ParameterVisitor<T> extends TsElement {
     } else {
       type = getType();
     }
+    ExecutableElement parentElement = (ExecutableElement) element.getEnclosingElement();
+
     parent.addProperty(
         TsProperty.builder(getName(), type)
             .addModifiers(getJsModifiers())
             .setOptional(isJsOptional())
+            .setVarargs(
+                parentElement.isVarArgs()
+                    && (parentElement.getParameters().indexOf(element)
+                        == (parentElement.getParameters().size() - 1)))
             .build());
   }
 }
