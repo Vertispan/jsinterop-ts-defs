@@ -142,5 +142,28 @@ public class TypeVisitor extends TsElement {
                         Diagnostic.Kind.ERROR,
                         DUPLICATE_MEMBERS_ARE_NOT_ALLOWED,
                         duplicate.element()));
+
+    Set<String> setGetNames = new HashSet<>();
+    element.getEnclosedElements().stream()
+        .map(e -> TsElement.of(e, env))
+        .filter(tsElement -> tsElement.isMethod() || tsElement.isField())
+        .filter(e -> !e.isConstructor())
+        .filter(e -> e.isExportable() && (e.isSetter() || e.isGetter()))
+        .map(TsElement::nonGetSetName)
+        .forEach(setGetNames::add);
+
+    element.getEnclosedElements().stream()
+        .map(e -> TsElement.of(e, env))
+        .filter(TsElement::isField)
+        .filter(TsElement::isExportable)
+        .filter(e -> !setGetNames.add(e.getName()))
+        .collect(Collectors.toList())
+        .forEach(
+            duplicate ->
+                env.messager()
+                    .printMessage(
+                        Diagnostic.Kind.ERROR,
+                        DUPLICATE_MEMBERS_ARE_NOT_ALLOWED,
+                        duplicate.element()));
   }
 }

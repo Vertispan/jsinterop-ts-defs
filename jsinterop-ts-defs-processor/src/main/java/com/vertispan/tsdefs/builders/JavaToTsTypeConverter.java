@@ -211,6 +211,11 @@ public class JavaToTsTypeConverter {
             typeMirror, env.elements().getTypeElement(targetClass.getCanonicalName()).asType());
   }
 
+  public static boolean isVoidType(TypeMirror typeMirror, HasProcessorEnv env) {
+    return (typeMirror.getKind().isPrimitive() && typeMirror.getKind() == TypeKind.VOID)
+        || isSameType(typeMirror, Void.class, env);
+  }
+
   public Optional<TypeMirror> getValueFromAnnotationMirror(AnnotationMirror am, String paramName) {
     for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
         am.getElementValues().entrySet()) {

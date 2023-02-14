@@ -9,6 +9,6 @@ public class JsTypeWithDuplicateJsPropertiesName {
     public String member0;
     @JsProperty(name="member02")
     public String member1(){
-
+        return "";
     }
 }
