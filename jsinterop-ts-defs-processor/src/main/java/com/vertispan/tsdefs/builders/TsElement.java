@@ -16,6 +16,7 @@
 package com.vertispan.tsdefs.builders;
 
 import static com.vertispan.tsdefs.Formatting.capitalizeFirstLetter;
+import static com.vertispan.tsdefs.builders.JavaToTsTypeConverter.isVoidType;
 import static com.vertispan.tsdefs.model.TsModifier.*;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -86,13 +87,23 @@ public class TsElement {
   }
 
   public boolean isGetter() {
-    return isMethod()
-        && isJsProperty()
-        && (elementName().startsWith("get") || elementName().startsWith("is"));
+    return isMethod() && isJsProperty() && matchGetterPattern();
+  }
+
+  private boolean matchGetterPattern() {
+    ExecutableElement executableElement = (ExecutableElement) element;
+    return !isVoidType(executableElement.getReturnType(), env)
+        && executableElement.getParameters().size() == 0;
   }
 
   public boolean isSetter() {
-    return isMethod() && isJsProperty() && (elementName().startsWith("set"));
+    return isMethod() && isJsProperty() && matchSetterPattern();
+  }
+
+  private boolean matchSetterPattern() {
+    ExecutableElement executableElement = (ExecutableElement) element;
+    return isVoidType(executableElement.getReturnType(), env)
+        && executableElement.getParameters().size() == 1;
   }
 
   public String getName() {
@@ -143,7 +154,7 @@ public class TsElement {
    * @return String name
    */
   public String nonGetSetName() {
-    return getDeclaredJsName().orElse(Formatting.nonGetSetName(elementName()));
+    return Formatting.nonGetSetName(getDeclaredJsName().orElse(elementName()));
   }
 
   /**

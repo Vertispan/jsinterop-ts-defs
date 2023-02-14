@@ -51,9 +51,13 @@ public class DuplicateMembersTest {
                 JavaFileObjects.forResource(
                     "types/members/JsTypeWithDuplicateFieldAndJsPropertyName.java"));
 
-    assertThat(result.errors().size()).isEqualTo(1);
-    assertThat(result.errors().get(0).getMessage(Locale.getDefault()))
-        .isEqualTo(TypeVisitor.DUPLICATE_MEMBERS_ARE_NOT_ALLOWED);
+    assertThat(result.errors().size()).isGreaterThan(0);
+    assertThat(result.errors())
+        .allMatch(
+            diagnostic ->
+                diagnostic
+                    .getMessage(Locale.getDefault())
+                    .equals(TypeVisitor.DUPLICATE_MEMBERS_ARE_NOT_ALLOWED));
   }
 
   @Test

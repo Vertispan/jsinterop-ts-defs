@@ -64,7 +64,11 @@ public class Formatting {
    * @return The new string with lowercase first letter
    */
   public static String lowerFirstLetter(String input) {
-    return input.substring(0, 1).toLowerCase() + input.substring(1);
+    if (input.length() > 1) {
+      return input.substring(0, 1).toLowerCase() + input.substring(1);
+    } else {
+      return input.toLowerCase();
+    }
   }
 
   /**
@@ -84,10 +88,11 @@ public class Formatting {
    * @return the name of the method with the get,set and is prefixes and lowercase the first letter.
    */
   public static String nonGetSetName(String originalName) {
-    if (originalName.startsWith("get") || originalName.startsWith("set")) {
+    if (originalName.startsWith("get")
+        || originalName.startsWith("set") && originalName.length() > 3) {
       return Formatting.lowerFirstLetter(originalName.substring(3));
     }
-    if (originalName.startsWith("is")) {
+    if (originalName.startsWith("is") && originalName.length() > 2) {
       return Formatting.lowerFirstLetter(originalName.substring(2));
     }
     return originalName;
