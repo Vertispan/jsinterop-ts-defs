@@ -29,7 +29,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic;
 
 public class ClassTypeVisitor extends TsElement {
 
@@ -152,12 +151,6 @@ public class ClassTypeVisitor extends TsElement {
         && !superTsElement.isTsInterface()
         && !superTsElement.isTsIgnored()) {
 
-      if (superTsElement.requiresProtectedConstructor()) {
-        env.messager()
-            .printMessage(
-                Diagnostic.Kind.ERROR, "Cannot extend a type with private constructor.", element);
-        return Optional.empty();
-      }
       TsClass.TsClassBuilder builder =
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
       new TypeArgumentsVisitor<TsClass.TsClassBuilder>(superclass, env).visit(builder);
