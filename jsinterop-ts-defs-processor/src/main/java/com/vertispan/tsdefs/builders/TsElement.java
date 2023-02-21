@@ -47,14 +47,17 @@ public class TsElement {
   protected final Element element;
   protected final HasProcessorEnv env;
   private final JavaToTsTypeConverter typeConverter;
+  private TypeMirror typeMirror;
 
   public TsElement(Element element, HasProcessorEnv env) {
     this.element = element;
     this.env = env;
     this.typeConverter = new JavaToTsTypeConverter(element, env);
+    this.typeMirror = nonNull(element) ? element.asType() : null;
   }
 
   public TsElement(TypeMirror typeMirror, HasProcessorEnv env) {
+    this.typeMirror = typeMirror;
     this.element = env.types().asElement(typeMirror);
     this.env = env;
     this.typeConverter = new JavaToTsTypeConverter(element, env);
@@ -143,6 +146,19 @@ public class TsElement {
     return getDeclaredJsName().orElse(elementName());
   }
 
+  // TODO: This is a workaround for when types like <?> and <T> or <String[][]> do not actually
+  // translate to an element and the element is null, I need to stop mixing types and elements and
+  // provide a better way to get the information from a type or element.
+  private <T extends Annotation> T getAnnotation(Class<T> annotation) {
+    if (nonNull(element)) {
+      return element.getAnnotation(annotation);
+    }
+    if (nonNull(typeMirror)) {
+      return typeMirror.getAnnotation(annotation);
+    }
+    return null;
+  }
+
   /**
    * The name specified in TsName annotation takes highest priority Then we check each one of the
    * JsInterop annotations to find the element name
@@ -150,10 +166,10 @@ public class TsElement {
    * @return {@link Optional} String name.
    */
   public Optional<String> getDeclaredJsName() {
-    TsName tsNameAnnotation = element.getAnnotation(TsName.class);
-    JsType jsTypeAnnotation = element.getAnnotation(JsType.class);
-    JsProperty jsPropertyAnnotation = element.getAnnotation(JsProperty.class);
-    JsMethod jsMethodAnnotation = element.getAnnotation(JsMethod.class);
+    TsName tsNameAnnotation = getAnnotation(TsName.class);
+    JsType jsTypeAnnotation = getAnnotation(JsType.class);
+    JsProperty jsPropertyAnnotation = getAnnotation(JsProperty.class);
+    JsMethod jsMethodAnnotation = getAnnotation(JsMethod.class);
     if (nonNull(tsNameAnnotation)
         && nonNull(tsNameAnnotation.name())
         && !tsNameAnnotation.name().trim().isEmpty()
@@ -202,10 +218,10 @@ public class TsElement {
   }
 
   public Optional<String> getDeclaredNamespace() {
-    TsName tsNameAnnotation = element.getAnnotation(TsName.class);
-    JsType jsTypeAnnotation = element.getAnnotation(JsType.class);
-    JsProperty jsPropertyAnnotation = element.getAnnotation(JsProperty.class);
-    JsMethod jsMethodAnnotation = element.getAnnotation(JsMethod.class);
+    TsName tsNameAnnotation = getAnnotation(TsName.class);
+    JsType jsTypeAnnotation = getAnnotation(JsType.class);
+    JsProperty jsPropertyAnnotation = getAnnotation(JsProperty.class);
+    JsMethod jsMethodAnnotation = getAnnotation(JsMethod.class);
     if (nonNull(tsNameAnnotation)
         && nonNull(tsNameAnnotation.namespace())
         && !"<auto>".equals(tsNameAnnotation.namespace())) {
@@ -504,11 +520,11 @@ public class TsElement {
   }
 
   public Boolean isOptional() {
-    return nonNull(element.getAnnotation(JsOptional.class));
+    return nonNull(getAnnotation(JsOptional.class));
   }
 
   public boolean isJsType() {
-    return nonNull(element.getAnnotation(JsType.class));
+    return nonNull(getAnnotation(JsType.class));
   }
 
   public boolean isJsNullable() {
@@ -541,31 +557,32 @@ public class TsElement {
   }
 
   public boolean isIgnored() {
-    return nonNull(element.getAnnotation(JsIgnore.class));
+    return nonNull(getAnnotation(JsIgnore.class));
   }
 
   public boolean isTsIgnored() {
-    return nonNull(element) && nonNull(element.getAnnotation(TsIgnore.class));
+    return nonNull(getAnnotation(TsIgnore.class));
   }
 
   public boolean isOverlay() {
-    return nonNull(element.getAnnotation(JsOverlay.class));
+    return nonNull(getAnnotation(JsOverlay.class));
   }
 
   public boolean isJsProperty() {
-    return nonNull(element.getAnnotation(JsProperty.class));
+    return nonNull(getAnnotation(JsProperty.class));
   }
 
   public boolean isJsOptional() {
-    return nonNull(element.getAnnotation(JsOptional.class));
+    return nonNull(getAnnotation(JsOptional.class));
   }
 
   public boolean isTsTypeDef() {
-    return nonNull(element.getAnnotation(TsTypeDef.class));
+    //    return nonNull(element) && nonNull(getAnnotation(TsTypeDef.class));
+    return nonNull(getAnnotation(TsTypeDef.class));
   }
 
   public boolean isTsInterface() {
-    return nonNull(element) && nonNull(element.getAnnotation(TsInterface.class));
+    return nonNull(getAnnotation(TsInterface.class));
   }
 
   public Optional<TypeMirror> getJavaSuperClass() {
@@ -594,11 +611,11 @@ public class TsElement {
   }
 
   public boolean isJsMethod() {
-    return nonNull(element.getAnnotation(JsMethod.class));
+    return nonNull(getAnnotation(JsMethod.class));
   }
 
   public boolean isJsConstructor() {
-    return nonNull(element.getAnnotation(JsConstructor.class));
+    return nonNull(getAnnotation(JsConstructor.class));
   }
 
   public boolean isField() {
@@ -606,7 +623,7 @@ public class TsElement {
   }
 
   public boolean isJsFunction() {
-    return nonNull(element) && nonNull(element.getAnnotation(JsFunction.class));
+    return nonNull(getAnnotation(JsFunction.class));
   }
 
   public boolean isConstructor() {
@@ -619,7 +636,7 @@ public class TsElement {
   }
 
   public boolean isDeprecated() {
-    return nonNull(element.getAnnotation(Deprecated.class));
+    return nonNull(getAnnotation(Deprecated.class));
   }
 
   public String getGetterName() {
