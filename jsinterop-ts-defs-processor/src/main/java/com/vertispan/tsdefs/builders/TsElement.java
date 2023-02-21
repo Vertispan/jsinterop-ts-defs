@@ -259,6 +259,12 @@ public class TsElement {
   }
 
   public TsType getType() {
+    TsType elementTsType = getElementTsType();
+    elementTsType.nullable(isJsNullable());
+    return elementTsType;
+  }
+
+  private TsType getElementTsType() {
     if (isTsTypeRef()) {
       Optional<TypeMirror> typeDefClass = getClassValueFromAnnotation(TsTypeRef.class, "value");
       if (typeDefClass.isPresent()) {
@@ -505,6 +511,31 @@ public class TsElement {
     return nonNull(element.getAnnotation(JsType.class));
   }
 
+  public boolean isJsNullable() {
+    TypeMirror typeMirror;
+    if (ElementKind.METHOD == element.getKind()) {
+      typeMirror = ((ExecutableElement) element).getReturnType();
+    } else {
+      typeMirror = element.asType();
+    }
+    List<? extends AnnotationMirror> annotations = typeMirror.getAnnotationMirrors();
+    return annotations.stream()
+        .anyMatch(
+            annotationMirror ->
+                JavaToTsTypeConverter.isSameType(
+                    annotationMirror.getAnnotationType(), JsNullable.class, env));
+  }
+
+  public boolean isTsTypeRef() {
+    TypeMirror typeMirror = element.asType();
+    List<? extends AnnotationMirror> annotations = typeMirror.getAnnotationMirrors();
+    return annotations.stream()
+        .anyMatch(
+            annotationMirror ->
+                JavaToTsTypeConverter.isSameType(
+                    annotationMirror.getAnnotationType(), TsTypeRef.class, env));
+  }
+
   public boolean hasJsMembers() {
     return element.getEnclosedElements().stream().anyMatch(e -> TsElement.of(e, env).isJsMember());
   }
@@ -531,10 +562,6 @@ public class TsElement {
 
   public boolean isTsTypeDef() {
     return nonNull(element.getAnnotation(TsTypeDef.class));
-  }
-
-  public boolean isTsTypeRef() {
-    return nonNull(element) && nonNull(element.getAnnotation(TsTypeRef.class));
   }
 
   public boolean isTsInterface() {

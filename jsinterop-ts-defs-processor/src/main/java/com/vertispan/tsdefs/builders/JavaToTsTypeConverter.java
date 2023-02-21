@@ -151,7 +151,7 @@ public class JavaToTsTypeConverter {
       return TsType.of("any");
     } else if (TypeKind.DECLARED.equals(type.getKind())) {
       DeclaredType declaredType = (DeclaredType) type;
-      if (nonNull(declaredType.asElement().getAnnotation(TsTypeRef.class))) {
+      if (TsElement.of(declaredType, env).isTsTypeRef()) {
         return getTsTypeReference(declaredType);
       } else if (!TsElement.of(declaredType, env).isPublic()) {
         env.messager()

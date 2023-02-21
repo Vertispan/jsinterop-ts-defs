@@ -13,25 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.tstypedef;
+package com.vertispan.tsdefs.jsnullable;
 
-import com.vertispan.tsdefs.annotations.TsTypeRef;
-import elemental2.core.JsArray;
-import elemental2.core.JsMap;
-import elemental2.core.JsString;
+import jsinterop.annotations.JsIgnore;
+import jsinterop.annotations.JsNullable;
 import jsinterop.annotations.JsType;
-import jsinterop.base.JsPropertyMap;
 
 @JsType
-public class EnumClient {
+public class JsTypeWithJsNullableMembers {
 
-  public JsMap<@TsTypeRef(String.class) Object, @TsTypeRef(Double.class) Object> testMap;
+  @JsIgnore public String ignoredProperty;
+  public String notNullable;
 
-  public void useEnum(@TsTypeRef(EnumSimulation.class) String param) {}
+  public @JsNullable String nullableProperty;
 
-  public void useString(String param) {}
+  public String notNullableMethod() {
+    return null;
+  }
 
-  public void useJsTypeAsTypeReference(@TsTypeRef(UsedAsTypeRef.class) Object param) {}
+  public @JsNullable String nullableMethod() {
+    return null;
+  }
 
-  public JsPropertyMap<JsArray<@TsTypeRef(EnumSimulation.class) JsString>> values;
+  public String methodWithNullableParameter(@JsNullable String nullable, String notNullable) {
+    return "";
+  }
 }
