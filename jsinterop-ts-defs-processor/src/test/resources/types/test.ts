@@ -79,6 +79,7 @@ import UsedAsTypeRef = com.vertispan.tsdefs.tstypedef.UsedAsTypeRef;
 // @ts-expect-error
 import TsIgnoredSuperClass = com.vertispan.tsdefs.inheritance.TsIgnoredSuperClass;
 import JsTypeExtendsTsIgnoredSuperType = com.vertispan.tsdefs.inheritance.JsTypeExtendsTsIgnoredSuperType;
+import JsTypeWithJsNullableMembers = com.vertispan.tsdefs.jsnullable.JsTypeWithJsNullableMembers;
 
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -673,5 +674,26 @@ enumClient.values = {
     test3: [1, 2, 3],
 }
 
-// ---------------------- TsName -----------------------
+// --------------------- JsNullable ---------------
+const jsTypeWithJsNullableMembers = new JsTypeWithJsNullableMembers();
 
+// @ts-expect-error
+jsTypeWithJsNullableMembers.notNullable = null;
+// @ts-expect-error
+jsTypeWithJsNullableMembers.notNullable = undefined;
+jsTypeWithJsNullableMembers.nullableProperty = null;
+jsTypeWithJsNullableMembers.nullableProperty = undefined;
+
+// @ts-expect-error
+jsTypeWithJsNullableMembers.methodWithNullableParameter(null, null);
+// @ts-expect-error
+jsTypeWithJsNullableMembers.methodWithNullableParameter(null, undefined);
+// @ts-expect-error
+jsTypeWithJsNullableMembers.methodWithNullableParameter(undefined, undefined);
+jsTypeWithJsNullableMembers.methodWithNullableParameter(null, "");
+jsTypeWithJsNullableMembers.methodWithNullableParameter(undefined, "");
+
+jsTypeWithJsNullableMembers.notNullable = jsTypeWithJsNullableMembers.notNullableMethod();
+// @ts-expect-error
+jsTypeWithJsNullableMembers.notNullable = jsTypeWithJsNullableMembers.nullableMethod();
+jsTypeWithJsNullableMembers.nullableProperty = jsTypeWithJsNullableMembers.nullableMethod();

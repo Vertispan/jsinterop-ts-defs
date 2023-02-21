@@ -25,6 +25,7 @@ public class TsType {
   protected final String name;
   protected final String namespace;
   private List<TsType> bounds = new ArrayList<>();
+  private boolean nullable;
 
   public static TsType of(String name, String namespace) {
     return new TsType(name, namespace);
@@ -37,6 +38,11 @@ public class TsType {
   public TsType(String name, String namespace) {
     this.name = name;
     this.namespace = namespace;
+  }
+
+  public TsType nullable(boolean nullable) {
+    this.nullable = nullable;
+    return this;
   }
 
   public String getName() {
@@ -54,10 +60,17 @@ public class TsType {
 
   public String emit(String parentNamespace) {
     if (namespace.isEmpty() || namespace.equals(parentNamespace)) {
-      return resolveName(name) + emitBounds(parentNamespace);
+      return resolveName(name) + emitBounds(parentNamespace) + emitNullable();
     } else {
-      return namespace + "." + resolveName(name) + emitBounds(parentNamespace);
+      return namespace + "." + resolveName(name) + emitBounds(parentNamespace) + emitNullable();
     }
+  }
+
+  private String emitNullable() {
+    if (nullable) {
+      return "|null|undefined";
+    }
+    return "";
   }
 
   private String emitBounds(String parentNamespace) {
