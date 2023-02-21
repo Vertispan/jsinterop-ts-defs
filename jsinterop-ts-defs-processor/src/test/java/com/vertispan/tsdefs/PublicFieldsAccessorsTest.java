@@ -34,7 +34,7 @@ public class PublicFieldsAccessorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/members/JsTypeWithPublicFieldAndPublicAccessor.java"));
+                    "errors/members/JsTypeWithPublicFieldAndPublicAccessor.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))

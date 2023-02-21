@@ -141,6 +141,7 @@
                         <exclude>**/settings.xml</exclude>
                         <exclude>**/.flattened-pom.xml</exclude>
                         <exclude>**/*.d.ts</exclude>
+                        <exclude>**/*.json</exclude>
                         <exclude>**/node/**</exclude>
                         <exclude>**/node_modules/**</exclude>
                     </excludes>

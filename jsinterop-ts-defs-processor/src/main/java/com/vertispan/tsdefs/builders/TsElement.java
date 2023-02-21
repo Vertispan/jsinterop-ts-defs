@@ -18,7 +18,6 @@ package com.vertispan.tsdefs.builders;
 import static com.vertispan.tsdefs.Formatting.capitalizeFirstLetter;
 import static com.vertispan.tsdefs.builders.JavaToTsTypeConverter.isVoidType;
 import static com.vertispan.tsdefs.model.TsModifier.*;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import com.vertispan.tsdefs.Formatting;
@@ -87,7 +86,24 @@ public class TsElement {
   }
 
   public boolean isGetter() {
-    return isMethod() && isJsProperty() && matchGetterPattern();
+    return isMethod() && ((isJsProperty() && matchGetterPattern()) || isInheritedGetter());
+  }
+
+  public boolean isInheritedGetter() {
+    List<ExecutableElement> superGetters =
+        TsElement.of(element.getEnclosingElement(), env).allSuperMethods().stream()
+            .filter(executableElement -> TsElement.of(executableElement, env).isGetter())
+            .collect(Collectors.toList());
+    return superGetters.stream()
+        .anyMatch(
+            possibleOverridden -> {
+              ExecutableElement currentMethod = (ExecutableElement) this.element;
+              return env.elements()
+                  .overrides(
+                      currentMethod,
+                      possibleOverridden,
+                      (TypeElement) element.getEnclosingElement());
+            });
   }
 
   private boolean matchGetterPattern() {
@@ -97,13 +113,30 @@ public class TsElement {
   }
 
   public boolean isSetter() {
-    return isMethod() && isJsProperty() && matchSetterPattern();
+    return isMethod() && ((isJsProperty() && matchSetterPattern()) || isInheritedSetter());
   }
 
   private boolean matchSetterPattern() {
     ExecutableElement executableElement = (ExecutableElement) element;
     return isVoidType(executableElement.getReturnType(), env)
         && executableElement.getParameters().size() == 1;
+  }
+
+  public boolean isInheritedSetter() {
+    List<ExecutableElement> superGetters =
+        TsElement.of(element.getEnclosingElement(), env).allSuperMethods().stream()
+            .filter(executableElement -> TsElement.of(executableElement, env).isSetter())
+            .collect(Collectors.toList());
+    return superGetters.stream()
+        .anyMatch(
+            possibleOverridden -> {
+              ExecutableElement currentMethod = (ExecutableElement) this.element;
+              return env.elements()
+                  .overrides(
+                      currentMethod,
+                      possibleOverridden,
+                      (TypeElement) element.getEnclosingElement());
+            });
   }
 
   public String getName() {
@@ -154,7 +187,7 @@ public class TsElement {
    * @return String name
    */
   public String nonGetSetName() {
-    return Formatting.nonGetSetName(getDeclaredJsName().orElse(elementName()));
+    return getDeclaredJsName().orElseGet(() -> Formatting.nonGetSetName(elementName()));
   }
 
   /**
@@ -249,16 +282,71 @@ public class TsElement {
     }
   }
 
-  public List<ExecutableElement> nonInheritedMethods() {
+  public List<ExecutableElement> allSuperMethods() {
     List<ExecutableElement> superMethods = superMethods();
-    return ElementFilter.methodsIn(element.getEnclosedElements()).stream()
-        .filter(method -> isNull(method.getAnnotation(Override.class)))
-        .filter(method -> !overridesOneOf(method, superMethods))
+    superMethods.addAll(allSuperInterfacesMethods());
+    return superMethods;
+  }
+
+  public List<ExecutableElement> allNotOverriddenMethods() {
+    List<ExecutableElement> executableElements = enclosedMethods();
+    List<ExecutableElement> superMethods = allSuperMethods();
+    return superMethods.stream()
+        .filter(
+            possibleOverridden -> {
+              return executableElements.stream()
+                  .noneMatch(
+                      overrider ->
+                          env.elements()
+                              .overrides(overrider, possibleOverridden, (TypeElement) element));
+            })
+        .collect(Collectors.toList());
+  }
+
+  public List<ExecutableElement> allNotOverriddenInterfacesMethods() {
+    return allNotOverriddenInterfacesMethods(executableElement -> true);
+  }
+
+  public List<ExecutableElement> allNotOverriddenInterfacesMethods(
+      Predicate<TypeMirror> predicate) {
+    List<ExecutableElement> executableElements = enclosedMethods();
+    List<ExecutableElement> superMethods = allSuperInterfacesMethods(predicate);
+    return superMethods.stream()
+        .filter(
+            possibleOverridden ->
+                executableElements.stream()
+                    .noneMatch(
+                        overrider ->
+                            env.elements()
+                                .overrides(overrider, possibleOverridden, (TypeElement) element)))
+        .collect(Collectors.toList());
+  }
+
+  public List<ExecutableElement> enclosedMethods() {
+    return element.getEnclosedElements().stream()
+        .filter(e -> ElementKind.METHOD == e.getKind())
+        .map(e -> (ExecutableElement) e)
+        .collect(Collectors.toList());
+  }
+
+  public List<ExecutableElement> enclosedNonInheritedMethods() {
+    List<ExecutableElement> superMethods = allSuperMethods();
+    return element.getEnclosedElements().stream()
+        .filter(e -> ElementKind.METHOD == e.getKind())
+        .map(e -> (ExecutableElement) e)
+        .filter(
+            method ->
+                superMethods.stream()
+                    .noneMatch(
+                        possibleOverridden ->
+                            env.elements()
+                                .overrides(method, possibleOverridden, (TypeElement) element)))
         .collect(Collectors.toList());
   }
 
   public boolean isInheritedMethod(ExecutableElement method) {
     List<ExecutableElement> superMethods = superMethods();
+    superMethods.addAll(allSuperInterfacesMethods());
     return overridesOneOf(method, superMethods);
   }
 
@@ -274,7 +362,8 @@ public class TsElement {
     superElement()
         .ifPresent(
             superElement -> {
-              if (!superElement.superClass().getKind().equals(TypeKind.NONE)) {
+              if (!superElement.superClass().getKind().equals(TypeKind.NONE)
+                  && !superElement.isTsInterface()) {
                 methods.addAll(ElementFilter.methodsIn(superElement.element.getEnclosedElements()));
                 methods.addAll(superElement.superMethods());
               }
@@ -303,7 +392,15 @@ public class TsElement {
             .filter(predicate::test)
             .map(typeMirror -> (TypeElement) env.types().asElement(typeMirror))
             .forEach(typeElement -> methods.addAll(allMethodsInInterface(typeElement)));
-
+    getJavaSuperClass()
+        .ifPresent(
+            typeMirror -> {
+              TsElement superClass = TsElement.of(typeMirror, env);
+              if (superClass.isTsInterface()) {
+                methods.addAll(superClass.allSuperInterfacesMethods());
+                methods.addAll(superClass.enclosedNonInheritedMethods());
+              }
+            });
     return methods;
   }
 
@@ -322,7 +419,7 @@ public class TsElement {
     return allMethodsAndSuperClassesMethods().stream()
         .anyMatch(
             elementMethod ->
-                env.elements().overrides(elementMethod, method, (TypeElement) element));
+                env.elements().overrides(method, elementMethod, (TypeElement) element));
   }
 
   public Optional<TsElement> superElement() {
@@ -338,12 +435,14 @@ public class TsElement {
   }
 
   public boolean isExportable() {
-    return (parent().isTsInterface() && (isJsType() || isJsMember() || hasJsMembers()))
-        || (!parent().isTsInterface()
-            && (isJsType()
-                || isJsMember()
-                || hasJsMembers()
-                || (isPublic() && (parent().isJsType()))));
+    return !isIgnored()
+        && !isOverlay()
+        && ((parent().isTsInterface() && (isJsType() || isJsMember() || hasJsMembers()))
+            || (!parent().isTsInterface()
+                && (isJsType()
+                    || isJsMember()
+                    || hasJsMembers()
+                    || (isPublic() && (parent().isJsType())))));
   }
 
   public boolean isJsMember() {
@@ -371,9 +470,7 @@ public class TsElement {
   }
 
   private Optional<TsModifier> abstractModifier() {
-    return (isAbstract() && isMethod() && !parent().isInterface())
-        ? Optional.of(ABSTRACT)
-        : Optional.empty();
+    return (isAbstract() && !parent().isInterface()) ? Optional.of(ABSTRACT) : Optional.empty();
   }
 
   public Boolean isPrivate() {
@@ -556,8 +653,6 @@ public class TsElement {
           element.getEnclosedElements().stream()
               .map(enclosedElement -> TsElement.of(enclosedElement, env))
               .filter(TsElement::isConstructor)
-              .filter(
-                  tsElement -> !((ExecutableElement) tsElement.element()).getParameters().isEmpty())
               .collect(Collectors.toList());
       boolean allIgnored =
           !constructors.isEmpty() && constructors.stream().allMatch(TsElement::isIgnored);

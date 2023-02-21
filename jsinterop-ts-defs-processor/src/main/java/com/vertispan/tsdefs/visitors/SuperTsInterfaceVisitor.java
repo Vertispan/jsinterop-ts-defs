@@ -20,10 +20,6 @@ import com.vertispan.tsdefs.builders.HasInterfaces;
 import com.vertispan.tsdefs.builders.IsClassBuilder;
 import com.vertispan.tsdefs.builders.TsElement;
 import com.vertispan.tsdefs.model.TsInterface;
-import com.vertispan.tsdefs.model.TsMethod;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 public class SuperTsInterfaceVisitor<T> extends TsElement {
@@ -37,36 +33,7 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
   public void visit(IsClassBuilder<T> builder) {
     if (isTsInterface()) {
       addInterface(builder, type);
-      element.getEnclosedElements().stream()
-          .filter(e -> ElementKind.METHOD.equals(e.getKind()))
-          .map(e -> TsElement.of(e, env))
-          .filter(TsElement::isJsMethod)
-          .map(e -> (ExecutableElement) e.element())
-          .forEach(e -> addFunction(builder, e));
-
-      ((TypeElement) element)
-          .getInterfaces()
-          .forEach(
-              interfaceType -> {
-                new InheritedMethodsVisitor<T>(env.types().asElement(interfaceType), env)
-                    .visit(builder);
-              });
     }
-  }
-
-  public void addFunction(IsClassBuilder<T> parent, ExecutableElement method) {
-    TsElement tsMethodElement = TsElement.of(method, env);
-    TsMethod.TsMethodBuilder builder =
-        TsMethod.builder(tsMethodElement.getName(), tsMethodElement.getType())
-            .addModifiers(tsMethodElement.getJsModifiers())
-            .setDocs(tsMethodElement.getDocs())
-            .setDeprecated(tsMethodElement.isDeprecated());
-
-    method
-        .getParameters()
-        .forEach(
-            param -> new ParameterVisitor<TsMethod.TsMethodBuilder>(param, env).visit(builder));
-    parent.addFunction(builder.build());
   }
 
   private void addInterface(HasInterfaces<T> builder, TypeMirror typeMirror) {

@@ -35,9 +35,15 @@ public class ClassMethodVisitor<T> extends TsElement {
         && !isOverlay()
         && !isJsProperty()
         && isExportable()
-        && !TsElement.of(element.getEnclosingElement(), env)
-            .isInheritedMethod((ExecutableElement) element)
+        && !isGetter()
+        && !isSetter()
         && (isJsMethod() || (parent().isJsType() && isPublic()))) {
+
+      TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
+      if (parentElement.isTsInterface()
+          && parentElement.isInheritedMethod((ExecutableElement) this.element)) {
+        return;
+      }
 
       TsMethod.TsMethodBuilder builder =
           TsMethod.builder(getName(), getType())

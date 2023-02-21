@@ -34,7 +34,7 @@ public class ConstructorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/ctors/JsTypeWithMultipleNoneAnnotatedConstructors.java"));
+                    "errors/ctors/JsTypeWithMultipleNoneAnnotatedConstructors.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))
@@ -49,7 +49,7 @@ public class ConstructorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/ctors/JsTypeWithMultipleAnnotatedConstructors.java"));
+                    "errors/ctors/JsTypeWithMultipleAnnotatedConstructors.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))
@@ -64,7 +64,7 @@ public class ConstructorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/ctors/JsTypeWithMultipleAnnotatedAndIgnoredConstructors.java"));
+                    "errors/ctors/JsTypeWithMultipleAnnotatedAndIgnoredConstructors.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))
@@ -79,7 +79,7 @@ public class ConstructorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/ctors/JsTypeWithMultipleIgnoredConstructors.java"));
+                    "errors/ctors/JsTypeWithMultipleIgnoredConstructors.java"));
 
     assertThat(result.errors()).isEmpty();
   }
@@ -90,7 +90,7 @@ public class ConstructorsTest {
     Compilation result =
         Compiler.javac()
             .withProcessors(new JsTypesProcessorProcessor())
-            .compile(JavaFileObjects.forResource("types/ctors/JsTypeWithSingleConstructors.java"));
+            .compile(JavaFileObjects.forResource("errors/ctors/JsTypeWithSingleConstructors.java"));
 
     assertThat(result.errors()).isEmpty();
   }
@@ -103,7 +103,7 @@ public class ConstructorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/ctors/JsTypeWithSingleNotIgnoredConstructors.java"));
+                    "errors/ctors/JsTypeWithSingleNotIgnoredConstructors.java"));
 
     assertThat(result.errors()).isEmpty();
   }
@@ -116,7 +116,7 @@ public class ConstructorsTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/ctors/JsTypeWithIgnoredConstructorsExceptOneAnnotated.java"));
+                    "errors/ctors/JsTypeWithIgnoredConstructorsExceptOneAnnotated.java"));
 
     assertThat(result.errors()).isEmpty();
   }

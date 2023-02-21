@@ -37,6 +37,12 @@
             <artifactId>base</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.google.elemental2</groupId>
+            <artifactId>elemental2-core</artifactId>
+            <version>1.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>com.google.auto</groupId>
             <artifactId>auto-common</artifactId>
         </dependency>
@@ -103,13 +109,13 @@
                             "install", so unless you need to run some other npm command,
                             you can remove this whole <configuration> section.
                             -->
-                            <arguments>install --save-dev check-dts typescript</arguments>
+                            <arguments>install --prefix ${project.build.directory}/test-classes --save-dev @definitelytyped/dtslint typescript</arguments>
                         </configuration>
                     </execution>
                     <execution>
                         <id>test generated definitions</id>
                         <goals>
-                            <goal>npx</goal>
+                            <goal>npm</goal>
                         </goals>
 
                         <!-- optional: default phase is "generate-resources" -->
@@ -120,8 +126,7 @@
                             "install", so unless you need to run some other npm command,
                             you can remove this whole <configuration> section.
                             -->
-                            <arguments>check-dts **/target/generated-test-sources/test-annotations/**/tsinterop.*.ts
-                            </arguments>
+                            <arguments>run --prefix ${project.build.directory}/test-classes dtslint</arguments>
                         </configuration>
                     </execution>
                 </executions>

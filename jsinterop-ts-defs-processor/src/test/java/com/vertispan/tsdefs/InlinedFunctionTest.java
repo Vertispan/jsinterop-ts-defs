@@ -30,7 +30,7 @@ public class InlinedFunctionTest {
     Compilation result =
         Compiler.javac()
             .withProcessors(new JsTypesProcessorProcessor())
-            .compile(JavaFileObjects.forResource("types/functions/UsesIFunction.java"));
+            .compile(JavaFileObjects.forResource("errors/functions/UsesIFunction.java"));
 
     assertThat(result.errors()).isEmpty();
   }

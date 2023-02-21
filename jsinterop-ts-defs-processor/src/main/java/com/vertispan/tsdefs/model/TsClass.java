@@ -54,8 +54,16 @@ public class TsClass implements IsType {
   public void mergeWith(TsClass other) {
     this.interfaces.addAll(other.interfaces);
     this.typeArguments.addAll(other.typeArguments);
-    this.functions.addAll(other.functions);
+    mergeFunctions(other);
+    mergeProperties(other);
+  }
+
+  public void mergeProperties(TsClass other) {
     this.properties.addAll(other.properties);
+  }
+
+  public void mergeFunctions(TsClass other) {
+    this.functions.addAll(other.functions);
   }
 
   @Override
@@ -89,7 +97,7 @@ public class TsClass implements IsType {
     if (nonNull(tsDoc)) {
       sb.append(tsDoc.emit(indent, deprecated));
     }
-    sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining(" ")));
+    sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining("")));
     sb.append("class ");
     sb.append(emitType(parentNamespace));
     if (nonNull(superClass)) {
