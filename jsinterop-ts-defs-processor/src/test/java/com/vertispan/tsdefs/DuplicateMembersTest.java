@@ -34,7 +34,7 @@ public class DuplicateMembersTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/members/JsTypeWithDuplicateMethodAndField.java"));
+                    "errors/members/JsTypeWithDuplicateMethodAndField.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))
@@ -49,7 +49,7 @@ public class DuplicateMembersTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/members/JsTypeWithDuplicateFieldAndJsPropertyName.java"));
+                    "errors/members/JsTypeWithDuplicateFieldAndJsPropertyName.java"));
 
     assertThat(result.errors().size()).isGreaterThan(0);
     assertThat(result.errors())
@@ -68,7 +68,7 @@ public class DuplicateMembersTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/members/JsTypeWithDuplicateJsPropertiesName.java"));
+                    "errors/members/JsTypeWithDuplicateJsPropertiesName.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))
@@ -83,7 +83,7 @@ public class DuplicateMembersTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/members/JsTypeWithPrivateFieldAndPublicAccessorJsProperty.java"));
+                    "errors/members/JsTypeWithPrivateFieldAndPublicAccessorJsProperty.java"));
 
     assertThat(result.errors()).isEmpty();
   }
@@ -94,7 +94,7 @@ public class DuplicateMembersTest {
     Compilation result =
         Compiler.javac()
             .withProcessors(new JsTypesProcessorProcessor())
-            .compile(JavaFileObjects.forResource("types/members/NoJsTypeDuplicateMethod.java"));
+            .compile(JavaFileObjects.forResource("errors/members/NoJsTypeDuplicateMethod.java"));
 
     assertThat(result.errors()).isEmpty();
   }
@@ -107,7 +107,7 @@ public class DuplicateMembersTest {
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
                 JavaFileObjects.forResource(
-                    "types/members/JsTypeWithDuplicateStaticAndNoneStaticMethods.java"));
+                    "errors/members/JsTypeWithDuplicateStaticAndNoneStaticMethods.java"));
 
     assertThat(result.errors()).isEmpty();
   }
@@ -119,7 +119,8 @@ public class DuplicateMembersTest {
         Compiler.javac()
             .withProcessors(new JsTypesProcessorProcessor())
             .compile(
-                JavaFileObjects.forResource("types/members/JsTypeWithDuplicateStaticMembers.java"));
+                JavaFileObjects.forResource(
+                    "errors/members/JsTypeWithDuplicateStaticMembers.java"));
 
     assertThat(result.errors().size()).isEqualTo(1);
     assertThat(result.errors().get(0).getMessage(Locale.getDefault()))

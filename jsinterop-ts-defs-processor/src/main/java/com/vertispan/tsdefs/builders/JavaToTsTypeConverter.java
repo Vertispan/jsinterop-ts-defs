@@ -45,6 +45,17 @@ public class JavaToTsTypeConverter {
   }
 
   public TsType toTsType(TypeMirror type) {
+    return toTsType(type, false);
+  }
+
+  public TsType toTsType(TypeMirror type, boolean checkTypeDef) {
+
+    if (checkTypeDef && TsElement.of(type, env).isTsTypeDef()) {
+      Optional<TsType> tsType = fromTsTypeDef(TsElement.of(type, env).element);
+      if (tsType.isPresent()) {
+        return tsType.get();
+      }
+    }
     if (type.getKind().isPrimitive()) {
       switch (type.getKind()) {
         case BOOLEAN:
@@ -87,7 +98,7 @@ public class JavaToTsTypeConverter {
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
         DeclaredType declaredType = (DeclaredType) type;
         return TsTemplatedInlinedType.of(
-            "{[key:string]:$T}", asTypeWithArgument(declaredType).get(0));
+            "{ [key: string]: $T; }", asTypeWithArgument(declaredType).get(0));
       }
 
       if (ProcessorType.of(type, env).isJsFunction()) {
@@ -182,7 +193,7 @@ public class JavaToTsTypeConverter {
 
     return typeArguments.stream()
         .map(this::getTypeOrTypeRef)
-        .map(this::toTsType)
+        .map(typeMirror -> toTsType(typeMirror, true))
         .collect(Collectors.toList());
   }
 

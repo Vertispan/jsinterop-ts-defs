@@ -1,0 +1,9 @@
+{
+  "devDependencies": {
+    "@definitelytyped/dtslint": "^0.0.146"
+  },
+  "types": "types",
+  "scripts": {
+    "dtslint": "dtslint types"
+  }
+}

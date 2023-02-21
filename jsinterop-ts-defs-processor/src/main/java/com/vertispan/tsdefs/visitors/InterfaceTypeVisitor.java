@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.model.TsProperty;
 import com.vertispan.tsdefs.model.TypeScriptModule;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
 public class InterfaceTypeVisitor extends TsElement {
@@ -51,18 +52,14 @@ public class InterfaceTypeVisitor extends TsElement {
                           Diagnostic.Kind.ERROR,
                           TS_INTERFACE_CANNOT_EXTEND_FROM_NONE_TS_INTERFACE_CLASSES,
                           element);
+                } else if (!TsElement.of(superclass, env).isTsIgnored()) {
+                  addInterface(builder, superclass);
                 }
               });
 
       new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(element.asType(), env)
           .visit(builder);
       new InterfacesVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
-
-      allSuperInterfacesMethods(typeMirror -> TsElement.of(typeMirror, env).isTsIgnored())
-          .forEach(
-              method ->
-                  new ClassMethodVisitor<TsInterface.TsInterfaceBuilder>(method, env)
-                      .visit(builder));
 
       element.getEnclosedElements().forEach(e -> visit(builder, e));
       if (isTsInterface()) {
@@ -88,7 +85,10 @@ public class InterfaceTypeVisitor extends TsElement {
                   }
                 });
       }
-      new InheritedMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
+      if (!isTsInterface()) {
+        new InheritedMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
+      }
+      new SetterGetterMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
 
       moduleBuilder.addInterface(builder.build());
     }
@@ -97,5 +97,16 @@ public class InterfaceTypeVisitor extends TsElement {
   private void visit(TsInterface.TsInterfaceBuilder interfaceBuilder, Element enclosedElement) {
     new ClassMethodVisitor<TsInterface.TsInterfaceBuilder>(enclosedElement, env)
         .visit(interfaceBuilder);
+  }
+
+  private void addInterface(TsInterface.TsInterfaceBuilder builder, TypeMirror interfaceElement) {
+    TsElement tsElement = TsElement.of(interfaceElement, env);
+    if (!tsElement.isTsIgnored()) {
+      TsInterface.TsInterfaceBuilder interfaceBuilder =
+          TsInterface.builder(tsElement.getName(), tsElement.getNamespace());
+      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(interfaceElement, env)
+          .visit(interfaceBuilder);
+      builder.addInterface(interfaceBuilder.build());
+    }
   }
 }

@@ -59,6 +59,7 @@ public class TsNamespace {
   public boolean isEmpty() {
     return tsInterfaces.isEmpty()
         && tsFunctions.isEmpty()
+        && tsEnums.isEmpty()
         && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty));
   }
 

@@ -1,0 +1,24 @@
+{
+  "extends": "@definitelytyped/dtslint/dtslint.json", // Or "@definitelytyped/dtslint/dt.json" if on DefinitelyTyped
+  "rules": {
+    "semicolon": false,
+    "indent": [false, "tabs"],
+    "whitespace": false,
+    "no-consecutive-blank-lines": false,
+    "jsdoc-format": false,
+    "typedef-whitespace": false,
+    "no-unnecessary-class": false,
+    "no-padding": false,
+    "no-mergeable-namespace": false,
+    "no-empty-interface": false,
+    "no-empty-function": false,
+    "no-relative-import-in-test": false,
+    "prefer-const": false,
+    "eofline": false,
+    "strict-export-declare-modifiers": false,
+    "void-return": false,
+    "array-type": false,
+    "ban-types": false,
+    "no-redundant-jsdoc": false
+  }
+}

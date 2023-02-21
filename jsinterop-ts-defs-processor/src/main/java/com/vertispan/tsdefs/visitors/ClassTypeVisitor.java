@@ -43,7 +43,8 @@ public class ClassTypeVisitor extends TsElement {
           TsClass.builder(getName(), getNamespace())
               .setDocs(getDocs())
               .setDeprecated(isDeprecated())
-              .addModifiers(TsModifier.EXPORT);
+              .addModifiers(TsModifier.EXPORT)
+              .addModifiers(getJsModifiers());
       new TypeArgumentsVisitor<TsClass.TsClassBuilder>(element.asType(), env).visit(builder);
       getSuperClass().ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
@@ -54,51 +55,63 @@ public class ClassTypeVisitor extends TsElement {
               e ->
                   !e.getDeclaredNamespace().isPresent()
                       || e.getNamespace().equals(getNamespace())
-                      || (e.getDeclaredNamespace().isPresent()
-                          && namespaceFromDeclaredNamespace(e.getDeclaredNamespace().get())
-                              .equals(getNamespace())))
+                      || (e.getDeclaredNamespace().isPresent() && isSameNameSpaceAsParent(e)))
           .forEach(e -> visit(builder, e.element()));
 
       new InheritedMethodsVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
-
-      // a ts class must export all super interfaces methods we are adding this to handle the
-      // TsInterface case were a class might not override a super class annotated as TsInterface
-      // method.
-      allSuperInterfacesMethods().stream()
-          .filter(method -> !override(method))
-          .forEach(
-              method -> new ClassMethodVisitor<TsClass.TsClassBuilder>(method, env).visit(builder));
+      new SetterGetterMethodsVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
 
       getJavaSuperClass()
           .ifPresent(
-              superclass ->
-                  new SuperTsInterfaceVisitor<TsClass.TsClassBuilder>(superclass, env)
-                      .visit(builder));
+              superclass -> {
+                new SuperTsInterfaceVisitor<TsClass.TsClassBuilder>(superclass, env).visit(builder);
+              });
 
-      getInterfaces().stream()
-          .map(interfaceType -> env.types().asElement(interfaceType))
-          .forEach(e -> new InheritedMethodsVisitor<TsClass.TsClassBuilder>(e, env).visit(builder));
+      TsClass tsClass = builder.build();
+      getJavaSuperClass()
+          .ifPresent(
+              superclass -> {
+                TsElement superTsElement = TsElement.of(superclass, env);
+                if (superTsElement.isTsIgnored()) {
+                  TsClass.TsClassBuilder superBuilder =
+                      TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
+                  superTsElement
+                      .element()
+                      .getEnclosedElements()
+                      .forEach(
+                          e -> {
+                            visit(superBuilder, e);
+                          });
+                  TsClass superTsClass = superBuilder.build();
+                  tsClass.mergeFunctions(superTsClass);
+                  tsClass.mergeProperties(superTsClass);
+                }
+              });
+      builder.setEmitProtectedContr(requiresProtectedConstructor());
 
-      moduleBuilder.addClass(builder.build());
+      moduleBuilder.addClass(tsClass);
 
       // Has own namespace
       Map<String, List<TsElement>> withDiffNs =
           element.getEnclosedElements().stream()
               .map(e -> TsElement.of(e, env))
               .filter(tsElement -> tsElement.getDeclaredNamespace().isPresent())
-              .filter(
-                  e ->
-                      e.isExportable()
-                          && !namespaceFromDeclaredNamespace(e.getDeclaredNamespace().get())
-                              .equals(getNamespace()))
+              .filter(e -> e.isExportable() && !isSameNameSpaceAsParent(e))
               .collect(groupingBy(TsElement::getNamespace));
 
       // Handle the case when a member has a different name space than its enclosing element
       // So we create a type on the fly on that namespace.
       buildTypesFromNamespaces(moduleBuilder, withDiffNs);
-
-      builder.setEmitProtectedContr(requiresProtectedConstructor());
     }
+  }
+
+  private boolean isSameNameSpaceAsParent(TsElement e) {
+    if (e.getDeclaredNamespace().isPresent()) {
+      String childNameSpace = e.getDeclaredNamespace().get();
+      return childNameSpace.equals(getNamespace())
+          || childNameSpace.equals(e.getNamespace() + "." + e.getName());
+    }
+    return true;
   }
 
   private void buildTypesFromNamespaces(
