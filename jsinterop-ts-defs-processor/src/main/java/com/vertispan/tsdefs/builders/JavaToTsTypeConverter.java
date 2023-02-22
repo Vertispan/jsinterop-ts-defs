@@ -88,11 +88,15 @@ public class JavaToTsTypeConverter {
       }
 
       if (ProcessorType.of(type, env).is2dArray()) {
-        return Array2dTsType.of(toTsType(ProcessorType.of(type, env).arrayComponentType()));
+        TypeMirror arrayComponentType = ProcessorType.of(type, env).deepArrayComponentType();
+        return Array2dTsType.of(toTsType(arrayComponentType))
+            .nullable(TsElement.of(arrayComponentType, env).isJsNullable());
       }
 
       if (ProcessorType.of(type, env).isArray()) {
-        return ArrayTsType.of(toTsType(ProcessorType.of(type, env).arrayComponentType()));
+        TypeMirror arrayComponentType = ProcessorType.of(type, env).arrayComponentType();
+        return ArrayTsType.of(toTsType(arrayComponentType))
+            .nullable(TsElement.of(arrayComponentType, env).isJsNullable());
       }
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
@@ -193,7 +197,9 @@ public class JavaToTsTypeConverter {
 
     return typeArguments.stream()
         .map(this::getTypeOrTypeRef)
-        .map(typeMirror -> toTsType(typeMirror, true))
+        .map(
+            typeMirror ->
+                toTsType(typeMirror, true).nullable(TsElement.of(typeMirror, env).isJsNullable()))
         .collect(Collectors.toList());
   }
 

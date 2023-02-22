@@ -53,16 +53,24 @@ public class TsType {
     return namespace;
   }
 
+  public boolean isNullable() {
+    return nullable;
+  }
+
   public TsType addBounds(TsType tsType) {
     this.bounds.add(tsType);
     return this;
   }
 
   public String emit(String parentNamespace) {
+    return emitType(parentNamespace) + emitNullable();
+  }
+
+  protected String emitType(String parentNamespace) {
     if (namespace.isEmpty() || namespace.equals(parentNamespace)) {
-      return resolveName(name) + emitBounds(parentNamespace) + emitNullable();
+      return resolveName(name) + emitBounds(parentNamespace);
     } else {
-      return namespace + "." + resolveName(name) + emitBounds(parentNamespace) + emitNullable();
+      return namespace + "." + resolveName(name) + emitBounds(parentNamespace);
     }
   }
 

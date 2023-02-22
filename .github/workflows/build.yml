@@ -5,18 +5,15 @@ on: [ push, pull_request ]
 jobs:
   verify:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        java-version: [ 8, 11 ]
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v2
       - name: Install Java and Maven
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: 11
           distribution: 'temurin'
-      - run: mvn verify
+      - run: mvn verify -B
 
   deploy:
     needs: verify

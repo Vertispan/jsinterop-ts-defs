@@ -68,7 +68,7 @@ public class TsElement {
   }
 
   public static TsElement of(TypeMirror typeMirror, HasProcessorEnv env) {
-    return new TsElement(env.types().asElement(typeMirror), env);
+    return new TsElement(typeMirror, env);
   }
 
   public Element element() {
@@ -276,7 +276,9 @@ public class TsElement {
 
   public TsType getType() {
     TsType elementTsType = getElementTsType();
-    elementTsType.nullable(isJsNullable());
+    if (!elementTsType.isNullable()) {
+      elementTsType.nullable(isJsNullable());
+    }
     return elementTsType;
   }
 
@@ -529,10 +531,14 @@ public class TsElement {
 
   public boolean isJsNullable() {
     TypeMirror typeMirror;
-    if (ElementKind.METHOD == element.getKind()) {
+    if (nonNull(element) && ElementKind.METHOD == element.getKind()) {
       typeMirror = ((ExecutableElement) element).getReturnType();
-    } else {
+    } else if (nonNull(this.typeMirror)) {
+      typeMirror = this.typeMirror;
+    } else if (nonNull(element)) {
       typeMirror = element.asType();
+    } else {
+      return false;
     }
     List<? extends AnnotationMirror> annotations = typeMirror.getAnnotationMirrors();
     return annotations.stream()
