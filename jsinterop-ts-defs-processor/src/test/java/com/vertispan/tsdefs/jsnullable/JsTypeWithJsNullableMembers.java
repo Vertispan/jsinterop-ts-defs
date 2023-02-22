@@ -15,6 +15,8 @@
  */
 package com.vertispan.tsdefs.jsnullable;
 
+import elemental2.core.JsArray;
+import elemental2.core.JsMap;
 import jsinterop.annotations.JsIgnore;
 import jsinterop.annotations.JsNullable;
 import jsinterop.annotations.JsType;
@@ -26,6 +28,15 @@ public class JsTypeWithJsNullableMembers {
   public String notNullable;
 
   public @JsNullable String nullableProperty;
+  public @JsNullable String[] nullableStringArray;
+  public @JsNullable String[][] nullableString2dArray;
+  public @JsNullable JsArray<String> nullableStringJsArray;
+  public JsArray<@JsNullable String> jsArrayOfNullableStrings;
+  public @JsNullable JsArray<@JsNullable String> nullableArrayOfNullableStrings;
+  public @JsNullable JsMap<@JsNullable String, @JsNullable Double>
+      nullableMapOfNullableKeysAndValues;
+  public @JsNullable JsMap<@JsNullable String, Double> nullableMapOfNullableKeys;
+  public @JsNullable JsMap<String, @JsNullable Double> nullableMapOfNullableValues;
 
   public String notNullableMethod() {
     return null;

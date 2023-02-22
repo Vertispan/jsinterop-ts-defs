@@ -31,12 +31,12 @@ public class TsClass implements IsType {
   private final String name;
   private final String namespace;
   private TsClass superClass;
-  private List<TsInterface> interfaces = new ArrayList<>();
-  private List<TsModifier> modifiers = new ArrayList<>();
-  private Set<TsProperty> properties = new LinkedHashSet<>();
+  private final List<TsInterface> interfaces = new ArrayList<>();
+  private final List<TsModifier> modifiers = new ArrayList<>();
+  private final Set<TsProperty> properties = new LinkedHashSet<>();
   private TsConstructor constructor;
-  private Set<TsMethod> functions = new LinkedHashSet<>();
-  private List<TsType> typeArguments = new ArrayList<>();
+  private final Set<TsMethod> functions = new LinkedHashSet<>();
+  private final List<TsType> typeArguments = new ArrayList<>();
   private TsDoc tsDoc;
   private boolean deprecated;
 
@@ -99,7 +99,11 @@ public class TsClass implements IsType {
     if (nonNull(tsDoc)) {
       sb.append(tsDoc.emit(indent, deprecated));
     }
-    sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining("")));
+    sb.append(
+        modifiers.stream()
+            .filter(tsModifier -> TsModifier.READONLY != tsModifier)
+            .map(TsModifier::emit)
+            .collect(Collectors.joining("")));
     sb.append("class ");
     sb.append(emitType(parentNamespace));
     if (nonNull(superClass)) {

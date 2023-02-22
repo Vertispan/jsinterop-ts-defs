@@ -13,25 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.model;
+package com.vertispan.tsdefs.jsclasses;
 
-public class ArrayTsType extends TsType {
+import jsinterop.annotations.JsType;
 
-  public static ArrayTsType of(TsType tsType) {
-    return new ArrayTsType(tsType);
-  }
+/*
+Test that final modifier will not produce a readonly modifier in type script
+By just having this class the TS tests will fail to compile the result .d.ts file and produce an error if if has readonly modifier.
+ */
+@JsType
+public final class FinalJsType {
+  public String property;
 
-  public ArrayTsType(TsType arrayComponent) {
-    super(arrayComponent.name, arrayComponent.namespace);
-  }
-
-  @Override
-  public String emitType(String parentNamespace) {
-    return super.emitType(parentNamespace) + "[]";
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return (o instanceof ArrayTsType) && super.equals(o);
-  }
+  public final void doSomething(final String name) {}
 }

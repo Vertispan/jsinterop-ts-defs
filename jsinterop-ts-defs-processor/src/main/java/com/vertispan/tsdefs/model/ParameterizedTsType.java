@@ -36,11 +36,11 @@ public class ParameterizedTsType extends TsType {
   }
 
   @Override
-  public String emit(String parentNamespace) {
+  public String emitType(String parentNamespace) {
     if (!typeArguments.isEmpty()) {
-      return super.emit(parentNamespace) + emitTypeArgs(parentNamespace);
+      return super.emitType(parentNamespace) + emitTypeArgs(parentNamespace);
     }
-    return super.emit(parentNamespace);
+    return super.emitType(parentNamespace);
   }
 
   private String emitTypeArgs(String parentNamespace) {
@@ -48,7 +48,7 @@ public class ParameterizedTsType extends TsType {
         .map(tsType -> tsType.emit(parentNamespace))
         .collect(
             Collectors.joining(
-                ",", optionalAffix("<", typeArguments), optionalAffix(">", typeArguments)));
+                ", ", optionalAffix("<", typeArguments), optionalAffix(">", typeArguments)));
   }
 
   @Override
