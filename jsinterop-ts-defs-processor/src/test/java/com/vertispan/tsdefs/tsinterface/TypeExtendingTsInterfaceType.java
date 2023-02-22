@@ -13,25 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.model;
+package com.vertispan.tsdefs.tsinterface;
 
-public class Array2dTsType extends ArrayTsType {
+import jsinterop.annotations.JsType;
 
-  public static Array2dTsType of(TsType tsType) {
-    return new Array2dTsType(tsType);
-  }
-
-  public Array2dTsType(TsType arrayComponent) {
-    super(arrayComponent);
-  }
-
-  @Override
-  public String emit(String parentNamespace) {
-    return super.emit(parentNamespace) + "[]";
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    return (o instanceof Array2dTsType) && super.equals(o);
-  }
-}
+@JsType
+public class TypeExtendingTsInterfaceType extends TsInterfaceType {}

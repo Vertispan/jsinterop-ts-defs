@@ -19,6 +19,7 @@ import static com.vertispan.tsdefs.Formatting.resolveName;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class TsType {
@@ -81,5 +82,20 @@ public class TsType {
         + bounds.stream()
             .map(tsType -> tsType.emit(parentNamespace))
             .collect(Collectors.joining(" & "));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsType)) return false;
+    TsType tsType = (TsType) o;
+    return Objects.equals(getName(), tsType.getName())
+        && Objects.equals(getNamespace(), tsType.getNamespace())
+        && Objects.equals(bounds, tsType.bounds);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getName(), getNamespace());
   }
 }

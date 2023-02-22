@@ -19,11 +19,12 @@ import static com.vertispan.tsdefs.Formatting.optionalAffix;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ParameterizedTsType extends TsType {
 
-  private List<TsType> typeArguments = new ArrayList<>();
+  private final List<TsType> typeArguments = new ArrayList<>();
 
   public static ParameterizedTsType of(String name, String namespace, List<TsType> typeArguments) {
     return new ParameterizedTsType(name, namespace, typeArguments);
@@ -48,5 +49,19 @@ public class ParameterizedTsType extends TsType {
         .collect(
             Collectors.joining(
                 ",", optionalAffix("<", typeArguments), optionalAffix(">", typeArguments)));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof ParameterizedTsType)) return false;
+    if (!super.equals(o)) return false;
+    ParameterizedTsType that = (ParameterizedTsType) o;
+    return typeArguments.equals(that.typeArguments);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), typeArguments);
   }
 }

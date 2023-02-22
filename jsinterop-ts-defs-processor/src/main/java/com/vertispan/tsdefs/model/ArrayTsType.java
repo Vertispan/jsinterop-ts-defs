@@ -29,4 +29,9 @@ public class ArrayTsType extends TsType {
   public String emit(String parentNamespace) {
     return super.emit(parentNamespace) + "[]";
   }
+
+  @Override
+  public boolean equals(Object o) {
+    return (o instanceof ArrayTsType) && super.equals(o);
+  }
 }

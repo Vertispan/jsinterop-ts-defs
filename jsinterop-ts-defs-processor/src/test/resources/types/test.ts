@@ -81,6 +81,8 @@ import TsIgnoredSuperClass = com.vertispan.tsdefs.inheritance.TsIgnoredSuperClas
 import JsTypeExtendsTsIgnoredSuperType = com.vertispan.tsdefs.inheritance.JsTypeExtendsTsIgnoredSuperType;
 import JsTypeWithJsNullableMembers = com.vertispan.tsdefs.jsnullable.JsTypeWithJsNullableMembers;
 
+import TypeExtendingTsInterfaceType = com.vertispan.tsdefs.tsinterface.TypeExtendingTsInterfaceType;
+
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
 
@@ -697,3 +699,10 @@ jsTypeWithJsNullableMembers.notNullable = jsTypeWithJsNullableMembers.notNullabl
 // @ts-expect-error
 jsTypeWithJsNullableMembers.notNullable = jsTypeWithJsNullableMembers.nullableMethod();
 jsTypeWithJsNullableMembers.nullableProperty = jsTypeWithJsNullableMembers.nullableMethod();
+
+
+// ----------------- TsInterface --------------------
+
+const typeExtendingTsInterfaceType = new TypeExtendingTsInterfaceType();
+// $ExpectType string
+typeExtendingTsInterfaceType.property;

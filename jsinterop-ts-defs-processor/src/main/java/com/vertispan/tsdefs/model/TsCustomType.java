@@ -15,6 +15,8 @@
  */
 package com.vertispan.tsdefs.model;
 
+import java.util.Objects;
+
 public class TsCustomType extends TsType {
   private final TsType referenceType;
 
@@ -40,5 +42,19 @@ public class TsCustomType extends TsType {
     sb.append(";");
 
     return sb.toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsCustomType)) return false;
+    if (!super.equals(o)) return false;
+    TsCustomType that = (TsCustomType) o;
+    return Objects.equals(referenceType, that.referenceType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), referenceType);
   }
 }

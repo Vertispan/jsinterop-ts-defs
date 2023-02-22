@@ -18,6 +18,7 @@ package com.vertispan.tsdefs.model;
 import com.vertispan.tsdefs.builders.HasProperties;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class TsInlinedFunctionType extends TsType implements HasProperties<TsInlinedFunctionType> {
@@ -51,5 +52,20 @@ public class TsInlinedFunctionType extends TsType implements HasProperties<TsInl
     return properties.stream()
         .map(property -> property.emit("", "", ""))
         .collect(Collectors.joining(","));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsInlinedFunctionType)) return false;
+    if (!super.equals(o)) return false;
+    TsInlinedFunctionType that = (TsInlinedFunctionType) o;
+    return Objects.equals(properties, that.properties)
+        && Objects.equals(getReturnType(), that.getReturnType());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), properties, getReturnType());
   }
 }

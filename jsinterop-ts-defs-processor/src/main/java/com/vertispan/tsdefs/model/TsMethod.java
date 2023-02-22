@@ -23,6 +23,7 @@ import com.vertispan.tsdefs.builders.HasProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class TsMethod {
@@ -117,5 +118,20 @@ public class TsMethod {
     public TsMethod build() {
       return this.method;
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsMethod)) return false;
+    TsMethod tsMethod = (TsMethod) o;
+    return Objects.equals(getName(), tsMethod.getName())
+        && Objects.equals(returnType, tsMethod.returnType)
+        && Objects.equals(parameters, tsMethod.parameters);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getName(), returnType, parameters);
   }
 }

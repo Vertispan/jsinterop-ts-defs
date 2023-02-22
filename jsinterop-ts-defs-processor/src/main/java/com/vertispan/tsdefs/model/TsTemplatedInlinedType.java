@@ -15,6 +15,8 @@
  */
 package com.vertispan.tsdefs.model;
 
+import java.util.Objects;
+
 public class TsTemplatedInlinedType extends TsType {
   private String template;
   private TsType type;
@@ -32,5 +34,19 @@ public class TsTemplatedInlinedType extends TsType {
   @Override
   public String emit(String parentNamespace) {
     return template.replace("$T", type.emit(parentNamespace));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsTemplatedInlinedType)) return false;
+    if (!super.equals(o)) return false;
+    TsTemplatedInlinedType that = (TsTemplatedInlinedType) o;
+    return Objects.equals(template, that.template) && Objects.equals(type, that.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), template, type);
   }
 }

@@ -72,16 +72,13 @@ public class ClassTypeVisitor extends TsElement {
           .ifPresent(
               superclass -> {
                 TsElement superTsElement = TsElement.of(superclass, env);
-                if (superTsElement.isTsIgnored()) {
+                if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
                   TsClass.TsClassBuilder superBuilder =
                       TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
                   superTsElement
                       .element()
                       .getEnclosedElements()
-                      .forEach(
-                          e -> {
-                            visit(superBuilder, e);
-                          });
+                      .forEach(e -> visit(superBuilder, e));
                   TsClass superTsClass = superBuilder.build();
                   tsClass.mergeFunctions(superTsClass);
                   tsClass.mergeProperties(superTsClass);
