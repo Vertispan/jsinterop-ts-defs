@@ -26,8 +26,8 @@ public class Array2dTsType extends ArrayTsType {
   }
 
   @Override
-  public String emit(String parentNamespace) {
-    return super.emit(parentNamespace) + "[]";
+  public String emitType(String parentNamespace) {
+    return super.emitType(parentNamespace) + "[]";
   }
 
   @Override

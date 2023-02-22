@@ -15,6 +15,7 @@
  */
 package com.vertispan.tsdefs.model;
 
+import static com.vertispan.tsdefs.Formatting.NONE;
 import static com.vertispan.tsdefs.Formatting.resolveName;
 import static java.util.Objects.nonNull;
 
@@ -41,6 +42,11 @@ public class TsProperty {
   }
 
   public String emit(String indent, String ending, String parentNamespace) {
+    return emitProperty(indent, ending, parentNamespace, false);
+  }
+
+  private String emitProperty(
+      String indent, String ending, String parentNamespace, boolean skipModifiers) {
     StringBuffer sb = new StringBuffer();
 
     if (nonNull(tsDoc)) {
@@ -48,7 +54,9 @@ public class TsProperty {
     } else if (deprecated) {
       sb.append(Deprecation.emit(indent));
     }
-    sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining("", "", "")));
+    if (!skipModifiers) {
+      sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining("", "", "")));
+    }
 
     if (varargs) {
       sb.append("...");
@@ -62,6 +70,10 @@ public class TsProperty {
     sb.append(ending);
 
     return sb.toString();
+  }
+
+  public String emitAsParameter(String parentNamespace) {
+    return emitProperty(NONE, NONE, parentNamespace, true);
   }
 
   @Override

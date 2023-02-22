@@ -62,13 +62,17 @@ public class TsMethod {
     if (nonNull(tsDoc)) {
       sb.append(tsDoc.emit(indent, deprecated));
     }
-    sb.append(modifiers.stream().map(TsModifier::emit).collect(Collectors.joining(NONE)));
+    sb.append(
+        modifiers.stream()
+            .filter(tsModifier -> TsModifier.READONLY != tsModifier)
+            .map(TsModifier::emit)
+            .collect(Collectors.joining(NONE)));
 
     sb.append(name);
     sb.append("(");
     sb.append(
         parameters.stream()
-            .map(property -> property.emit(NONE, NONE, parentNamespace))
+            .map(property -> property.emitAsParameter(parentNamespace))
             .collect(Collectors.joining(COMMA)));
 
     sb.append(")");

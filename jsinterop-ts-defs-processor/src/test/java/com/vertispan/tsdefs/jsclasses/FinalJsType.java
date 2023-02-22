@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.tsinterface;
+package com.vertispan.tsdefs.jsclasses;
 
-import com.vertispan.tsdefs.annotations.TsInterface;
-import jsinterop.annotations.JsMethod;
-import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 
-@TsInterface
-public class TsInterfaceType {
-  @JsProperty public String property;
+/*
+Test that final modifier will not produce a readonly modifier in type script
+By just having this class the TS tests will fail to compile the result .d.ts file and produce an error if if has readonly modifier.
+ */
+@JsType
+public final class FinalJsType {
+  public String property;
 
-  @JsMethod
-  public void doSomething() {}
+  public final void doSomething(final String name) {}
 }

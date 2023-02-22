@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.tsinterface;
+package com.vertispan.tsdefs.methods;
 
-import com.vertispan.tsdefs.annotations.TsInterface;
-import jsinterop.annotations.JsMethod;
-import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 
-@TsInterface
-public class TsInterfaceType {
-  @JsProperty public String property;
+@JsType
+public class JsTypeWithStaticMethods {
 
-  @JsMethod
+  public static void doSomethingStatic() {}
+
   public void doSomething() {}
 }

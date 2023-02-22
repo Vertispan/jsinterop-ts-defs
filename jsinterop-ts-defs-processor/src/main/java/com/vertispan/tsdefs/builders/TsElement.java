@@ -68,7 +68,7 @@ public class TsElement {
   }
 
   public static TsElement of(TypeMirror typeMirror, HasProcessorEnv env) {
-    return new TsElement(env.types().asElement(typeMirror), env);
+    return new TsElement(typeMirror, env);
   }
 
   public Element element() {
@@ -89,7 +89,9 @@ public class TsElement {
   }
 
   public boolean isGetter() {
-    return isMethod() && ((isJsProperty() && matchGetterPattern()) || isInheritedGetter());
+    return isMethod()
+        && !isStatic()
+        && ((isJsProperty() && matchGetterPattern()) || isInheritedGetter());
   }
 
   public boolean isInheritedGetter() {
@@ -116,7 +118,9 @@ public class TsElement {
   }
 
   public boolean isSetter() {
-    return isMethod() && ((isJsProperty() && matchSetterPattern()) || isInheritedSetter());
+    return isMethod()
+        && !isStatic()
+        && ((isJsProperty() && matchSetterPattern()) || isInheritedSetter());
   }
 
   private boolean matchSetterPattern() {
@@ -276,7 +280,9 @@ public class TsElement {
 
   public TsType getType() {
     TsType elementTsType = getElementTsType();
-    elementTsType.nullable(isJsNullable());
+    if (!elementTsType.isNullable()) {
+      elementTsType.nullable(isJsNullable());
+    }
     return elementTsType;
   }
 
@@ -459,12 +465,43 @@ public class TsElement {
   public boolean isExportable() {
     return !isIgnored()
         && !isOverlay()
-        && ((parent().isTsInterface() && (isJsType() || isJsMember() || hasJsMembers()))
-            || (!parent().isTsInterface()
-                && (isJsType()
-                    || isJsMember()
-                    || hasJsMembers()
-                    || (isPublic() && (parent().isJsType())))));
+        && ((isField() && isExportableField())
+            || (isMethod() && isExportableMethod())
+            || (isConstructor() && isExportableConstructor())
+            || (isInterface() && isExportableInterface())
+            || (isClass() && isExportableClass()));
+  }
+
+  private boolean isExportableClass() {
+    return isJsType() || hasJsMembers();
+  }
+
+  private boolean isExportableInterface() {
+    return isJsType() || hasJsMembers();
+  }
+
+  private boolean isExportableConstructor() {
+    return isJsConstructor() || (isPublic() && parent().isJsType());
+  }
+
+  private boolean isExportableMethod() {
+    return !disallowedStatic() && (isJsMethod() || (isPublic() && parent().isJsType()));
+  }
+
+  private boolean isExportableField() {
+    return !disallowedStatic() && (isJsProperty() || (isPublic() && parent().isJsType()));
+  }
+
+  private boolean disallowedStatic() {
+    boolean disallowed = isStatic() && (parent().isInterface() || parent().isTsInterface());
+    if (disallowed) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              "Interfaces or TsInterfaces cannot export static members.",
+              element);
+    }
+    return disallowed;
   }
 
   public boolean isJsMember() {
@@ -529,10 +566,14 @@ public class TsElement {
 
   public boolean isJsNullable() {
     TypeMirror typeMirror;
-    if (ElementKind.METHOD == element.getKind()) {
+    if (nonNull(element) && ElementKind.METHOD == element.getKind()) {
       typeMirror = ((ExecutableElement) element).getReturnType();
-    } else {
+    } else if (nonNull(this.typeMirror)) {
+      typeMirror = this.typeMirror;
+    } else if (nonNull(element)) {
       typeMirror = element.asType();
+    } else {
+      return false;
     }
     List<? extends AnnotationMirror> annotations = typeMirror.getAnnotationMirrors();
     return annotations.stream()
