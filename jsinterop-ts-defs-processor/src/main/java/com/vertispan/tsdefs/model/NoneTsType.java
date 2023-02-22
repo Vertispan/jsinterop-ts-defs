@@ -24,4 +24,9 @@ public class NoneTsType extends TsType {
   public String emit(String parentNamespace) {
     return "";
   }
+
+  @Override
+  public boolean equals(Object o) {
+    return (o instanceof NoneTsType) && super.equals(o);
+  }
 }

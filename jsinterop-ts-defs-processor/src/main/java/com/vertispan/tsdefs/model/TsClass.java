@@ -21,7 +21,9 @@ import static java.util.Objects.nonNull;
 import com.vertispan.tsdefs.builders.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TsClass implements IsType {
@@ -29,12 +31,12 @@ public class TsClass implements IsType {
   private final String name;
   private final String namespace;
   private TsClass superClass;
-  private List<TsInterface> interfaces = new ArrayList<>();
-  private List<TsModifier> modifiers = new ArrayList<>();
-  private List<TsProperty> properties = new ArrayList<>();
+  private final List<TsInterface> interfaces = new ArrayList<>();
+  private final List<TsModifier> modifiers = new ArrayList<>();
+  private final Set<TsProperty> properties = new LinkedHashSet<>();
   private TsConstructor constructor;
-  private List<TsMethod> functions = new ArrayList<>();
-  private List<TsType> typeArguments = new ArrayList<>();
+  private final Set<TsMethod> functions = new LinkedHashSet<>();
+  private final List<TsType> typeArguments = new ArrayList<>();
   private TsDoc tsDoc;
   private boolean deprecated;
 

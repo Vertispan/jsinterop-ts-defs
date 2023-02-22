@@ -29,4 +29,9 @@ public class Array2dTsType extends ArrayTsType {
   public String emitType(String parentNamespace) {
     return super.emitType(parentNamespace) + "[]";
   }
+
+  @Override
+  public boolean equals(Object o) {
+    return (o instanceof Array2dTsType) && super.equals(o);
+  }
 }

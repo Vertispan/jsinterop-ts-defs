@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.builders.HasDocs;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class TsProperty {
@@ -73,6 +74,19 @@ public class TsProperty {
 
   public String emitAsParameter(String parentNamespace) {
     return emitProperty(NONE, NONE, parentNamespace, true);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsProperty)) return false;
+    TsProperty that = (TsProperty) o;
+    return Objects.equals(name, that.name) && Objects.equals(type, that.type);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(name);
   }
 
   public static TsPropertyBuilder builder(String name, TsType type) {
