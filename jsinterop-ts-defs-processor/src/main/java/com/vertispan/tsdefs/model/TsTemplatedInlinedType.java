@@ -30,7 +30,7 @@ public class TsTemplatedInlinedType extends TsType {
   }
 
   @Override
-  public String emit(String parentNamespace) {
+  public String emitType(String parentNamespace) {
     return template.replace("$T", type.emit(parentNamespace));
   }
 }

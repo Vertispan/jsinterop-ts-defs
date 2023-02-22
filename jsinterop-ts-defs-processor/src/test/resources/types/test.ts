@@ -697,3 +697,81 @@ jsTypeWithJsNullableMembers.notNullable = jsTypeWithJsNullableMembers.notNullabl
 // @ts-expect-error
 jsTypeWithJsNullableMembers.notNullable = jsTypeWithJsNullableMembers.nullableMethod();
 jsTypeWithJsNullableMembers.nullableProperty = jsTypeWithJsNullableMembers.nullableMethod();
+
+jsTypeWithJsNullableMembers.nullableStringJsArray = null;
+jsTypeWithJsNullableMembers.nullableStringJsArray = undefined;
+jsTypeWithJsNullableMembers.nullableStringJsArray = ["text1", "text2", "text3"];
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableStringJsArray = [null, "text2", "text3"];
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableStringJsArray = [undefined, "text2", "text3"];
+
+// @ts-expect-error
+jsTypeWithJsNullableMembers.jsArrayOfNullableStrings = null;
+// @ts-expect-error
+jsTypeWithJsNullableMembers.jsArrayOfNullableStrings = undefined;
+jsTypeWithJsNullableMembers.jsArrayOfNullableStrings = ["text1", "text2", "text3"];
+jsTypeWithJsNullableMembers.jsArrayOfNullableStrings = [null, "text2", "text3"];
+jsTypeWithJsNullableMembers.jsArrayOfNullableStrings = [undefined, "text2", "text3"];
+
+
+jsTypeWithJsNullableMembers.nullableArrayOfNullableStrings = null;
+jsTypeWithJsNullableMembers.nullableArrayOfNullableStrings = undefined;
+jsTypeWithJsNullableMembers.nullableArrayOfNullableStrings = ["text1", "text2", "text3"];
+jsTypeWithJsNullableMembers.nullableArrayOfNullableStrings = [null, "text2", "text3"];
+jsTypeWithJsNullableMembers.nullableArrayOfNullableStrings = [undefined, "text2", "text3"];
+
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = null;
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = undefined;
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = new Map([
+    ['key',10],
+    [null,20],
+    [undefined,30],
+    ['key2', null],
+    ['key3', undefined]
+]);
+
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = null;
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = undefined;
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = new Map([
+    ['key',10],
+    [null,20],
+    [undefined,30]
+]);
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = new Map([
+    ['key',10],
+    ['key2', null],
+    ['key3', undefined]
+]);
+
+
+jsTypeWithJsNullableMembers.nullableMapOfNullableValues = null;
+jsTypeWithJsNullableMembers.nullableMapOfNullableValues = undefined;
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableMapOfNullableValues = new Map([
+    ['key',10],
+    [null,20],
+    [undefined,30]
+]);
+jsTypeWithJsNullableMembers.nullableMapOfNullableValues = new Map([
+    ['key',10],
+    ['key2', null],
+    ['key3', undefined]
+]);
+
+jsTypeWithJsNullableMembers.nullableStringArray=null;
+jsTypeWithJsNullableMembers.nullableStringArray=undefined;
+jsTypeWithJsNullableMembers.nullableStringArray=["text1", "text2"];
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableStringArray=[null, "text2"];
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableStringArray=[undefined, "text2"];
+
+jsTypeWithJsNullableMembers.nullableString2dArray=null;
+jsTypeWithJsNullableMembers.nullableString2dArray=undefined;
+jsTypeWithJsNullableMembers.nullableString2dArray=[["text1", "text2"],["text1", "text2"]];
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableString2dArray=[[null, "text2"],["text1", "text2"]];
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableString2dArray=[[undefined, "text2"],["text1", "text2"]];
