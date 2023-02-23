@@ -350,6 +350,10 @@ JsTypeWithStaticMethods.privateStaticProperty;
 JsTypeWithStaticMethods.privateStaticMethod();
 JsTypeWithStaticMethods.privateStaticJsProperty;
 JsTypeWithStaticMethods.privateStaticJsMethod();
+// @ts-expect-error
+JsTypeWithStaticMethods.publicStaticIgnoredProperty;
+// @ts-expect-error
+JsTypeWithStaticMethods.publicStaticIgnoredMethod();
 
 // ------------- Setters and Getters ---------------------------
 
