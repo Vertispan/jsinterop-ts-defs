@@ -67,4 +67,9 @@ public class JsTypeWithMethods {
   public String jsPropertyMethod() {
     return "";
   }
+
+  public void methodOne() {}
+
+  @JsMethod(name = "methodOne")
+  public static void staticMethodOne() {}
 }
