@@ -82,6 +82,9 @@ import JsTypeExtendsTsIgnoredSuperType = com.vertispan.tsdefs.inheritance.JsType
 import JsTypeWithJsNullableMembers = com.vertispan.tsdefs.jsnullable.JsTypeWithJsNullableMembers;
 
 import TypeExtendingTsInterfaceType = com.vertispan.tsdefs.tsinterface.TypeExtendingTsInterfaceType;
+import JsTypeAsTsInterface = com.vertispan.tsdefs.tsinterface.JsTypeAsTsInterface;
+
+import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMethods;
 
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -335,6 +338,10 @@ class NonJsTypeWithMethodsChild extends NonJsTypeWithMethods {
         super.protectedButNotExportedMethod();
     }
 }
+
+const jsTypeWithStaticMethods = new JsTypeWithStaticMethods();
+jsTypeWithStaticMethods.doSomething();
+JsTypeWithStaticMethods.doSomethingStatic();
 
 // ------------- Setters and Getters ---------------------------
 
@@ -783,3 +790,11 @@ jsTypeWithJsNullableMembers.nullableString2dArray=[[undefined, "text2"],["text1"
 const typeExtendingTsInterfaceType = new TypeExtendingTsInterfaceType();
 // $ExpectType string
 typeExtendingTsInterfaceType.property;
+
+class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
+    property: string;
+
+    doSomething(): void {
+        const x="";
+    }
+}

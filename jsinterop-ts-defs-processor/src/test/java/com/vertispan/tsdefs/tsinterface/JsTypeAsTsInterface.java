@@ -16,13 +16,12 @@
 package com.vertispan.tsdefs.tsinterface;
 
 import com.vertispan.tsdefs.annotations.TsInterface;
-import jsinterop.annotations.JsMethod;
-import jsinterop.annotations.JsProperty;
+import jsinterop.annotations.JsType;
 
 @TsInterface
-public class TsInterfaceType {
-  @JsProperty public String property;
+@JsType
+public class JsTypeAsTsInterface {
+  public String property;
 
-  @JsMethod
   public void doSomething() {}
 }

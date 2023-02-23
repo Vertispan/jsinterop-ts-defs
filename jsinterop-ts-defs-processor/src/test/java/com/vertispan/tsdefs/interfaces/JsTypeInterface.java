@@ -15,6 +15,7 @@
  */
 package com.vertispan.tsdefs.interfaces;
 
+import jsinterop.annotations.JsIgnore;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
@@ -22,7 +23,7 @@ import jsinterop.annotations.JsType;
 @JsType
 public interface JsTypeInterface {
 
-  String property = "INTERFACE STATIC PROPERTY";
+  @JsIgnore String property = "INTERFACE STATIC PROPERTY";
 
   String methodOne();
 
