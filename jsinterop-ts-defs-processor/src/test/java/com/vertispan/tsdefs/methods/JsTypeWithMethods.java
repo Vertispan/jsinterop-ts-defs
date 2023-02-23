@@ -17,6 +17,7 @@ package com.vertispan.tsdefs.methods;
 
 import jsinterop.annotations.JsIgnore;
 import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 
 @JsType
@@ -61,4 +62,9 @@ public class JsTypeWithMethods {
 
   @JsIgnore
   public void ignoredMethod() {}
+
+  @JsProperty
+  public String jsPropertyMethod() {
+    return "";
+  }
 }
