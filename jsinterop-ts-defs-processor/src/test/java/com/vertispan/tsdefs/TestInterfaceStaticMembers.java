@@ -38,7 +38,6 @@ public class TestInterfaceStaticMembers {
 
   @Test
   public void testTsInterfaceWithStaticMember() {
-
     Compilation result =
         Compiler.javac()
             .withProcessors(new JsTypesProcessorProcessor())
@@ -47,5 +46,17 @@ public class TestInterfaceStaticMembers {
                     "errors/access/JsTypeTsInterfaceWithStaticMember.java"));
 
     assertThat(result.errors()).isNotEmpty();
+  }
+
+  @Test
+  public void testTsInterfaceWithPrivateStaticMember() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessorProcessor())
+            .compile(
+                JavaFileObjects.forResource(
+                    "errors/access/JsTypeInterfaceWithPrivateStaticMember.java"));
+
+    assertThat(result.errors()).isEmpty();
   }
 }

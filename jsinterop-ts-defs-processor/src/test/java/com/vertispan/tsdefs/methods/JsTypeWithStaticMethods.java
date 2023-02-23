@@ -15,10 +15,21 @@
  */
 package com.vertispan.tsdefs.methods;
 
+import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 
 @JsType
 public class JsTypeWithStaticMethods {
+
+  @JsProperty private static String privateStaticJsProperty;
+  private static String privateStaticProperty;
+  public static String publicStaticProperty;
+
+  @JsMethod
+  private static void privateStaticJsMethod() {}
+
+  private static void privateStaticMethod() {};
 
   public static void doSomethingStatic() {}
 

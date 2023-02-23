@@ -485,11 +485,11 @@ public class TsElement {
   }
 
   private boolean isExportableMethod() {
-    return !disallowedStatic() && (isJsMethod() || (isPublic() && parent().isJsType()));
+    return (isJsMethod() || (isPublic() && parent().isJsType())) && !disallowedStatic();
   }
 
   private boolean isExportableField() {
-    return !disallowedStatic() && (isJsProperty() || (isPublic() && parent().isJsType()));
+    return (isJsProperty() || (isPublic() && parent().isJsType())) && !disallowedStatic();
   }
 
   private boolean disallowedStatic() {

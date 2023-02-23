@@ -13,7 +13,7 @@ jobs:
         with:
           java-version: 11
           distribution: 'temurin'
-      - run: mvn verify -B
+      - run: mvn verify -B -e
 
   deploy:
     needs: verify
@@ -26,7 +26,7 @@ jobs:
       - name: setup maven
         uses: actions/setup-java@v3
         with:
-          java-version: 8
+          java-version: 11
           distribution: 'temurin'
           server-id: ossrh
           server-username: SONATYPE_USERNAME
