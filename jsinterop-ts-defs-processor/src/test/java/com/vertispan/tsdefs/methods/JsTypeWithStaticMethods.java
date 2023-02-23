@@ -15,10 +15,26 @@
  */
 package com.vertispan.tsdefs.methods;
 
+import jsinterop.annotations.JsIgnore;
+import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 
 @JsType
 public class JsTypeWithStaticMethods {
+
+  @JsProperty private static String privateStaticJsProperty;
+  private static String privateStaticProperty;
+  public static String publicStaticProperty;
+  @JsIgnore public static String publicStaticIgnoredProperty;
+
+  @JsMethod
+  private static void privateStaticJsMethod() {}
+
+  private static void privateStaticMethod() {};
+
+  @JsIgnore
+  public static void publicStaticIgnoredMethod() {};
 
   public static void doSomethingStatic() {}
 

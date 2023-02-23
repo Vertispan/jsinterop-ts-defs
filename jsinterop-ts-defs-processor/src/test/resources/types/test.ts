@@ -340,8 +340,20 @@ class NonJsTypeWithMethodsChild extends NonJsTypeWithMethods {
 }
 
 const jsTypeWithStaticMethods = new JsTypeWithStaticMethods();
+
 jsTypeWithStaticMethods.doSomething();
 JsTypeWithStaticMethods.doSomethingStatic();
+JsTypeWithStaticMethods.publicStaticProperty;
+// @ts-expect-error
+JsTypeWithStaticMethods.privateStaticProperty;
+// @ts-expect-error
+JsTypeWithStaticMethods.privateStaticMethod();
+JsTypeWithStaticMethods.privateStaticJsProperty;
+JsTypeWithStaticMethods.privateStaticJsMethod();
+// @ts-expect-error
+JsTypeWithStaticMethods.publicStaticIgnoredProperty;
+// @ts-expect-error
+JsTypeWithStaticMethods.publicStaticIgnoredMethod();
 
 // ------------- Setters and Getters ---------------------------
 
