@@ -298,6 +298,7 @@ jsTypeWithMethods.protectedMethod();
 jsTypeWithMethods.privateMethodButExported(1.0);
 // @ts-expect-error
 jsTypeWithMethods.privateMethodButNotExported(1.0);
+jsTypeWithMethods.jsPropertyMethod;
 
 class JsTypeWithMethodsChild extends JsTypeWithMethods {
 
