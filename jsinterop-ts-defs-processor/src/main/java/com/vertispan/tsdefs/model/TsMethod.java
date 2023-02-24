@@ -29,8 +29,8 @@ import java.util.stream.Collectors;
 public class TsMethod {
   private final String name;
   private final TsType returnType;
-  private List<TsProperty> parameters = new ArrayList<>();
-  private List<TsModifier> modifiers = new ArrayList<>();
+  private final List<TsProperty> parameters = new ArrayList<>();
+  private final List<TsModifier> modifiers = new ArrayList<>();
   private TsDoc tsDoc;
   private boolean deprecated;
 
@@ -85,6 +85,22 @@ public class TsMethod {
     return sb.toString();
   }
 
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsMethod)) return false;
+    TsMethod tsMethod = (TsMethod) o;
+    return Objects.equals(getName(), tsMethod.getName())
+        && Objects.equals(returnType, tsMethod.returnType)
+        && parameters.equals(tsMethod.parameters)
+        && modifiers.equals(tsMethod.modifiers);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getName(), returnType, parameters, modifiers);
+  }
+
   public static class TsMethodBuilder
       implements HasProperties<TsMethodBuilder>, HasDocs<TsMethodBuilder> {
     private final TsMethod method;
@@ -122,20 +138,5 @@ public class TsMethod {
     public TsMethod build() {
       return this.method;
     }
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (!(o instanceof TsMethod)) return false;
-    TsMethod tsMethod = (TsMethod) o;
-    return Objects.equals(getName(), tsMethod.getName())
-        && Objects.equals(returnType, tsMethod.returnType)
-        && Objects.equals(parameters, tsMethod.parameters);
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(getName(), returnType, parameters);
   }
 }
