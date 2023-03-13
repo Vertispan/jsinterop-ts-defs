@@ -587,11 +587,12 @@ public class TsElement {
   public boolean isTsTypeRef() {
     TypeMirror typeMirror = element.asType();
     List<? extends AnnotationMirror> annotations = typeMirror.getAnnotationMirrors();
-    return annotations.stream()
-        .anyMatch(
-            annotationMirror ->
-                JavaToTsTypeConverter.isSameType(
-                    annotationMirror.getAnnotationType(), TsTypeRef.class, env));
+    return nonNull(element.getAnnotation(TsTypeRef.class))
+        || annotations.stream()
+            .anyMatch(
+                annotationMirror ->
+                    JavaToTsTypeConverter.isSameType(
+                        annotationMirror.getAnnotationType(), TsTypeRef.class, env));
   }
 
   public boolean hasJsMembers() {

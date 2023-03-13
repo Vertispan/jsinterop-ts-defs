@@ -40,8 +40,14 @@ public class TsEnumTypeVisitor extends TsElement {
 
       element.getEnclosedElements().stream()
           .map(e -> TsElement.of(e, env))
-          .filter(e -> e.isStatic() && e.isPublic() && e.isField() && e.isFinal())
-          .forEach(e -> builder.addEnumeration(e.getName()));
+          .forEach(
+              e -> {
+                if (e.isStatic() && e.isPublic() && e.isField() && e.isFinal()) {
+                  builder.addEnumeration(e.getName());
+                } else {
+                  new ClassMethodVisitor<TsEnum.TsEnumBuilder>(e.element(), env).visit(builder);
+                }
+              });
 
       moduleBuilder.addTsEnum(builder.build());
     }

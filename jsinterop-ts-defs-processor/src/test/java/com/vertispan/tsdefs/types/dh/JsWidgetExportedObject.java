@@ -8,7 +8,7 @@ import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 
 @TsInterface
-@TsName(namespace = "dh", name = "WidgetExportedObject")
+@TsName(namespace = "com.vertispan", name = "WidgetExportedObject")
 public class JsWidgetExportedObject {
 
   @JsProperty

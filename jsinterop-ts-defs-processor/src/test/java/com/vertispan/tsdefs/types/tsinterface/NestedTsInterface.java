@@ -20,7 +20,7 @@ import com.vertispan.tsdefs.annotations.TsName;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 
-@TsName(namespace = "dh", name = "ParentA")
+@TsName(namespace = "com.vertispan", name = "ParentA")
 public class NestedTsInterface {
 
   @JsMethod
@@ -29,7 +29,7 @@ public class NestedTsInterface {
   }
 
   @TsInterface
-  @TsName(namespace = "dh")
+  @TsName(namespace = "com.vertispan")
   public static class ParentB {
     @JsProperty
     public double getOffset() {
@@ -37,7 +37,7 @@ public class NestedTsInterface {
     }
 
     @TsInterface
-    @TsName(name = "TreeRow", namespace = "dh")
+    @TsName(name = "TreeRow", namespace = "com.vertispan")
     public static class Child {
       @JsProperty(name = "isExpanded")
       public boolean isExpanded() {

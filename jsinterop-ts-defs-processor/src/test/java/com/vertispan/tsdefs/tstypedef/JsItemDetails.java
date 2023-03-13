@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.types.constructors;
+package com.vertispan.tsdefs.tstypedef;
 
-import jsinterop.annotations.JsMethod;
+import com.vertispan.tsdefs.annotations.TsTypeRef;
+import jsinterop.annotations.JsProperty;
 import jsinterop.annotations.JsType;
 
-@JsType(name = "NoArgsType", namespace = "OtherNs")
-public class ChildNoTypeArgs {
-
-  @JsMethod(namespace = "OtherNs.NoArgsType")
-  public static void someMethod() {}
-
-  @JsMethod(namespace = "com.vertispan.DiffType")
-  public static void otherMethod() {}
+@JsType(namespace = "com.vertispan.storage", name = "ItemDetails")
+public class JsItemDetails {
+  @JsProperty
+  @TsTypeRef(JsItemType.class)
+  public String getType() {
+    return "";
+  }
 }

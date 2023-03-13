@@ -19,6 +19,7 @@
     "void-return": false,
     "array-type": false,
     "ban-types": false,
+    "no-trailing-whitespace": false,
     "no-redundant-jsdoc": false
   }
 }

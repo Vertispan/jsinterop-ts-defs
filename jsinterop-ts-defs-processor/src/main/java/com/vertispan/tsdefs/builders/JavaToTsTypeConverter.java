@@ -186,6 +186,16 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getTsTypeReference(DeclaredType declaredType) {
+    if (!TsElement.of(declaredType, env).isPublic()) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              "A none public type ["
+                  + declaredType.asElement().getSimpleName()
+                  + "] is referenced but it will not be exported.",
+              element);
+    }
+
     Optional<TypeMirror> typeRef =
         TsElement.of(declaredType.asElement(), env)
             .getClassValueFromAnnotation(TsTypeRef.class, "value");
