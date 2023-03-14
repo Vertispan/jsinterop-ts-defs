@@ -35,11 +35,6 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     this.type = typeMirror;
   }
 
-  /*
-      TypeMirror typeMirror = ((TypeParameterElement) ((Type.TypeVar) typeArguments.get(0)).asElement()).getBounds().get(0);
-
-  ((DeclaredType)typeMirror).getTypeArguments();
-       */
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
     List<? extends TypeMirror> typeArguments = classDeclaredType.getTypeArguments();
