@@ -72,6 +72,12 @@ import JsTypeExtendsAbstractGenericJsType = com.vertispan.tsdefs.generics.JsType
 import JsTypeImplementingGenericInterfaces = com.vertispan.tsdefs.generics.JsTypeImplementingGenericInterfaces;
 import NonGenericJsTypeExtendsGenericJsType = com.vertispan.tsdefs.generics.NonGenericJsTypeExtendsGenericJsType;
 import DualGenericsJsType = com.vertispan.tsdefs.generics.DualGenericsJsType;
+
+import UsingInterfaceWithMethodTypeArgs = com.vertispan.tsdefs.generics.UsingInterfaceWithMethodTypeArgs;
+import InterfaceWithGenericMethod = com.vertispan.tsdefs.generics.InterfaceWithGenericMethod;
+import GenericInterfaceWithGenericMethod = com.vertispan.tsdefs.generics.GenericInterfaceWithGenericMethod;
+import GenericInterfaceWithDualGenericMethod = com.vertispan.tsdefs.generics.GenericInterfaceWithDualGenericMethod;
+
 import EnumSimulation = com.vertispan.tsdefs.tstypedef.EnumSimulation;
 import EnumSimulationType = com.vertispan.tsdefs.tstypedef.EnumSimulationType;
 import EnumClient = com.vertispan.tsdefs.tstypedef.EnumClient;
@@ -681,6 +687,19 @@ dualGenericsJsType.takeCReturnC(1.0)
 dualGenericsJsType.takesCReturnT(1.0)
 // $ExpectType number
 dualGenericsJsType.takesTReturnC("text")
+
+const usingInterfaceWithMethodTypeArgs = new UsingInterfaceWithMethodTypeArgs<number>();
+
+usingInterfaceWithMethodTypeArgs.bar("string", "string");
+usingInterfaceWithMethodTypeArgs.bar(1.0, "string");
+
+usingInterfaceWithMethodTypeArgs.foo("string");
+usingInterfaceWithMethodTypeArgs.foo(1.0);
+
+usingInterfaceWithMethodTypeArgs.doSomething("string", 1.0, "string");
+usingInterfaceWithMethodTypeArgs.doSomething(1.0, 1.0, 1.0);
+// @ts-expect-error
+usingInterfaceWithMethodTypeArgs.doSomething(1.0, "string", 1.0);
 
 // ----------------- TsTypeDef -------------------
 const enumSimulation = new EnumSimulation();

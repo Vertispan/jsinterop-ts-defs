@@ -52,6 +52,8 @@ public class ClassMethodVisitor<T> extends TsElement {
               .setDeprecated(isDeprecated());
 
       ExecutableElement executableElement = (ExecutableElement) element;
+      new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(executableElement, env)
+          .visit(builder);
       executableElement
           .getParameters()
           .forEach(

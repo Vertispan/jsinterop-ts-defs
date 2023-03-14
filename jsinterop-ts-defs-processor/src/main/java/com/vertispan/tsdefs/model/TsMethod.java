@@ -20,6 +20,7 @@ import static java.util.Objects.nonNull;
 
 import com.vertispan.tsdefs.builders.HasDocs;
 import com.vertispan.tsdefs.builders.HasProperties;
+import com.vertispan.tsdefs.builders.HasTypeArguments;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -31,6 +32,7 @@ public class TsMethod {
   private final TsType returnType;
   private final List<TsProperty> parameters = new ArrayList<>();
   private final List<TsModifier> modifiers = new ArrayList<>();
+  private List<TsType> typeArguments = new ArrayList<>();
   private TsDoc tsDoc;
   private boolean deprecated;
 
@@ -69,6 +71,12 @@ public class TsMethod {
             .collect(Collectors.joining(NONE)));
 
     sb.append(name);
+    if (!typeArguments.isEmpty()) {
+      sb.append(
+          typeArguments.stream()
+              .map(tsType -> tsType.emit(parentNamespace))
+              .collect(Collectors.joining(", ", "<", ">")));
+    }
     sb.append("(");
     sb.append(
         parameters.stream()
@@ -102,7 +110,9 @@ public class TsMethod {
   }
 
   public static class TsMethodBuilder
-      implements HasProperties<TsMethodBuilder>, HasDocs<TsMethodBuilder> {
+      implements HasProperties<TsMethodBuilder>,
+          HasDocs<TsMethodBuilder>,
+          HasTypeArguments<TsMethodBuilder> {
     private final TsMethod method;
 
     private TsMethodBuilder(String name, TsType returnType) {
@@ -132,6 +142,12 @@ public class TsMethod {
 
     public TsMethodBuilder setDeprecated(boolean deprecated) {
       this.method.deprecated = deprecated;
+      return this;
+    }
+
+    @Override
+    public TsMethodBuilder addTypeArgument(TsType typeArgument) {
+      this.method.typeArguments.add(typeArgument);
       return this;
     }
 
