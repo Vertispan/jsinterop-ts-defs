@@ -24,6 +24,6 @@ public class ChildNoTypeArgs {
   @JsMethod(namespace = "OtherNs.NoArgsType")
   public static void someMethod() {}
 
-  @JsMethod(namespace = "dh.DiffType")
+  @JsMethod(namespace = "com.vertispan.DiffType")
   public static void otherMethod() {}
 }

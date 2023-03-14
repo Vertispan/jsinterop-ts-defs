@@ -119,7 +119,7 @@ public class Client implements FooInterface {
    * @return String testing return tag
    * @see {@link FooInterface}
    */
-  @JsMethod(namespace = "dh.diffns.OtherClient")
+  @JsMethod(namespace = "com.vertispan.diffns.OtherClient")
   public static String differentNs(int arg) {
     return null;
   }

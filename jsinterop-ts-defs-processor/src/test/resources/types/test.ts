@@ -76,6 +76,12 @@ import EnumSimulation = com.vertispan.tsdefs.tstypedef.EnumSimulation;
 import EnumSimulationType = com.vertispan.tsdefs.tstypedef.EnumSimulationType;
 import EnumClient = com.vertispan.tsdefs.tstypedef.EnumClient;
 import UsedAsTypeRef = com.vertispan.tsdefs.tstypedef.UsedAsTypeRef;
+
+import DayOfWeek = com.vertispan.calendar.DayOfWeek
+import ItemDetails = com.vertispan.storage.ItemDetails;
+import ItemType = com.vertispan.storage.ItemType;
+import ItemTypeType = com.vertispan.storage.ItemTypeType;
+
 // @ts-expect-error
 import TsIgnoredSuperClass = com.vertispan.tsdefs.inheritance.TsIgnoredSuperClass;
 import JsTypeExtendsTsIgnoredSuperType = com.vertispan.tsdefs.inheritance.JsTypeExtendsTsIgnoredSuperType;
@@ -85,6 +91,8 @@ import TypeExtendingTsInterfaceType = com.vertispan.tsdefs.tsinterface.TypeExten
 import JsTypeAsTsInterface = com.vertispan.tsdefs.tsinterface.JsTypeAsTsInterface;
 
 import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMethods;
+
+
 
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -697,6 +705,18 @@ enumClient.values = {
     // @ts-expect-error
     test3: [1, 2, 3],
 }
+
+DayOfWeek.values();
+class ItemDetailsChild extends ItemDetails {
+    constructor() {
+        super();
+    }
+}
+const itemDetails = new ItemDetailsChild();
+// TODO : The dtslint will always unwrap the type alias, will need to look for a different way to test this.
+// We should expect the type to be ItemTypeType instead of string
+// $ExpectType string
+itemDetails.type;
 
 // --------------------- JsNullable ---------------
 const jsTypeWithJsNullableMembers = new JsTypeWithJsNullableMembers();

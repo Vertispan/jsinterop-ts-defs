@@ -19,17 +19,19 @@ import static com.vertispan.tsdefs.Formatting.NEW_LINE;
 import static java.util.Objects.nonNull;
 
 import com.vertispan.tsdefs.builders.HasDocs;
+import com.vertispan.tsdefs.builders.HasFunctions;
 import com.vertispan.tsdefs.builders.HasNamespace;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class TsEnum implements HasNamespace {
   private final String name;
   private final String namespace;
   private TsCustomType type;
-  private List<TsModifier> modifiers = new ArrayList<>();
-  private List<String> enumerations = new ArrayList<>();
+  private final Set<TsModifier> modifiers = new LinkedHashSet<>();
+  private final Set<String> enumerations = new LinkedHashSet<>();
+  private final Set<TsMethod> functions = new LinkedHashSet<>();
   private TsDoc tsDoc;
   private boolean deprecated;
 
@@ -74,12 +76,14 @@ public class TsEnum implements HasNamespace {
                     .build())
         .forEach(classBuilder::addProperty);
 
+    functions.forEach(classBuilder::addFunction);
+
     sb.append(classBuilder.build().emit(indent, parentNamespace));
 
     return sb.toString();
   }
 
-  public static class TsEnumBuilder implements HasDocs<TsEnumBuilder> {
+  public static class TsEnumBuilder implements HasDocs<TsEnumBuilder>, HasFunctions<TsEnumBuilder> {
     private final TsEnum tsEnum;
 
     private TsEnumBuilder(String name, String namespace, TsCustomType type) {
@@ -104,6 +108,12 @@ public class TsEnum implements HasNamespace {
 
     public TsEnumBuilder setDeprecated(boolean deprecated) {
       this.tsEnum.deprecated = deprecated;
+      return this;
+    }
+
+    @Override
+    public TsEnumBuilder addFunction(TsMethod function) {
+      this.tsEnum.functions.add(function);
       return this;
     }
 
