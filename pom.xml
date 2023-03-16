@@ -21,6 +21,19 @@
 
     <inceptionYear>2023</inceptionYear>
 
+    <developers>
+        <developer>
+            <name>Ahmad Bawaneh</name>
+            <email>ahmad@vertispan.com</email>
+            <organization>Vertispan LLC</organization>
+        </developer>
+        <developer>
+            <name>Colin Alworth</name>
+            <email>colin@vertispan.com</email>
+            <organization>Vertispan LLC</organization>
+        </developer>
+    </developers>
+
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
