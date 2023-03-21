@@ -30,14 +30,7 @@ public class ClassMethodVisitor<T> extends TsElement {
 
   public void visit(HasFunctions<T> parent) {
 
-    if (isMethod()
-        && !isIgnored()
-        && !isOverlay()
-        && !isJsProperty()
-        && isExportable()
-        && !isGetter()
-        && !isSetter()
-        && (isJsMethod() || (parent().isJsType() && isPublic()))) {
+    if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
       TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
       if (parentElement.isTsInterface()

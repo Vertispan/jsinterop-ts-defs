@@ -27,7 +27,7 @@ public class FieldVisitor<T> extends TsElement {
   }
 
   public void visit(HasProperties<T> parent) {
-    if (isField() && !isIgnored() && (isJsProperty() || (parent().isJsType() && isPublic()))) {
+    if (isField() && isExportable()) {
       parent.addProperty(
           TsProperty.builder(getName(), getType())
               .addModifiers(getJsModifiers())

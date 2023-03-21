@@ -98,7 +98,10 @@ import JsTypeAsTsInterface = com.vertispan.tsdefs.tsinterface.JsTypeAsTsInterfac
 
 import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMethods;
 
+// =======
 
+import JsTypeWithTsIgnoredMembers = com.vertispan.tsdefs.tsignore.JsTypeWithTsIgnoredMembers;
+import JsInterfaceWithIgnoredMembers = com.vertispan.tsdefs.tsignore.JsInterfaceWithIgnoredMembers;
 
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -202,6 +205,7 @@ class JsTypeWithJsIgnoredConstructorChild_1 extends JsTypeWithJsIgnoredConstruct
         super();
     }
 }
+
 class JsTypeWithJsIgnoredConstructorChild_2 extends JsTypeWithJsIgnoredConstructor {
 
     constructor() {
@@ -216,9 +220,9 @@ const jsTypeWithJsIgnoredConstructorAndDefaultConstructor = new JsTypeWithJsIgno
 const jsTypeWithJsIgnoredConstructorAndDefaultConstructor2 = new JsTypeWithJsIgnoredConstructorAndDefaultConstructor("text");
 
 // @ts-expect-error
-const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor= new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor();
+const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor = new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor();
 // @ts-expect-error
-const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor= new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor("text");
+const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor = new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor("text");
 
 class jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor_child1 extends JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor {
 
@@ -226,6 +230,7 @@ class jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor_child1 extend
         super();
     }
 }
+
 class jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor_child2 extends JsTypeWithJsIgnoredConstructor {
 
     constructor() {
@@ -262,6 +267,7 @@ class nonJsTypeWithJsIgnoredConstructor_child extends NonJsTypeWithJsIgnoredCons
         super();
     }
 }
+
 class nonJsTypeWithJsIgnoredConstructor_child1 extends NonJsTypeWithJsIgnoredConstructor {
 
     constructor() {
@@ -269,6 +275,7 @@ class nonJsTypeWithJsIgnoredConstructor_child1 extends NonJsTypeWithJsIgnoredCon
         super("text");
     }
 }
+
 class nonJsTypeWithJsIgnoredConstructor_child2 extends NonJsTypeWithJsIgnoredConstructor {
 
     constructor() {
@@ -276,6 +283,7 @@ class nonJsTypeWithJsIgnoredConstructor_child2 extends NonJsTypeWithJsIgnoredCon
         super("text", "anotherText");
     }
 }
+
 class nonJsTypeWithJsIgnoredConstructor_child3 extends NonJsTypeWithJsIgnoredConstructor {
 
     constructor() {
@@ -318,7 +326,7 @@ JsTypeWithMethods.methodOne();
 
 class JsTypeWithMethodsChild extends JsTypeWithMethods {
 
-    doNothing():void {
+    doNothing(): void {
         super.protectedMethod();
         // @ts-expect-error
         super.protectedButNotExportedMethod();
@@ -349,7 +357,7 @@ nonJsTypeWithMethods.privateMethodButNotExported(1.0);
 
 class NonJsTypeWithMethodsChild extends NonJsTypeWithMethods {
 
-    doNothing():void {
+    doNothing(): void {
         super.protectedMethod();
         // @ts-expect-error
         super.protectedButNotExportedMethod();
@@ -379,14 +387,14 @@ const jsTypeWithSettersAndGetters = new JsTypeWithSettersAndGetters("text");
 jsTypeWithSettersAndGetters.getPropertyA();
 jsTypeWithSettersAndGetters.setPropertyA("text");
 // @ts-expect-error
-const propertyAValue= jsTypeWithSettersAndGetters.propertyA;
+const propertyAValue = jsTypeWithSettersAndGetters.propertyA;
 // @ts-expect-error
 jsTypeWithSettersAndGetters.propertyA = "text";
 
 jsTypeWithSettersAndGetters.getPropertyB();
 jsTypeWithSettersAndGetters.setPropertyB("text");
 // @ts-expect-error
-const propertyBValue= jsTypeWithSettersAndGetters.propertyB;
+const propertyBValue = jsTypeWithSettersAndGetters.propertyB;
 // @ts-expect-error
 jsTypeWithSettersAndGetters.propertyB = "text";
 
@@ -397,7 +405,7 @@ jsTypeWithSettersAndGetters.getPropertyC();
 // @ts-expect-error
 jsTypeWithSettersAndGetters.setPropertyC("text");
 
-const propertyEValue_1= jsTypeWithSettersAndGetters.getPropertyE();
+const propertyEValue_1 = jsTypeWithSettersAndGetters.getPropertyE();
 // @ts-expect-error
 jsTypeWithSettersAndGetters.propertyE = "text";
 // @ts-expect-error
@@ -409,17 +417,17 @@ jsTypeWithSettersAndGetters.propertyF = "text";
 // @ts-expect-error
 const propertyFValue = jsTypeWithSettersAndGetters.propertyF;
 
-const propertyGValue =jsTypeWithSettersAndGetters.renamedPropertyG;
+const propertyGValue = jsTypeWithSettersAndGetters.renamedPropertyG;
 // @ts-expect-error
-const propertyGValue2 =jsTypeWithSettersAndGetters.getRenamedPropertyG();
+const propertyGValue2 = jsTypeWithSettersAndGetters.getRenamedPropertyG();
 // @ts-expect-error
-const propertyGValue3 =jsTypeWithSettersAndGetters.propertyG;
+const propertyGValue3 = jsTypeWithSettersAndGetters.propertyG;
 // @ts-expect-error
-const propertyGValue4 =jsTypeWithSettersAndGetters.getPropertyG();
+const propertyGValue4 = jsTypeWithSettersAndGetters.getPropertyG();
 // @ts-expect-error
-jsTypeWithSettersAndGetters.renamedPropertyG= "text";
+jsTypeWithSettersAndGetters.renamedPropertyG = "text";
 // @ts-expect-error
-jsTypeWithSettersAndGetters.propertyG= "text";
+jsTypeWithSettersAndGetters.propertyG = "text";
 // @ts-expect-error
 jsTypeWithSettersAndGetters.setRenamedPropertyG("text");
 // @ts-expect-error
@@ -503,10 +511,10 @@ jsTypeChild.getInterfaceOneProperty();
 jsTypeChild.setInterfaceOneProperty("text");
 // @ts-expect-error
 jsTypeChild.getInterfaceOneGetterProperty();
-const interfaceOneGetterPropertyValue =jsTypeChild.interfaceOneGetterProperty;
+const interfaceOneGetterPropertyValue = jsTypeChild.interfaceOneGetterProperty;
 // @ts-expect-error
 jsTypeChild.setInterfaceOneProperty("text");
-jsTypeChild.interfaceOneSetterProperty ="text";
+jsTypeChild.interfaceOneSetterProperty = "text";
 jsTypeChild.interfaceTwoMethodOne();
 jsTypeChild.interfaceTwoIgnoredMethod();
 jsTypeChild.interfaceTwoProperty = "text";
@@ -568,7 +576,7 @@ jsTypeWithDataTypes.jsNumberProperty;
 const jsFunctionsClient = new JsFunctionsClient();
 jsFunctionsClient.useVoidFunction(() => {
     // To avoid empty function error since we are not interested in this error.
-    const a="";
+    const a = "";
 });
 jsFunctionsClient.useFunctionWithArgs((id, name) => {
     // $ExpectType number
@@ -577,14 +585,14 @@ jsFunctionsClient.useFunctionWithArgs((id, name) => {
     const nameType = name;
 });
 jsFunctionsClient.useFunctionWithReturnType((id, name) => {
-   return true;
+    return true;
 });
 // @ts-expect-error
 jsFunctionsClient.useFunctionWithReturnType((id, name) => {
-   return 1.0;
+    return 1.0;
 });
 // $ExpectType (id: number, name: string) => boolean
-const aFunction =jsFunctionsClient.useFunctionAndReturnFunction((id, name) => true);
+const aFunction = jsFunctionsClient.useFunctionAndReturnFunction((id, name) => true);
 
 
 // -------------- Generics -------------------
@@ -636,17 +644,17 @@ const jsTypeImplementingGenericInterfaces = new JsTypeImplementingGenericInterfa
 jsTypeImplementingGenericInterfaces.genericInterfaceOneMethod();
 // $ExpectType string
 jsTypeImplementingGenericInterfaces.genericPropertyOne;
-jsTypeImplementingGenericInterfaces.genericPropertyOne="text";
+jsTypeImplementingGenericInterfaces.genericPropertyOne = "text";
 // @ts-expect-error
-jsTypeImplementingGenericInterfaces.genericPropertyOne=1.0;
+jsTypeImplementingGenericInterfaces.genericPropertyOne = 1.0;
 
 // $ExpectType number
 jsTypeImplementingGenericInterfaces.genericInterfaceTwoMethod();
 // $ExpectType number
 jsTypeImplementingGenericInterfaces.genericPropertyTwo;
-jsTypeImplementingGenericInterfaces.genericPropertyTwo=1.0;
+jsTypeImplementingGenericInterfaces.genericPropertyTwo = 1.0;
 // @ts-expect-error
-jsTypeImplementingGenericInterfaces.genericPropertyTwo="text";
+jsTypeImplementingGenericInterfaces.genericPropertyTwo = "text";
 
 // $ExpectType boolean
 jsTypeImplementingGenericInterfaces.genericInterfaceThreeMethod();
@@ -726,11 +734,13 @@ enumClient.values = {
 }
 
 DayOfWeek.values();
+
 class ItemDetailsChild extends ItemDetails {
     constructor() {
         super();
     }
 }
+
 const itemDetails = new ItemDetailsChild();
 // TODO : The dtslint will always unwrap the type alias, will need to look for a different way to test this.
 // We should expect the type to be ItemTypeType instead of string
@@ -787,9 +797,9 @@ jsTypeWithJsNullableMembers.nullableArrayOfNullableStrings = [undefined, "text2"
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = null;
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = undefined;
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = new Map([
-    ['key',10],
-    [null,20],
-    [undefined,30],
+    ['key', 10],
+    [null, 20],
+    [undefined, 30],
     ['key2', null],
     ['key3', undefined]
 ]);
@@ -797,13 +807,13 @@ jsTypeWithJsNullableMembers.nullableMapOfNullableKeysAndValues = new Map([
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = null;
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = undefined;
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = new Map([
-    ['key',10],
-    [null,20],
-    [undefined,30]
+    ['key', 10],
+    [null, 20],
+    [undefined, 30]
 ]);
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableMapOfNullableKeys = new Map([
-    ['key',10],
+    ['key', 10],
     ['key2', null],
     ['key3', undefined]
 ]);
@@ -813,31 +823,31 @@ jsTypeWithJsNullableMembers.nullableMapOfNullableValues = null;
 jsTypeWithJsNullableMembers.nullableMapOfNullableValues = undefined;
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableMapOfNullableValues = new Map([
-    ['key',10],
-    [null,20],
-    [undefined,30]
+    ['key', 10],
+    [null, 20],
+    [undefined, 30]
 ]);
 jsTypeWithJsNullableMembers.nullableMapOfNullableValues = new Map([
-    ['key',10],
+    ['key', 10],
     ['key2', null],
     ['key3', undefined]
 ]);
 
-jsTypeWithJsNullableMembers.nullableStringArray=null;
-jsTypeWithJsNullableMembers.nullableStringArray=undefined;
-jsTypeWithJsNullableMembers.nullableStringArray=["text1", "text2"];
+jsTypeWithJsNullableMembers.nullableStringArray = null;
+jsTypeWithJsNullableMembers.nullableStringArray = undefined;
+jsTypeWithJsNullableMembers.nullableStringArray = ["text1", "text2"];
 // @ts-expect-error
-jsTypeWithJsNullableMembers.nullableStringArray=[null, "text2"];
+jsTypeWithJsNullableMembers.nullableStringArray = [null, "text2"];
 // @ts-expect-error
-jsTypeWithJsNullableMembers.nullableStringArray=[undefined, "text2"];
+jsTypeWithJsNullableMembers.nullableStringArray = [undefined, "text2"];
 
-jsTypeWithJsNullableMembers.nullableString2dArray=null;
-jsTypeWithJsNullableMembers.nullableString2dArray=undefined;
-jsTypeWithJsNullableMembers.nullableString2dArray=[["text1", "text2"],["text1", "text2"]];
+jsTypeWithJsNullableMembers.nullableString2dArray = null;
+jsTypeWithJsNullableMembers.nullableString2dArray = undefined;
+jsTypeWithJsNullableMembers.nullableString2dArray = [["text1", "text2"], ["text1", "text2"]];
 // @ts-expect-error
-jsTypeWithJsNullableMembers.nullableString2dArray=[[null, "text2"],["text1", "text2"]];
+jsTypeWithJsNullableMembers.nullableString2dArray = [[null, "text2"], ["text1", "text2"]];
 // @ts-expect-error
-jsTypeWithJsNullableMembers.nullableString2dArray=[[undefined, "text2"],["text1", "text2"]];
+jsTypeWithJsNullableMembers.nullableString2dArray = [[undefined, "text2"], ["text1", "text2"]];
 
 // ----------------- TsInterface --------------------
 
@@ -849,6 +859,28 @@ class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
     property: string;
 
     doSomething(): void {
-        const x="";
+        const x = "";
+    }
+}
+
+// --------------------- TsIgnored members ----------------------
+
+const jsTypeWithTsIgnoredMembers = new JsTypeWithTsIgnoredMembers();
+
+// @ts-expect-error
+jsTypeWithTsIgnoredMembers.ignoredProperty;
+// @ts-expect-error
+jsTypeWithTsIgnoredMembers.ignoredMethod();
+
+jsTypeWithTsIgnoredMembers.notIgnoredProperty;
+jsTypeWithTsIgnoredMembers.notIgnoredMethod();
+jsTypeWithTsIgnoredMembers.interfaceIgnoredMethod();
+jsTypeWithTsIgnoredMembers.notIgnoredInterfaceMethod();
+jsTypeWithTsIgnoredMembers.ignoredInterfaceMethod();
+
+
+class ImplementInterfaceWithTsIgnoredMethod implements JsInterfaceWithIgnoredMembers {
+    notIgnoredInterfaceMethod(): void {
+        const x = "empty methods not allowed in tests";
     }
 }
