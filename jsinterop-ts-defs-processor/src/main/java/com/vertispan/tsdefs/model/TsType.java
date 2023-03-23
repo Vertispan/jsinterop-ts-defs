@@ -36,6 +36,14 @@ public class TsType {
     return new TsType(name, "");
   }
 
+  public static TsType nullType() {
+    return TsType.of("null");
+  }
+
+  public static TsType undefinedType() {
+    return TsType.of("undefined");
+  }
+
   public TsType(String name, String namespace) {
     this.name = name;
     this.namespace = namespace;
@@ -64,7 +72,14 @@ public class TsType {
   }
 
   public String emit(String parentNamespace) {
-    return emitType(parentNamespace) + emitNullable();
+    return emit(parentNamespace, true);
+  }
+
+  public String emit(String parentNamespace, boolean checkNullable) {
+    if (checkNullable && isNullable()) {
+      return TsUnionType.of(this, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
+    }
+    return emitType(parentNamespace);
   }
 
   protected String emitType(String parentNamespace) {
@@ -73,13 +88,6 @@ public class TsType {
     } else {
       return namespace + "." + resolveName(name) + emitBounds(parentNamespace);
     }
-  }
-
-  private String emitNullable() {
-    if (nullable) {
-      return "|null|undefined";
-    }
-    return "";
   }
 
   private String emitBounds(String parentNamespace) {

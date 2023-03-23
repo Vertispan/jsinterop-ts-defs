@@ -15,21 +15,21 @@
  */
 package com.vertispan.tsdefs.model;
 
-public class TsProperty extends TsVariable {
+public class TsParameter extends TsVariable {
 
-  public TsProperty(String name, TsType type) {
+  public TsParameter(String name, TsType type) {
     super(name, type);
   }
 
   @Override
   public String emitType(String parentNamespace) {
     if (type.isNullable()) {
-      return TsUnionType.of(type, TsType.nullType()).emit(parentNamespace);
+      return TsUnionType.of(type, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
     }
     return type.emit(parentNamespace);
   }
 
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
+  public static TsPropertyBuilder<TsParameter> builder(String name, TsType type) {
+    return new TsPropertyBuilder<>(new TsParameter(name, type));
   }
 }
