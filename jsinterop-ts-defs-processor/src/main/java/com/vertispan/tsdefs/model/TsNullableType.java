@@ -15,29 +15,30 @@
  */
 package com.vertispan.tsdefs.model;
 
-import static com.vertispan.tsdefs.Formatting.NONE;
+public class TsNullableType extends TsType implements IsNullableTsType {
 
-public class TsParameter extends TsVariable {
+  private final TsType type;
+  private boolean undefined = true;
 
-  public TsParameter(String name, TsType type) {
-    super(name, type);
+  public TsNullableType(TsType type) {
+    super(type.name, type.namespace);
+    this.type = type;
   }
 
+  public static TsNullableType of(TsType tsType) {
+    return new TsNullableType(tsType);
+  }
+
+  @Override
   public String emit(String parentNamespace) {
-    return super.emit(NONE, NONE, parentNamespace, true);
+    if (undefined) {
+      return TsUnionType.of(type, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
+    }
+    return TsUnionType.of(type, TsType.nullType()).emit(parentNamespace);
   }
 
   @Override
-  public String emit(String indent, String ending, String parentNamespace) {
-    return super.emit(NONE, NONE, parentNamespace, true);
-  }
-
-  @Override
-  public String emitType(String parentNamespace) {
-    return type.emit(parentNamespace);
-  }
-
-  public static TsPropertyBuilder<TsParameter> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsParameter(name, type));
+  public void setUndefined(boolean undefined) {
+    this.undefined = undefined;
   }
 }

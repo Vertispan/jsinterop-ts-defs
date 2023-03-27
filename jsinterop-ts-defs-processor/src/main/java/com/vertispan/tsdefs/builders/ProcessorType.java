@@ -159,4 +159,9 @@ public class ProcessorType {
     Element element = env.types().asElement(type);
     return nonNull(element) && TsElement.of(element, env).isJsFunction();
   }
+
+  public boolean isUnionType() {
+    Element element = env.types().asElement(type);
+    return nonNull(element) && TsElement.of(element, env).isUnionType();
+  }
 }
