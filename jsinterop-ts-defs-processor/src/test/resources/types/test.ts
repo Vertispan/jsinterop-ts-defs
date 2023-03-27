@@ -98,7 +98,10 @@ import JsTypeAsTsInterface = com.vertispan.tsdefs.tsinterface.JsTypeAsTsInterfac
 
 import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMethods;
 
+// ---------- JsNullable ---------------
 
+import JsInterfaceWithJsNullableSetGet = com.vertispan.tsdefs.jsnullable.JsInterfaceWithJsNullableSetGet
+import ExtendsInterfaceWithJsNullableProperty = com.vertispan.tsdefs.jsnullable.ExtendsInterfaceWithJsNullableProperty
 
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -824,6 +827,7 @@ jsTypeWithJsNullableMembers.nullableMapOfNullableValues = new Map([
 ]);
 
 jsTypeWithJsNullableMembers.nullableStringArray=null;
+// @ts-expect-error
 jsTypeWithJsNullableMembers.nullableStringArray=undefined;
 jsTypeWithJsNullableMembers.nullableStringArray=["text1", "text2"];
 // @ts-expect-error
@@ -832,12 +836,22 @@ jsTypeWithJsNullableMembers.nullableStringArray=[null, "text2"];
 jsTypeWithJsNullableMembers.nullableStringArray=[undefined, "text2"];
 
 jsTypeWithJsNullableMembers.nullableString2dArray=null;
+// @ts-expect-error
 jsTypeWithJsNullableMembers.nullableString2dArray=undefined;
 jsTypeWithJsNullableMembers.nullableString2dArray=[["text1", "text2"],["text1", "text2"]];
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableString2dArray=[[null, "text2"],["text1", "text2"]];
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableString2dArray=[[undefined, "text2"],["text1", "text2"]];
+
+const jsInterfaceWithJsNullableSetGet:JsInterfaceWithJsNullableSetGet = {
+    propertyThree:"string"
+}
+
+const extendsInterfaceWithJsNullableProperty = new ExtendsInterfaceWithJsNullableProperty();
+extendsInterfaceWithJsNullableProperty.propertyOne;
+extendsInterfaceWithJsNullableProperty.propertyTow;
+extendsInterfaceWithJsNullableProperty.propertyThree;
 
 // ----------------- TsInterface --------------------
 

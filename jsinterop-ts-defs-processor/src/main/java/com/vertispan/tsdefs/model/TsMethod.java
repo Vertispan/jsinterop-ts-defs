@@ -19,7 +19,7 @@ import static com.vertispan.tsdefs.Formatting.*;
 import static java.util.Objects.nonNull;
 
 import com.vertispan.tsdefs.builders.HasDocs;
-import com.vertispan.tsdefs.builders.HasProperties;
+import com.vertispan.tsdefs.builders.HasParameters;
 import com.vertispan.tsdefs.builders.HasTypeArguments;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 public class TsMethod {
   private final String name;
   private final TsType returnType;
-  private final List<TsProperty> parameters = new ArrayList<>();
+  private final List<TsParameter> parameters = new ArrayList<>();
   private final List<TsModifier> modifiers = new ArrayList<>();
   private List<TsType> typeArguments = new ArrayList<>();
   private TsDoc tsDoc;
@@ -80,7 +80,7 @@ public class TsMethod {
     sb.append("(");
     sb.append(
         parameters.stream()
-            .map(property -> property.emitAsParameter(parentNamespace))
+            .map(parameter -> parameter.emitAsParameter(parentNamespace))
             .collect(Collectors.joining(COMMA)));
 
     sb.append(")");
@@ -110,7 +110,7 @@ public class TsMethod {
   }
 
   public static class TsMethodBuilder
-      implements HasProperties<TsMethodBuilder>,
+      implements HasParameters<TsMethodBuilder>,
           HasDocs<TsMethodBuilder>,
           HasTypeArguments<TsMethodBuilder> {
     private final TsMethod method;
@@ -124,8 +124,8 @@ public class TsMethod {
     }
 
     @Override
-    public TsMethodBuilder addProperty(TsProperty property) {
-      this.method.parameters.add(property);
+    public TsMethodBuilder addParameter(TsParameter parameter) {
+      this.method.parameters.add(parameter);
       return this;
     }
 
