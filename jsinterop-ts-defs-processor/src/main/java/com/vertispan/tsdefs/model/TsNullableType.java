@@ -26,6 +26,9 @@ public class TsNullableType extends TsType implements IsNullableTsType {
   }
 
   public static TsNullableType of(TsType tsType) {
+    if (tsType instanceof TsNullableType) {
+      return (TsNullableType) tsType;
+    }
     return new TsNullableType(tsType);
   }
 
