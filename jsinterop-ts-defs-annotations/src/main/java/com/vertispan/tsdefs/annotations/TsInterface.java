@@ -20,7 +20,7 @@ import java.lang.annotation.*;
 /**
  * A type annotated with this annotation will be exported as interface, even if the type itself is
  * not an interface if a type is extending a type that is annotated as TsInterface when exported it
- * will implement the exported interface instead of extending,
+ * will implement the exported interface instead of extending the type.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

@@ -22,9 +22,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A type annotated with this annotation will be exported as interface, even if the type itself is
- * not an interface if a type is extending a type that is annotated as TsInterface when exported it
- * will implement the exported interface instead of extending,
+ * A type annotated with this annotation will represent a Typescript Union type equivalent, and
+ * should define {@link TsUnionMember}s that will be used to generate the correct union type, When a
+ * type element is annotated with this annotation is used as a type for class member or parameter
+ * the tool will emit a union type of all {@link TsUnionMember}s included in the type element
+ * instead of the type itself.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

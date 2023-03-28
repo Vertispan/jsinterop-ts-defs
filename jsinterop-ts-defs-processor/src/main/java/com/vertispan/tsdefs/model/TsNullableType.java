@@ -20,7 +20,7 @@ public class TsNullableType extends TsType implements IsNullableTsType {
   private final TsType type;
   private boolean undefined = true;
 
-  public TsNullableType(TsType type) {
+  private TsNullableType(TsType type) {
     super(type.name, type.namespace);
     this.type = type;
   }

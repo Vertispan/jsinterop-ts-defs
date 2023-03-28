@@ -22,9 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A type annotated with this annotation will be exported as interface, even if the type itself is
- * not an interface if a type is extending a type that is annotated as TsInterface when exported it
- * will implement the exported interface instead of extending,
+ * A type annotated with this annotation will be treated as a type member in a union type presented
+ * by {@link TsUnion}
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})

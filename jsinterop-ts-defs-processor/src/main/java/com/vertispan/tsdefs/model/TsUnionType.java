@@ -16,26 +16,30 @@
 package com.vertispan.tsdefs.model;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TsUnionType extends TsType {
 
-  private final Set<TsType> tsTypes = new LinkedHashSet<>();
+  private final Set<TsType> tsTypes;
 
-  public TsUnionType(Set<TsType> tsTypes) {
+  public TsUnionType(Collection<TsType> tsTypes) {
     super("", "");
 
-    tsTypes.forEach(
-        tsType -> {
-          if (tsType instanceof TsUnionType) {
-            this.tsTypes.addAll(((TsUnionType) tsType).tsTypes);
-          } else {
-            this.tsTypes.add(tsType);
-          }
-        });
+    this.tsTypes =
+        tsTypes.stream()
+            .flatMap(
+                type -> {
+                  if (type instanceof TsUnionType) {
+                    return ((TsUnionType) type).tsTypes.stream();
+                  }
+                  return Stream.of(type);
+                })
+            .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   public static TsUnionType of(TsType... types) {

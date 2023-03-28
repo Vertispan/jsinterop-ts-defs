@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.annotations.TsTypeRef;
 import com.vertispan.tsdefs.model.*;
 import com.vertispan.tsdefs.visitors.ParameterVisitor;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -121,16 +122,14 @@ public class JavaToTsTypeConverter {
 
   private TsType unionType(TypeMirror type) {
     Element element = env.types().asElement(type);
+    DeclaredType declaredType = (DeclaredType) type;
 
     Set<TsType> unionTypes =
         element.getEnclosedElements().stream()
             .filter(e -> TsElement.of(e, env).isUnionMember())
-            .map(
-                e ->
-                    ((ExecutableType) env.types().asMemberOf((DeclaredType) type, e))
-                        .getReturnType())
+            .map(e -> ((ExecutableType) env.types().asMemberOf(declaredType, e)).getReturnType())
             .map(this::toTsType)
-            .collect(Collectors.toSet());
+            .collect(Collectors.toCollection(LinkedHashSet::new));
 
     return TsUnionType.of(unionTypes);
   }
