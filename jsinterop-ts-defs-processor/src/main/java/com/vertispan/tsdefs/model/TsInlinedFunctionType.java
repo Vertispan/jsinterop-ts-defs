@@ -49,14 +49,6 @@ public class TsInlinedFunctionType extends TsType implements HasParameters<TsInl
     return "(" + emitParameters() + ")=>" + returnType.emit("");
   }
 
-  @Override
-  public String emit(String parentNamespace, boolean checkNullable) {
-    if (checkNullable && isNullable()) {
-      return TsUnionType.of(this, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
-    }
-    return emit(parentNamespace);
-  }
-
   private String emitParameters() {
     return parameters.stream()
         .map(parameter -> parameter.emit("", "", ""))

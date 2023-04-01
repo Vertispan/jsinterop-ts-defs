@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.model;
+package com.vertispan.tsdefs.annotations;
 
-public class TsProperty extends TsVariable {
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-  public TsProperty(String name, TsType type) {
-    super(name, type);
-  }
-
-  @Override
-  public String emit(String indent, String ending, String parentNamespace) {
-    return super.emit(indent, ending, parentNamespace, false);
-  }
-
-  @Override
-  public String emitType(String parentNamespace) {
-    return type.emit(parentNamespace);
-  }
-
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
-  }
-}
+/**
+ * A type annotated with this annotation will be treated as a type member in a union type presented
+ * by {@link TsUnion}
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+@Documented
+public @interface TsUnionMember {}

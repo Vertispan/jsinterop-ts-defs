@@ -103,6 +103,10 @@ import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMe
 import JsInterfaceWithJsNullableSetGet = com.vertispan.tsdefs.jsnullable.JsInterfaceWithJsNullableSetGet
 import ExtendsInterfaceWithJsNullableProperty = com.vertispan.tsdefs.jsnullable.ExtendsInterfaceWithJsNullableProperty
 
+// ---------------- Union Types ----------------
+
+import UnionTypeApi = com.vertispan.tsdefs.tsunion.UnionTypeApi;
+
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
 
@@ -864,5 +868,45 @@ class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
 
     doSomething(): void {
         const x="";
+    }
+}
+
+// ---------------------- Union Types --------------------------
+
+
+class ImplementsUnionTypeApi implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return undefined;
+    }
+}
+
+const implementsUnionTypeApi = new ImplementsUnionTypeApi();
+
+implementsUnionTypeApi.someFunction(1.0, null);
+implementsUnionTypeApi.someFunction(1.0, 1.0);
+implementsUnionTypeApi.someFunction([1.0, 2.0], 1.0);
+implementsUnionTypeApi.someFunction([1.0, null], 1.0);
+implementsUnionTypeApi.someFunction(1.0, undefined);
+implementsUnionTypeApi.someFunction(1.0, [1.0, 2.0]);
+implementsUnionTypeApi.someFunction(1.0, [1.0, null]);
+
+class ImplementsUnionTypeApiNumber implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return 1.0;
+    }
+}
+class ImplementsUnionTypeApiArrayString implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return ["A", "B"];
+    }
+}
+class ImplementsUnionTypeApiNull implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return null;
+    }
+}
+class ImplementsUnionTypeApiUndefined implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return undefined;
     }
 }
