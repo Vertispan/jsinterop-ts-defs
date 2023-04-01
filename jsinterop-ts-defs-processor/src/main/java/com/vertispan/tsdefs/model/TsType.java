@@ -49,11 +49,6 @@ public class TsType {
     this.namespace = namespace;
   }
 
-  public TsType nullable(boolean nullable) {
-    this.nullable = nullable;
-    return this;
-  }
-
   public String getName() {
     return name;
   }
@@ -72,13 +67,6 @@ public class TsType {
   }
 
   public String emit(String parentNamespace) {
-    return emit(parentNamespace, true);
-  }
-
-  public String emit(String parentNamespace, boolean checkNullable) {
-    if (checkNullable && isNullable()) {
-      return TsUnionType.of(this, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
-    }
     return emitType(parentNamespace);
   }
 

@@ -15,17 +15,25 @@
  */
 package com.vertispan.tsdefs.model;
 
+import static com.vertispan.tsdefs.Formatting.NONE;
+
 public class TsParameter extends TsVariable {
 
   public TsParameter(String name, TsType type) {
     super(name, type);
   }
 
+  public String emit(String parentNamespace) {
+    return super.emit(NONE, NONE, parentNamespace, true);
+  }
+
+  @Override
+  public String emit(String indent, String ending, String parentNamespace) {
+    return super.emit(NONE, NONE, parentNamespace, true);
+  }
+
   @Override
   public String emitType(String parentNamespace) {
-    if (type.isNullable()) {
-      return TsUnionType.of(type, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
-    }
     return type.emit(parentNamespace);
   }
 

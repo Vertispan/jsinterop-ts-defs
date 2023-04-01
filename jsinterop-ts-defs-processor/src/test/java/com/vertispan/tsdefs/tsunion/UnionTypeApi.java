@@ -13,25 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.model;
+package com.vertispan.tsdefs.tsunion;
 
-public class TsProperty extends TsVariable {
+import jsinterop.annotations.JsNullable;
+import jsinterop.annotations.JsType;
 
-  public TsProperty(String name, TsType type) {
-    super(name, type);
-  }
-
-  @Override
-  public String emit(String indent, String ending, String parentNamespace) {
-    return super.emit(indent, ending, parentNamespace, false);
-  }
-
-  @Override
-  public String emitType(String parentNamespace) {
-    return type.emit(parentNamespace);
-  }
-
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
-  }
+@JsType
+public interface UnionTypeApi {
+  @JsNullable
+  ResultUnion<String> someFunction(ParamUnion param1, @JsNullable ParamUnion param2);
 }
