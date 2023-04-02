@@ -237,7 +237,7 @@ public class TsClass implements IsType {
   public static class TsConstructor {
 
     private List<TsModifier> modifiers = new ArrayList<>();
-    private List<TsProperty> properties = new ArrayList<>();
+    private List<TsParameter> parameters = new ArrayList<>();
     private TsDoc tsDoc;
     private boolean deprecated;
 
@@ -256,8 +256,8 @@ public class TsClass implements IsType {
       sb.append("constructor");
       sb.append("(");
       sb.append(
-          properties.stream()
-              .map(property -> property.emit(NONE, NONE, parentNamespace))
+          parameters.stream()
+              .map(parameter -> parameter.emit(NONE, NONE, parentNamespace))
               .collect(Collectors.joining(", ")));
       sb.append(");");
 
@@ -265,7 +265,7 @@ public class TsClass implements IsType {
     }
 
     public static class TsConstructorBuilder
-        implements HasProperties<TsConstructorBuilder>, HasDocs<TsConstructorBuilder> {
+        implements HasParameters<TsConstructorBuilder>, HasDocs<TsConstructorBuilder> {
       private final TsConstructor constructor;
 
       private TsConstructorBuilder() {
@@ -278,8 +278,8 @@ public class TsClass implements IsType {
       }
 
       @Override
-      public TsConstructorBuilder addProperty(TsProperty property) {
-        this.constructor.properties.add(property);
+      public TsConstructorBuilder addParameter(TsParameter parameter) {
+        this.constructor.parameters.add(parameter);
         return this;
       }
 

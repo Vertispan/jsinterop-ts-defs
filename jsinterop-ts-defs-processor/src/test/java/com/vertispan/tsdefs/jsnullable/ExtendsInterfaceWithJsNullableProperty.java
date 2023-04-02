@@ -13,25 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.model;
+package com.vertispan.tsdefs.jsnullable;
 
-public class TsProperty extends TsVariable {
+import jsinterop.annotations.JsNullable;
+import jsinterop.annotations.JsType;
 
-  public TsProperty(String name, TsType type) {
-    super(name, type);
+@JsType
+public class ExtendsInterfaceWithJsNullableProperty implements JsInterfaceWithJsNullableSetGet {
+  @Override
+  public @JsNullable String getPropertyOne() {
+    return null;
   }
 
   @Override
-  public String emit(String indent, String ending, String parentNamespace) {
-    return super.emit(indent, ending, parentNamespace, false);
+  public @JsNullable String getPropertyTow() {
+    return null;
   }
 
   @Override
-  public String emitType(String parentNamespace) {
-    return type.emit(parentNamespace);
+  public String getPropertyThree() {
+    return null;
   }
 
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
-  }
+  @Override
+  public void setPropertyThree(String value) {}
+
+  @Override
+  public void setPropertyOne(String value) {}
 }

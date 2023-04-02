@@ -21,8 +21,10 @@ import com.vertispan.tsdefs.builders.TsElement;
 import com.vertispan.tsdefs.model.NoneTsType;
 import com.vertispan.tsdefs.model.TsMethod;
 import com.vertispan.tsdefs.model.TsModifier;
+import com.vertispan.tsdefs.model.TsParameter;
 import com.vertispan.tsdefs.model.TsProperty;
 import com.vertispan.tsdefs.model.TsType;
+import com.vertispan.tsdefs.model.TsVariable;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -95,6 +97,7 @@ public class SetterGetterMethodsVisitor<T> extends TsElement {
                     TsProperty.builder(getter.nonGetSetName(), getter.getType())
                         .setDocs(getter.getDocs())
                         .setDeprecated(isDeprecated())
+                        .setOptional(getter.isJsNullable())
                         .build()));
 
     Set<String> getterOnlyKeys = new HashSet<>(getters.keySet());
@@ -102,13 +105,26 @@ public class SetterGetterMethodsVisitor<T> extends TsElement {
     getterOnlyKeys.stream()
         .map(getters::get)
         .forEach(
-            getter ->
+            getter -> {
+              if (getter.isJsNullable()) {
+                TsVariable.TsPropertyBuilder<TsProperty> propertyBuilder =
+                    TsProperty.builder(getter.nonGetSetName(), getter.getType())
+                        .setDocs(getter.getDocs())
+                        .setDeprecated(isDeprecated())
+                        .setOptional(getter.isJsNullable());
+                if (getter.isJsNullable()) {
+                  propertyBuilder.addModifiers(TsModifier.READONLY);
+                }
+                parent.addProperty(propertyBuilder.build());
+              } else {
                 parent.addFunction(
                     TsMethod.builder(getter.nonGetSetName(), getter.getType())
                         .addModifiers(TsModifier.GET)
                         .setDocs(getter.getDocs())
                         .setDeprecated(isDeprecated())
-                        .build()));
+                        .build());
+              }
+            });
 
     Set<String> setterOnlyKeys = new HashSet<>(setters.keySet());
     setterOnlyKeys.removeAll(common);
@@ -121,8 +137,9 @@ public class SetterGetterMethodsVisitor<T> extends TsElement {
                         .addModifiers(TsModifier.SET)
                         .setDocs(setter.getDocs())
                         .setDeprecated(isDeprecated())
-                        .addProperty(
-                            TsProperty.builder(setter.nonGetSetName(), getTypeFromSetterArg(setter))
+                        .addParameter(
+                            TsParameter.builder(
+                                    setter.nonGetSetName(), getTypeFromSetterArg(setter))
                                 .build())
                         .build()));
   }

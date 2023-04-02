@@ -98,7 +98,14 @@ import JsTypeAsTsInterface = com.vertispan.tsdefs.tsinterface.JsTypeAsTsInterfac
 
 import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMethods;
 
-// =======
+// ---------- JsNullable ---------------
+
+import JsInterfaceWithJsNullableSetGet = com.vertispan.tsdefs.jsnullable.JsInterfaceWithJsNullableSetGet
+import ExtendsInterfaceWithJsNullableProperty = com.vertispan.tsdefs.jsnullable.ExtendsInterfaceWithJsNullableProperty
+
+// ---------------- Union Types ----------------
+
+import UnionTypeApi = com.vertispan.tsdefs.tsunion.UnionTypeApi;
 
 import JsTypeWithTsIgnoredMembers = com.vertispan.tsdefs.tsignore.JsTypeWithTsIgnoredMembers;
 import JsInterfaceWithIgnoredMembers = com.vertispan.tsdefs.tsignore.JsInterfaceWithIgnoredMembers;
@@ -205,7 +212,6 @@ class JsTypeWithJsIgnoredConstructorChild_1 extends JsTypeWithJsIgnoredConstruct
         super();
     }
 }
-
 class JsTypeWithJsIgnoredConstructorChild_2 extends JsTypeWithJsIgnoredConstructor {
 
     constructor() {
@@ -220,9 +226,9 @@ const jsTypeWithJsIgnoredConstructorAndDefaultConstructor = new JsTypeWithJsIgno
 const jsTypeWithJsIgnoredConstructorAndDefaultConstructor2 = new JsTypeWithJsIgnoredConstructorAndDefaultConstructor("text");
 
 // @ts-expect-error
-const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor = new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor();
+const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor= new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor();
 // @ts-expect-error
-const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor = new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor("text");
+const jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor= new JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor("text");
 
 class jsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor_child1 extends JsTypeWithJsIgnoredConstructorAndJsIgnoredDefaultConstructor {
 
@@ -834,20 +840,39 @@ jsTypeWithJsNullableMembers.nullableMapOfNullableValues = new Map([
 ]);
 
 jsTypeWithJsNullableMembers.nullableStringArray = null;
+// @ts-expect-error
 jsTypeWithJsNullableMembers.nullableStringArray = undefined;
 jsTypeWithJsNullableMembers.nullableStringArray = ["text1", "text2"];
+jsTypeWithJsNullableMembers.nullableStringArray=null;
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableStringArray=undefined;
+jsTypeWithJsNullableMembers.nullableStringArray=["text1", "text2"];
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableStringArray = [null, "text2"];
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableStringArray = [undefined, "text2"];
 
 jsTypeWithJsNullableMembers.nullableString2dArray = null;
+// @ts-expect-error
 jsTypeWithJsNullableMembers.nullableString2dArray = undefined;
 jsTypeWithJsNullableMembers.nullableString2dArray = [["text1", "text2"], ["text1", "text2"]];
+jsTypeWithJsNullableMembers.nullableString2dArray=null;
+// @ts-expect-error
+jsTypeWithJsNullableMembers.nullableString2dArray=undefined;
+jsTypeWithJsNullableMembers.nullableString2dArray=[["text1", "text2"],["text1", "text2"]];
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableString2dArray = [[null, "text2"], ["text1", "text2"]];
 // @ts-expect-error
 jsTypeWithJsNullableMembers.nullableString2dArray = [[undefined, "text2"], ["text1", "text2"]];
+
+const jsInterfaceWithJsNullableSetGet:JsInterfaceWithJsNullableSetGet = {
+    propertyThree:"string"
+}
+
+const extendsInterfaceWithJsNullableProperty = new ExtendsInterfaceWithJsNullableProperty();
+extendsInterfaceWithJsNullableProperty.propertyOne;
+extendsInterfaceWithJsNullableProperty.propertyTow;
+extendsInterfaceWithJsNullableProperty.propertyThree;
 
 // ----------------- TsInterface --------------------
 
@@ -882,5 +907,45 @@ jsTypeWithTsIgnoredMembers.ignoredInterfaceMethod();
 class ImplementInterfaceWithTsIgnoredMethod implements JsInterfaceWithIgnoredMembers {
     notIgnoredInterfaceMethod(): void {
         const x = "empty methods not allowed in tests";
+    }
+}
+
+// ---------------------- Union Types --------------------------
+
+
+class ImplementsUnionTypeApi implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return undefined;
+    }
+}
+
+const implementsUnionTypeApi = new ImplementsUnionTypeApi();
+
+implementsUnionTypeApi.someFunction(1.0, null);
+implementsUnionTypeApi.someFunction(1.0, 1.0);
+implementsUnionTypeApi.someFunction([1.0, 2.0], 1.0);
+implementsUnionTypeApi.someFunction([1.0, null], 1.0);
+implementsUnionTypeApi.someFunction(1.0, undefined);
+implementsUnionTypeApi.someFunction(1.0, [1.0, 2.0]);
+implementsUnionTypeApi.someFunction(1.0, [1.0, null]);
+
+class ImplementsUnionTypeApiNumber implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return 1.0;
+    }
+}
+class ImplementsUnionTypeApiArrayString implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return ["A", "B"];
+    }
+}
+class ImplementsUnionTypeApiNull implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return null;
+    }
+}
+class ImplementsUnionTypeApiUndefined implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return undefined;
     }
 }

@@ -25,6 +25,7 @@ import com.vertispan.tsdefs.HasProcessorEnv;
 import com.vertispan.tsdefs.annotations.*;
 import com.vertispan.tsdefs.model.TsDoc;
 import com.vertispan.tsdefs.model.TsModifier;
+import com.vertispan.tsdefs.model.TsNullableType;
 import com.vertispan.tsdefs.model.TsType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
@@ -280,8 +281,14 @@ public class TsElement {
 
   public TsType getType() {
     TsType elementTsType = getElementTsType();
-    if (!elementTsType.isNullable()) {
-      elementTsType.nullable(isJsNullable());
+    if (!(elementTsType instanceof TsNullableType)) {
+      elementTsType = typeOrNullable(elementTsType);
+    }
+
+    if (elementTsType instanceof TsNullableType) {
+      if (isField() || isJsProperty() || isGetter() || isSetter()) {
+        ((TsNullableType) elementTsType).setUndefined(false);
+      }
     }
     return elementTsType;
   }
@@ -568,6 +575,13 @@ public class TsElement {
     return nonNull(getAnnotation(JsType.class));
   }
 
+  public TsType typeOrNullable(TsType type) {
+    if (isJsNullable()) {
+      return TsNullableType.of(type);
+    }
+    return type;
+  }
+
   public boolean isJsNullable() {
     TypeMirror typeMirror;
     if (nonNull(element) && ElementKind.METHOD == element.getKind()) {
@@ -767,5 +781,17 @@ public class TsElement {
       }
     }
     return false;
+  }
+
+  public boolean isUnionType() {
+    return nonNull(getAnnotation(TsUnion.class));
+  }
+
+  public boolean isJsOverlay() {
+    return nonNull(getAnnotation(JsOverlay.class));
+  }
+
+  public boolean isUnionMember() {
+    return isJsOverlay() && isMethod() && nonNull(getAnnotation(TsUnionMember.class));
   }
 }

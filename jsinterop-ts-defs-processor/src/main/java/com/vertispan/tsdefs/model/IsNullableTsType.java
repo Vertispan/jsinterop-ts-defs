@@ -15,23 +15,6 @@
  */
 package com.vertispan.tsdefs.model;
 
-public class TsProperty extends TsVariable {
-
-  public TsProperty(String name, TsType type) {
-    super(name, type);
-  }
-
-  @Override
-  public String emit(String indent, String ending, String parentNamespace) {
-    return super.emit(indent, ending, parentNamespace, false);
-  }
-
-  @Override
-  public String emitType(String parentNamespace) {
-    return type.emit(parentNamespace);
-  }
-
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
-  }
+public interface IsNullableTsType {
+  void setUndefined(boolean undefined);
 }

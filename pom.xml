@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.vertispan.tsdefs</groupId>
     <artifactId>jsinterop-ts-defs</artifactId>
-    <version>HEAD-SNAPSHOT</version>
+    <version>1.0.0-RC1</version>
     <packaging>pom</packaging>
 
     <name>jsinterop-ts-defs</name>
@@ -20,6 +20,19 @@
     </organization>
 
     <inceptionYear>2023</inceptionYear>
+
+    <developers>
+        <developer>
+            <name>Ahmad Bawaneh</name>
+            <email>ahmad@vertispan.com</email>
+            <organization>Vertispan LLC</organization>
+        </developer>
+        <developer>
+            <name>Colin Alworth</name>
+            <email>colin@vertispan.com</email>
+            <organization>Vertispan LLC</organization>
+        </developer>
+    </developers>
 
     <licenses>
         <license>

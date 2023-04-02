@@ -15,15 +15,21 @@
  */
 package com.vertispan.tsdefs.model;
 
-public class TsProperty extends TsVariable {
+import static com.vertispan.tsdefs.Formatting.NONE;
 
-  public TsProperty(String name, TsType type) {
+public class TsParameter extends TsVariable {
+
+  public TsParameter(String name, TsType type) {
     super(name, type);
+  }
+
+  public String emit(String parentNamespace) {
+    return super.emit(NONE, NONE, parentNamespace, true);
   }
 
   @Override
   public String emit(String indent, String ending, String parentNamespace) {
-    return super.emit(indent, ending, parentNamespace, false);
+    return super.emit(NONE, NONE, parentNamespace, true);
   }
 
   @Override
@@ -31,7 +37,7 @@ public class TsProperty extends TsVariable {
     return type.emit(parentNamespace);
   }
 
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
+  public static TsPropertyBuilder<TsParameter> builder(String name, TsType type) {
+    return new TsPropertyBuilder<>(new TsParameter(name, type));
   }
 }

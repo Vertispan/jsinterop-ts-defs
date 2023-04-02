@@ -122,3 +122,14 @@ The output from this processor can be controlled by adding custom annotations to
   
 - `@TsInterface` : Use this annotation on a class type to force exporting the class as an interface, useful for cases when the class will only export methods and should not be instantiated.
 - `@TsIgnore` : Use this annotation on a type to prevent it from being exported, but the children of this type will still inherit its exportable members.
+
+### What is next?
+
+Meanwhile, the current implementation might be good enough for most use cases we are already planing more features for the next release :
+
+- Optional properties.
+- Options to ignore methods in Typescript.
+- Union types.
+- Generics improvements.
+- Bug fixes.
+- More tests.
