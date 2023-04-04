@@ -18,6 +18,7 @@ package com.vertispan.tsdefs.model;
 import static com.vertispan.tsdefs.Formatting.optionalAffix;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -28,6 +29,10 @@ public class ParameterizedTsType extends TsType {
 
   public static ParameterizedTsType of(String name, String namespace, List<TsType> typeArguments) {
     return new ParameterizedTsType(name, namespace, typeArguments);
+  }
+
+  public static ParameterizedTsType of(String name, String namespace, TsType... typeArguments) {
+    return new ParameterizedTsType(name, namespace, Arrays.asList(typeArguments));
   }
 
   public ParameterizedTsType(String name, String namespace, List<TsType> typeArguments) {

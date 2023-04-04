@@ -92,14 +92,28 @@ public class JavaToTsTypeConverter {
 
       if (ProcessorType.of(type, env).is2dArray()) {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).deepArrayComponentType();
-        return TsElement.of(arrayComponentType, env)
-            .typeOrNullable(Array2dTsType.of(toTsType(arrayComponentType)));
+        if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(
+                  ParameterizedTsType.of(
+                      "Array",
+                      "",
+                      ParameterizedTsType.of("Array", "", unionType(arrayComponentType))));
+        } else {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(Array2dTsType.of(toTsType(arrayComponentType)));
+        }
       }
 
       if (ProcessorType.of(type, env).isArray()) {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).arrayComponentType();
-        return TsElement.of(arrayComponentType, env)
-            .typeOrNullable(ArrayTsType.of(toTsType(arrayComponentType)));
+        if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(ParameterizedTsType.of("Array", "", unionType(arrayComponentType)));
+        } else {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(ArrayTsType.of(toTsType(arrayComponentType)));
+        }
       }
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
@@ -126,9 +140,14 @@ public class JavaToTsTypeConverter {
 
     Set<TsType> unionTypes =
         element.getEnclosedElements().stream()
-            .filter(e -> TsElement.of(e, env).isUnionMember())
-            .map(e -> ((ExecutableType) env.types().asMemberOf(declaredType, e)).getReturnType())
-            .map(this::toTsType)
+            .map(e -> TsElement.of(e, env))
+            .filter(TsElement::isUnionMember)
+            .map(
+                e ->
+                    e.typeOrNullable(
+                        toTsType(
+                            ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
+                                .getReturnType())))
             .collect(Collectors.toCollection(LinkedHashSet::new));
 
     return TsUnionType.of(unionTypes);

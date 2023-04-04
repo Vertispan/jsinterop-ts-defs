@@ -22,4 +22,11 @@ import jsinterop.annotations.JsType;
 public interface UnionTypeApi {
   @JsNullable
   ResultUnion<String> someFunction(ParamUnion param1, @JsNullable ParamUnion param2);
+
+  @JsNullable
+  ResultUnion<ParamUnion[]> arraysFunction(ParamUnion[] param1, @JsNullable ParamUnion[] param2);
+
+  @JsNullable
+  ResultUnion<ParamUnion[][]> arrays2dFunction(
+      ParamUnion[][] param1, @JsNullable ParamUnion[][] param2);
 }
