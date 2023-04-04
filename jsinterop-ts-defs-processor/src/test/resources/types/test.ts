@@ -569,6 +569,10 @@ jsTypeWithDataTypes.jsPropertyMapProperty;
 jsTypeWithDataTypes.anyProperty;
 // $ExpectType Number
 jsTypeWithDataTypes.jsNumberProperty;
+// $ExpectType { [key: string]: any; }[]
+jsTypeWithDataTypes.propertyMapArray;
+// $ExpectType { [key: string]: any; }[][]
+jsTypeWithDataTypes.propertyMap2dArray;
 
 // --------------- JsFunctions --------------------------
 
