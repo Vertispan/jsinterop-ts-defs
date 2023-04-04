@@ -13,15 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.annotations;
+package com.vertispan.tsdefs.tsignore;
 
-import java.lang.annotation.*;
+import com.vertispan.tsdefs.annotations.TsIgnore;
+import jsinterop.annotations.JsType;
 
-/**
- * A type annotated with this annotation will not be exported, the types inheriting this from a type
- * annotated with this annotation will still inherit its exportable members.
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.FIELD, ElementType.METHOD})
-@Documented
-public @interface TsIgnore {}
+@JsType
+public class JsTypeWithTsIgnoredMembers
+    implements JsInterfaceWithIgnoredMembers, TsIgnoredInterface {
+
+  @TsIgnore public String ignoredProperty;
+  public String notIgnoredProperty;
+
+  @TsIgnore
+  public void ignoredMethod() {}
+
+  public void notIgnoredMethod() {}
+
+  @Override
+  public void interfaceIgnoredMethod() {}
+
+  @Override
+  public void notIgnoredInterfaceMethod() {}
+
+  @Override
+  public void ignoredInterfaceMethod() {}
+}

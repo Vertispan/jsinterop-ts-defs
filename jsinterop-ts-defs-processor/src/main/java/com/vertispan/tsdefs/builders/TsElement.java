@@ -493,11 +493,14 @@ public class TsElement {
 
   private boolean isExportableMethod() {
     return ((isJsMethod() || isJsProperty()) || (isPublic() && parent().isJsType()))
-        && !disallowedStatic();
+        && !disallowedStatic()
+        && !isTsIgnored();
   }
 
   private boolean isExportableField() {
-    return (isJsProperty() || (isPublic() && parent().isJsType())) && !disallowedStatic();
+    return (isJsProperty() || (isPublic() && parent().isJsType()))
+        && !disallowedStatic()
+        && !isTsIgnored();
   }
 
   private boolean disallowedStatic() {
