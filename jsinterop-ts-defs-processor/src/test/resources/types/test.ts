@@ -102,6 +102,7 @@ import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMe
 
 import JsInterfaceWithJsNullableSetGet = com.vertispan.tsdefs.jsnullable.JsInterfaceWithJsNullableSetGet
 import ExtendsInterfaceWithJsNullableProperty = com.vertispan.tsdefs.jsnullable.ExtendsInterfaceWithJsNullableProperty
+import TsInterfaceWithJsNullableFields = com.vertispan.tsdefs.jsnullable.TsInterfaceWithJsNullableFields;
 
 // ---------------- Union Types ----------------
 
@@ -856,6 +857,10 @@ const extendsInterfaceWithJsNullableProperty = new ExtendsInterfaceWithJsNullabl
 extendsInterfaceWithJsNullableProperty.propertyOne;
 extendsInterfaceWithJsNullableProperty.propertyTow;
 extendsInterfaceWithJsNullableProperty.propertyThree;
+
+class ImplementsTsInterfaceWithJsNullableFields implements TsInterfaceWithJsNullableFields {
+    type: string;
+}
 
 // ----------------- TsInterface --------------------
 
