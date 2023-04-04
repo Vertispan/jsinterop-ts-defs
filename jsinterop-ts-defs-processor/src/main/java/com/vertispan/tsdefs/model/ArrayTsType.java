@@ -17,17 +17,20 @@ package com.vertispan.tsdefs.model;
 
 public class ArrayTsType extends TsType {
 
+  private final TsType componentType;
+
   public static ArrayTsType of(TsType tsType) {
     return new ArrayTsType(tsType);
   }
 
   public ArrayTsType(TsType arrayComponent) {
-    super(arrayComponent.name, arrayComponent.namespace);
+    super("", "");
+    this.componentType = arrayComponent;
   }
 
   @Override
   public String emitType(String parentNamespace) {
-    return super.emitType(parentNamespace) + "[]";
+    return componentType.emit(parentNamespace) + "[]";
   }
 
   @Override
