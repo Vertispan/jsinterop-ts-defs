@@ -20,6 +20,7 @@
     "array-type": false,
     "ban-types": false,
     "no-trailing-whitespace": false,
+    "max-line-length": false,
     "no-redundant-jsdoc": false
   }
 }
