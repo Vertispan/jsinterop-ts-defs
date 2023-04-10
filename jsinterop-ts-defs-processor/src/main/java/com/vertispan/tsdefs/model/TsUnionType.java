@@ -15,21 +15,27 @@
  */
 package com.vertispan.tsdefs.model;
 
-public class TsProperty extends TsVariable {
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
-  public TsProperty(String name, TsType type) {
-    super(name, type);
+public class TsUnionType extends TsType {
+
+  private List<TsType> tsTypes;
+
+  public TsUnionType(List<TsType> tsTypes) {
+    super("", "");
+    this.tsTypes = tsTypes;
+  }
+
+  public static TsUnionType of(TsType... types) {
+    return new TsUnionType(Arrays.asList(types));
   }
 
   @Override
-  public String emitType(String parentNamespace) {
-    if (type.isNullable()) {
-      return TsUnionType.of(type, TsType.nullType()).emit(parentNamespace);
-    }
-    return type.emit(parentNamespace);
-  }
-
-  public static TsPropertyBuilder<TsProperty> builder(String name, TsType type) {
-    return new TsPropertyBuilder<>(new TsProperty(name, type));
+  public String emit(String parentNamespace) {
+    return tsTypes.stream()
+        .map(tsType -> tsType.emit(parentNamespace, false))
+        .collect(Collectors.joining("|"));
   }
 }

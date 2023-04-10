@@ -15,14 +15,14 @@
  */
 package com.vertispan.tsdefs.model;
 
-import com.vertispan.tsdefs.builders.HasProperties;
+import com.vertispan.tsdefs.builders.HasParameters;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class TsInlinedFunctionType extends TsType implements HasProperties<TsInlinedFunctionType> {
-  private List<TsProperty> properties = new ArrayList<>();
+public class TsInlinedFunctionType extends TsType implements HasParameters<TsInlinedFunctionType> {
+  private List<TsParameter> parameters = new ArrayList<>();
   private TsType returnType;
 
   public TsInlinedFunctionType() {
@@ -30,8 +30,8 @@ public class TsInlinedFunctionType extends TsType implements HasProperties<TsInl
   }
 
   @Override
-  public TsInlinedFunctionType addProperty(TsProperty property) {
-    properties.add(property);
+  public TsInlinedFunctionType addParameter(TsParameter parameter) {
+    parameters.add(parameter);
     return this;
   }
 
@@ -39,18 +39,27 @@ public class TsInlinedFunctionType extends TsType implements HasProperties<TsInl
     return returnType;
   }
 
-  public void setReturnType(TsType returnType) {
+  public TsInlinedFunctionType setReturnType(TsType returnType) {
     this.returnType = returnType;
+    return this;
   }
 
   @Override
   public String emit(String parentNamespace) {
-    return "(" + emitProperties() + ")=>" + returnType.emit("");
+    return "(" + emitParameters() + ")=>" + returnType.emit("");
   }
 
-  private String emitProperties() {
-    return properties.stream()
-        .map(property -> property.emit("", "", ""))
+  @Override
+  public String emit(String parentNamespace, boolean checkNullable) {
+    if (checkNullable && isNullable()) {
+      return TsUnionType.of(this, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
+    }
+    return emit(parentNamespace);
+  }
+
+  private String emitParameters() {
+    return parameters.stream()
+        .map(parameter -> parameter.emit("", "", ""))
         .collect(Collectors.joining(","));
   }
 
@@ -60,12 +69,12 @@ public class TsInlinedFunctionType extends TsType implements HasProperties<TsInl
     if (!(o instanceof TsInlinedFunctionType)) return false;
     if (!super.equals(o)) return false;
     TsInlinedFunctionType that = (TsInlinedFunctionType) o;
-    return Objects.equals(properties, that.properties)
+    return Objects.equals(parameters, that.parameters)
         && Objects.equals(getReturnType(), that.getReturnType());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), properties, getReturnType());
+    return Objects.hash(super.hashCode(), parameters, getReturnType());
   }
 }

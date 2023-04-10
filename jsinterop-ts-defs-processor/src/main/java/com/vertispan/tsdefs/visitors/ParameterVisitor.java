@@ -16,9 +16,9 @@
 package com.vertispan.tsdefs.visitors;
 
 import com.vertispan.tsdefs.HasProcessorEnv;
-import com.vertispan.tsdefs.builders.HasProperties;
+import com.vertispan.tsdefs.builders.HasParameters;
 import com.vertispan.tsdefs.builders.TsElement;
-import com.vertispan.tsdefs.model.TsProperty;
+import com.vertispan.tsdefs.model.TsParameter;
 import com.vertispan.tsdefs.model.TsType;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,7 +64,7 @@ public class ParameterVisitor<T> extends TsElement {
     return super.getName();
   }
 
-  public void visit(HasProperties<T> parent) {
+  public void visit(HasParameters<T> parent) {
     TsType type;
     TypeMirror typeMirror = element.asType();
     if (TypeKind.TYPEVAR.equals(typeMirror.getKind())
@@ -75,8 +75,8 @@ public class ParameterVisitor<T> extends TsElement {
     }
     ExecutableElement parentElement = (ExecutableElement) element.getEnclosingElement();
 
-    parent.addProperty(
-        TsProperty.builder(getName(), type)
+    parent.addParameter(
+        TsParameter.builder(getName(), type)
             .addModifiers(getJsModifiers())
             .setOptional(isJsOptional())
             .setVarargs(

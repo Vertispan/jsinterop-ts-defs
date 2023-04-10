@@ -74,13 +74,14 @@ public class InterfaceTypeVisitor extends TsElement {
                         TsMethod.builder(tsElement.getName(), tsElement.getType())
                             .addModifiers(TsModifier.GET)
                             .setDocs(tsElement.getDocs())
-                            .setDeprecated(isDeprecated())
+                            .setDeprecated(tsElement.isDeprecated())
                             .build());
                   } else {
                     builder.addProperty(
                         TsProperty.builder(tsElement.getName(), tsElement.getType())
                             .setDocs(tsElement.getDocs())
-                            .setDeprecated(isDeprecated())
+                            .setDeprecated(tsElement.isDeprecated())
+                            .setOptional(tsElement.isJsNullable())
                             .build());
                   }
                 });

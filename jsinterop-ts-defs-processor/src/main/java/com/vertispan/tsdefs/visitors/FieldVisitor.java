@@ -33,6 +33,7 @@ public class FieldVisitor<T> extends TsElement {
               .addModifiers(getJsModifiers())
               .setDocs(getDocs())
               .setDeprecated(isDeprecated())
+              .setOptional(isJsNullable())
               .build());
     }
   }
