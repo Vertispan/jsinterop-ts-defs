@@ -15,7 +15,6 @@
  */
 package com.vertispan.tsdefs.model;
 
-import static com.vertispan.tsdefs.Formatting.NONE;
 import static com.vertispan.tsdefs.Formatting.resolveName;
 import static java.util.Objects.nonNull;
 
@@ -41,11 +40,9 @@ public abstract class TsVariable {
     this.type = type;
   }
 
-  public String emit(String indent, String ending, String parentNamespace) {
-    return emitProperty(indent, ending, parentNamespace, false);
-  }
+  public abstract String emit(String indent, String ending, String parentNamespace);
 
-  private String emitProperty(
+  protected String emit(
       String indent, String ending, String parentNamespace, boolean skipModifiers) {
     StringBuffer sb = new StringBuffer();
 
@@ -73,10 +70,6 @@ public abstract class TsVariable {
   }
 
   public abstract String emitType(String parentNamespace);
-
-  public String emitAsParameter(String parentNamespace) {
-    return emitProperty(NONE, NONE, parentNamespace, true);
-  }
 
   @Override
   public boolean equals(Object o) {

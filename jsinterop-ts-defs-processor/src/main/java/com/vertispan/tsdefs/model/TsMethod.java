@@ -80,7 +80,7 @@ public class TsMethod {
     sb.append("(");
     sb.append(
         parameters.stream()
-            .map(parameter -> parameter.emitAsParameter(parentNamespace))
+            .map(parameter -> parameter.emit(parentNamespace))
             .collect(Collectors.joining(COMMA)));
 
     sb.append(")");

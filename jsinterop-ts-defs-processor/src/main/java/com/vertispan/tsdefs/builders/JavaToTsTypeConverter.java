@@ -24,12 +24,15 @@ import com.vertispan.tsdefs.annotations.TsTypeRef;
 import com.vertispan.tsdefs.model.*;
 import com.vertispan.tsdefs.visitors.ParameterVisitor;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
@@ -89,14 +92,28 @@ public class JavaToTsTypeConverter {
 
       if (ProcessorType.of(type, env).is2dArray()) {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).deepArrayComponentType();
-        return Array2dTsType.of(toTsType(arrayComponentType))
-            .nullable(TsElement.of(arrayComponentType, env).isJsNullable());
+        if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(
+                  ParameterizedTsType.of(
+                      "Array",
+                      "",
+                      ParameterizedTsType.of("Array", "", unionType(arrayComponentType))));
+        } else {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(Array2dTsType.of(toTsType(arrayComponentType)));
+        }
       }
 
       if (ProcessorType.of(type, env).isArray()) {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).arrayComponentType();
-        return ArrayTsType.of(toTsType(arrayComponentType))
-            .nullable(TsElement.of(arrayComponentType, env).isJsNullable());
+        if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(ParameterizedTsType.of("Array", "", unionType(arrayComponentType)));
+        } else {
+          return TsElement.of(arrayComponentType, env)
+              .typeOrNullable(ArrayTsType.of(toTsType(arrayComponentType)));
+        }
       }
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
@@ -109,8 +126,31 @@ public class JavaToTsTypeConverter {
         return inlineJsFunctionType(type);
       }
 
+      if (ProcessorType.of(type, env).isUnionType()) {
+        return unionType(type);
+      }
+
       return getReferenceType(type);
     }
+  }
+
+  private TsType unionType(TypeMirror type) {
+    Element element = env.types().asElement(type);
+    DeclaredType declaredType = (DeclaredType) type;
+
+    Set<TsType> unionTypes =
+        element.getEnclosedElements().stream()
+            .map(e -> TsElement.of(e, env))
+            .filter(TsElement::isUnionMember)
+            .map(
+                e ->
+                    e.typeOrNullable(
+                        toTsType(
+                            ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
+                                .getReturnType())))
+            .collect(Collectors.toCollection(LinkedHashSet::new));
+
+    return TsUnionType.of(unionTypes);
   }
 
   private TsInlinedFunctionType inlineJsFunctionType(TypeMirror type) {
@@ -207,9 +247,7 @@ public class JavaToTsTypeConverter {
 
     return typeArguments.stream()
         .map(this::getTypeOrTypeRef)
-        .map(
-            typeMirror ->
-                toTsType(typeMirror, true).nullable(TsElement.of(typeMirror, env).isJsNullable()))
+        .map(typeMirror -> TsElement.of(typeMirror, env).typeOrNullable(toTsType(typeMirror, true)))
         .collect(Collectors.toList());
   }
 

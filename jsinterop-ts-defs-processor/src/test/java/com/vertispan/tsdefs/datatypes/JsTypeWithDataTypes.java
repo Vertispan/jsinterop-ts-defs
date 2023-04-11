@@ -43,4 +43,6 @@ public class JsTypeWithDataTypes {
   public JsPropertyMap<String> jsPropertyMapProperty;
   public Any anyProperty;
   public JsNumber jsNumberProperty;
+  public JsPropertyMap<?>[] propertyMapArray;
+  public JsPropertyMap<?>[][] propertyMap2dArray;
 }

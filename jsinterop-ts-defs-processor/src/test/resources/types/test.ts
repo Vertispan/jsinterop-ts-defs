@@ -103,6 +103,9 @@ import JsTypeWithStaticMethods = com.vertispan.tsdefs.methods.JsTypeWithStaticMe
 import JsInterfaceWithJsNullableSetGet = com.vertispan.tsdefs.jsnullable.JsInterfaceWithJsNullableSetGet
 import ExtendsInterfaceWithJsNullableProperty = com.vertispan.tsdefs.jsnullable.ExtendsInterfaceWithJsNullableProperty
 import TsInterfaceWithJsNullableFields = com.vertispan.tsdefs.jsnullable.TsInterfaceWithJsNullableFields;
+// ---------------- Union Types ----------------
+
+import UnionTypeApi = com.vertispan.tsdefs.tsunion.UnionTypeApi;
 
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -566,6 +569,10 @@ jsTypeWithDataTypes.jsPropertyMapProperty;
 jsTypeWithDataTypes.anyProperty;
 // $ExpectType Number
 jsTypeWithDataTypes.jsNumberProperty;
+// $ExpectType { [key: string]: any; }[]
+jsTypeWithDataTypes.propertyMapArray;
+// $ExpectType { [key: string]: any; }[][]
+jsTypeWithDataTypes.propertyMap2dArray;
 
 // --------------- JsFunctions --------------------------
 
@@ -869,5 +876,98 @@ class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
 
     doSomething(): void {
         const x="";
+    }
+}
+
+// ---------------------- Union Types --------------------------
+
+
+class ImplementsUnionTypeApi implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return undefined;
+    }
+
+    arrays2dFunction(param1: Array<Array<number | Array<number | undefined | null>>>, param2: Array<Array<number | Array<number | undefined | null>>> | undefined | null): number | Array<Array<Array<number | Array<number | undefined | null>>>> | undefined | null {
+        return undefined;
+    }
+
+    arraysFunction(param1: Array<number | Array<number | undefined | null>>, param2: Array<number | Array<number | undefined | null>> | undefined | null): number | Array<Array<number | Array<number | undefined | null>>> | undefined | null {
+        return undefined;
+    }
+
+}
+
+const implementsUnionTypeApi = new ImplementsUnionTypeApi();
+
+implementsUnionTypeApi.someFunction(1.0, null);
+implementsUnionTypeApi.someFunction(1.0, 1.0);
+implementsUnionTypeApi.someFunction([1.0, 2.0], 1.0);
+implementsUnionTypeApi.someFunction([1.0, null], 1.0);
+implementsUnionTypeApi.someFunction(1.0, undefined);
+implementsUnionTypeApi.someFunction(1.0, [1.0, 2.0]);
+implementsUnionTypeApi.someFunction(1.0, [1.0, null]);
+implementsUnionTypeApi.arraysFunction([1.0, [1.0, null, undefined]], [1.0, [1.0, null, undefined]]);
+implementsUnionTypeApi.arraysFunction([1.0, [1.0, null, undefined]], null);
+implementsUnionTypeApi.arraysFunction([1.0, [1.0, null, undefined]], undefined);
+implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], [[1.0, [1.0, null, undefined]]]);
+implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], null);
+implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], undefined);
+
+class ImplementsUnionTypeApiNumber implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return 1.0;
+    }
+
+    arrays2dFunction(param1: Array<Array<number | Array<number | undefined | null>>>, param2: Array<Array<number | Array<number | undefined | null>>> | undefined | null): number | Array<Array<Array<number | Array<number | undefined | null>>>> | undefined | null {
+        return [[[1.0, [1.0, null, undefined]]]];
+    }
+
+    arraysFunction(param1: Array<number | Array<number | undefined | null>>, param2: Array<number | Array<number | undefined | null>> | undefined | null): number | Array<Array<number | Array<number | undefined | null>>> | undefined | null {
+        return [[1.0, [1.0, null, undefined]]];
+    }
+
+
+}
+class ImplementsUnionTypeApiArrayString implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return ["A", "B"];
+    }
+
+    arraysFunction(param1: Array<number | Array<number | undefined | null>>, param2: Array<number | Array<number | undefined | null>> | undefined | null): number | Array<Array<number | Array<number | undefined | null>>> | undefined | null {
+        return 1.0;
+    }
+
+    arrays2dFunction(param1: Array<Array<number | Array<number | undefined | null>>>, param2: Array<Array<number | Array<number | undefined | null>>> | undefined | null): number | Array<Array<Array<number | Array<number | undefined | null>>>> | undefined | null {
+        return 1.0;
+    }
+
+}
+class ImplementsUnionTypeApiNull implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return null;
+    }
+
+    arrays2dFunction(param1: Array<Array<number | Array<number | undefined | null>>>, param2: Array<Array<number | Array<number | undefined | null>>>): number | Array<Array<Array<number | Array<number | undefined | null>>>> | undefined | null {
+        return null;
+    }
+
+    arraysFunction(param1: Array<number | Array<number | undefined | null>>, param2: Array<number | Array<number | undefined | null>>): number | Array<Array<number | Array<number | undefined | null>>> | undefined | null {
+        return null;
+    }
+
+
+
+}
+class ImplementsUnionTypeApiUndefined implements UnionTypeApi {
+    someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {
+        return undefined;
+    }
+
+    arrays2dFunction(param1: Array<Array<number | Array<number | undefined | null>>>, param2: Array<Array<number | Array<number | undefined | null>>>): number | Array<Array<Array<number | Array<number | undefined | null>>>> | undefined | null {
+        return undefined;
+    }
+
+    arraysFunction(param1: Array<number | Array<number | undefined | null>>, param2: Array<number | Array<number | undefined | null>>): number | Array<Array<number | Array<number | undefined | null>>> | undefined | null {
+        return undefined;
     }
 }
