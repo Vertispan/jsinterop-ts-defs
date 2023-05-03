@@ -111,6 +111,11 @@ import UnionTypeApi = com.vertispan.tsdefs.tsunion.UnionTypeApi;
 import JsTypeWithTsIgnoredMembers = com.vertispan.tsdefs.tsignore.JsTypeWithTsIgnoredMembers;
 import JsInterfaceWithIgnoredMembers = com.vertispan.tsdefs.tsignore.JsInterfaceWithIgnoredMembers;
 
+// ---------------- Inheritance ----------------
+
+import JsTypeGrandChild = com.vertispan.tsdefs.inheritance.JsTypeGrandChild;
+import JsTypeGrandChild2 = com.vertispan.tsdefs.inheritance.JsTypeGrandChild2;
+
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
 
@@ -538,6 +543,28 @@ const jsTypeExtendsTsIgnoredSuperType = new JsTypeExtendsTsIgnoredSuperType();
 jsTypeExtendsTsIgnoredSuperType.childProperty;
 jsTypeExtendsTsIgnoredSuperType.property;
 jsTypeExtendsTsIgnoredSuperType.doSomething();
+
+const jsTypeGrandChild = new JsTypeGrandChild();
+
+jsTypeGrandChild.propertyFromA;
+jsTypeGrandChild.doSomethingFromA();
+jsTypeGrandChild.propertyFromC;
+jsTypeGrandChild.doSomethingFromC();
+// @ts-expect-error
+jsTypeGrandChild.propertyFromB;
+// @ts-expect-error
+jsTypeGrandChild.doSomethingFromB;
+
+const jsTypeGrandChild2 = new JsTypeGrandChild2();
+
+jsTypeGrandChild2.propertyFromA;
+jsTypeGrandChild2.doSomethingFromA();
+jsTypeGrandChild2.propertyFromC;
+jsTypeGrandChild2.doSomethingFromC();
+// @ts-expect-error
+jsTypeGrandChild2.propertyFromB;
+// @ts-expect-error
+jsTypeGrandChild2.doSomethingFromB;
 
 // ------------------------ TsName ---------------------
 
