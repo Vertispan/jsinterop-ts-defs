@@ -33,6 +33,12 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
   public void visit(IsClassBuilder<T> builder) {
     if (isTsInterface()) {
       addInterface(builder, type);
+    } else {
+      getJavaSuperClass()
+          .ifPresent(
+              typeMirror -> {
+                new SuperTsInterfaceVisitor<T>(typeMirror, env).visit(builder);
+              });
     }
   }
 
