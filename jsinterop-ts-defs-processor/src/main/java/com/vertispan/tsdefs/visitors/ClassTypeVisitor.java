@@ -46,7 +46,7 @@ public class ClassTypeVisitor extends TsElement {
               .addModifiers(TsModifier.EXPORT)
               .addModifiers(getJsModifiers());
       new TypeArgumentsVisitor<TsClass.TsClassBuilder>(element.asType(), env).visit(builder);
-      getSuperClass().ifPresent(builder::superClass);
+      getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
 
       element.getEnclosedElements().stream()
@@ -68,22 +68,7 @@ public class ClassTypeVisitor extends TsElement {
               });
 
       TsClass tsClass = builder.build();
-      getJavaSuperClass()
-          .ifPresent(
-              superclass -> {
-                TsElement superTsElement = TsElement.of(superclass, env);
-                if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
-                  TsClass.TsClassBuilder superBuilder =
-                      TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
-                  superTsElement
-                      .element()
-                      .getEnclosedElements()
-                      .forEach(e -> visit(superBuilder, e));
-                  TsClass superTsClass = superBuilder.build();
-                  tsClass.mergeFunctions(superTsClass);
-                  tsClass.mergeProperties(superTsClass);
-                }
-              });
+      getJavaSuperClass().ifPresent(superclass -> processSuperClass(tsClass, superclass));
       builder.setEmitProtectedContr(requiresProtectedConstructor());
 
       moduleBuilder.addClass(tsClass);
@@ -99,6 +84,25 @@ public class ClassTypeVisitor extends TsElement {
       // Handle the case when a member has a different name space than its enclosing element
       // So we create a type on the fly on that namespace.
       buildTypesFromNamespaces(moduleBuilder, withDiffNs);
+    }
+  }
+
+  private void processSuperClass(TsClass tsClass, TypeMirror superclass) {
+    TsElement superTsElement = TsElement.of(superclass, env);
+    if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
+      TsClass.TsClassBuilder superBuilder =
+          TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
+      superTsElement.element().getEnclosedElements().forEach(e -> visit(superBuilder, e));
+      TsClass superTsClass = superBuilder.build();
+      tsClass.mergeFunctions(superTsClass);
+      tsClass.mergeProperties(superTsClass);
+    } else {
+      superTsElement
+          .getJavaSuperClass()
+          .ifPresent(
+              typeMirror -> {
+                processSuperClass(tsClass, typeMirror);
+              });
     }
   }
 
@@ -145,7 +149,7 @@ public class ClassTypeVisitor extends TsElement {
     new ClassMethodVisitor<TsClass.TsClassBuilder>(enclosedElement, env).visit(classBuilder);
   }
 
-  private Optional<TsClass> getSuperClass() {
+  private Optional<TsClass> getSuperClass(Element element) {
     TypeMirror superclass = ((TypeElement) element).getSuperclass();
 
     if (((TypeElement) env.types().asElement(superclass))
@@ -165,7 +169,8 @@ public class ClassTypeVisitor extends TsElement {
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
       new TypeArgumentsVisitor<TsClass.TsClassBuilder>(superclass, env).visit(builder);
       return Optional.of(builder.build());
+    } else {
+      return getSuperClass(superTsElement.element());
     }
-    return Optional.empty();
   }
 }
