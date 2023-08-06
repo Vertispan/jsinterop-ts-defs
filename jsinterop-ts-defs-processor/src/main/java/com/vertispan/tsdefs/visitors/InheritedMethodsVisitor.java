@@ -32,7 +32,7 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     List<ExecutableElement> nonOverriddenMethods = allNotOverriddenInterfacesMethods();
     nonOverriddenMethods.forEach(
         executableElement -> {
-          new ClassMethodVisitor<T>(executableElement, env).visit(parent);
+          new ClassMethodVisitor<T>(executableElement, env, false).visit(parent);
         });
   }
 }
