@@ -18,14 +18,22 @@ package com.vertispan.tsdefs.visitors;
 import com.vertispan.tsdefs.HasProcessorEnv;
 import com.vertispan.tsdefs.builders.HasFunctions;
 import com.vertispan.tsdefs.builders.TsElement;
+import com.vertispan.tsdefs.model.TsDoc;
 import com.vertispan.tsdefs.model.TsMethod;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 
 public class ClassMethodVisitor<T> extends TsElement {
+  private final boolean copyDocs;
 
   public ClassMethodVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
+    this.copyDocs = true;
+  }
+
+  public ClassMethodVisitor(Element element, HasProcessorEnv env, boolean copyDocs) {
+    super(element, env);
+    this.copyDocs = copyDocs;
   }
 
   public void visit(HasFunctions<T> parent) {
@@ -48,7 +56,7 @@ public class ClassMethodVisitor<T> extends TsElement {
       TsMethod.TsMethodBuilder builder =
           TsMethod.builder(getName(), getType())
               .addModifiers(getJsModifiers())
-              .setDocs(getDocs())
+              .setDocs(copyDocs ? getDocs() : TsDoc.empty())
               .setDeprecated(isDeprecated());
 
       ExecutableElement executableElement = (ExecutableElement) element;
