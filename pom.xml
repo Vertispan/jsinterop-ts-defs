@@ -73,6 +73,9 @@
     <modules>
         <module>jsinterop-ts-defs-processor</module>
         <module>jsinterop-ts-defs-annotations</module>
+        <module>jsinterop-ts-defs-impl</module>
+        <module>jsinterop-ts-defs-doclet</module>
+        <module>jsinterop-ts-defs-test</module>
     </modules>
 
     <dependencyManagement>

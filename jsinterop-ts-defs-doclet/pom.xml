@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jsinterop-ts-defs-processor</artifactId>
+    <artifactId>jsinterop-ts-defs-doclet</artifactId>
     <packaging>jar</packaging>
 
-    <name>tsinterop-processor</name>
+    <name>tsinterop-doclet</name>
     <url>https://github.com/Vertispan/jsinterop-ts-defs</url>
 
     <properties>
@@ -27,6 +27,7 @@
             <artifactId>jsinterop-ts-defs-impl</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.jsinterop/jsinterop-annotations -->
         <dependency>
             <groupId>com.google.elemental2</groupId>
             <artifactId>elemental2-core</artifactId>
