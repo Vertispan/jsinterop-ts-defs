@@ -3,14 +3,14 @@
     <parent>
         <artifactId>jsinterop-ts-defs</artifactId>
         <groupId>com.vertispan.tsdefs</groupId>
-        <version>1.0.0-RC2</version>
+        <version>HEAD-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jsinterop-ts-defs-processor</artifactId>
+    <artifactId>jsinterop-ts-defs-test</artifactId>
     <packaging>jar</packaging>
 
-    <name>tsinterop-processor</name>
+    <name>tsinterop-test</name>
     <url>https://github.com/Vertispan/jsinterop-ts-defs</url>
 
     <properties>
@@ -28,19 +28,16 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
+            <groupId>com.vertispan.tsdefs</groupId>
+            <artifactId>jsinterop-ts-defs-processor</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.google.elemental2</groupId>
             <artifactId>elemental2-core</artifactId>
             <version>1.1.0</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auto</groupId>
-            <artifactId>auto-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.auto.service</groupId>
-            <artifactId>auto-service</artifactId>
-            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
@@ -65,6 +62,63 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>com.github.eirslett</groupId>
+                <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.12.1</version>
+                <executions>
+                    <execution>
+                        <!-- optional: you don't really need execution ids, but it looks nice in your build log. -->
+                        <id>install node and npm</id>
+                        <goals>
+                            <goal>install-node-and-npm</goal>
+                        </goals>
+                        <!-- optional: default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <nodeVersion>v14.19.3</nodeVersion>
+
+                            <!-- optional: with node version greater than 4.0.0 will use npm provided by node distribution -->
+                            <npmVersion>6.14.17</npmVersion>
+
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+
+                        <!-- optional: default phase is "generate-resources" -->
+                        <phase>generate-resources</phase>
+
+                        <configuration>
+                            <!-- optional: The default argument is actually
+                            "install", so unless you need to run some other npm command,
+                            you can remove this whole <configuration> section.
+                            -->
+                            <arguments>install --prefix ${project.build.directory}/test-classes --save-dev @definitelytyped/dtslint typescript</arguments>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test generated definitions</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+
+                        <!-- optional: default phase is "generate-resources" -->
+                        <phase>test</phase>
+
+                        <configuration>
+                            <!-- optional: The default argument is actually
+                            "install", so unless you need to run some other npm command,
+                            you can remove this whole <configuration> section.
+                            -->
+                            <arguments>run --prefix ${project.build.directory}/test-classes dtslint</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
