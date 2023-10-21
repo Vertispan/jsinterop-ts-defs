@@ -53,7 +53,7 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
   private Messager messager;
   private DocletLogWrapper logWrapper;
 
-  public static final String TSOUT_DIR = "-tsoutput";
+  public static final String TSOUT_DIR = "-d";
 
   private String outputDir;
 
@@ -76,47 +76,22 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
 
   @Override
   public Set<? extends Option> getSupportedOptions() {
-    Option[] options = {
-      new Option() {
-
-        @Override
-        public int getArgumentCount() {
-          return 1;
-        }
-
-        @Override
-        public String getDescription() {
-          return "Type script generated definition file location";
-        }
-
-        @Override
-        public Kind getKind() {
-          return Kind.STANDARD;
-        }
-
-        @Override
-        public List<String> getNames() {
-          return List.of(TSOUT_DIR);
-        }
-
-        @Override
-        public String getParameters() {
-          return "file";
-        }
-
-        @Override
-        public boolean process(String opt, List<String> arguments) {
-          if (arguments.isEmpty()) {
-            reporter.print(
-                Diagnostic.Kind.ERROR, "You must specify an output filepath with " + TSOUT_DIR);
-            return false;
-          }
-          outputDir = arguments.get(0);
-          return true;
-        }
-      }
-    };
-    return new HashSet<>(Arrays.asList(options));
+    return Set.of(
+        TsDocletOption.of(
+            "-d",
+            "Type script generated definition file location",
+            (opt, arguments) -> {
+              if (arguments.isEmpty()) {
+                reporter.print(
+                    Diagnostic.Kind.ERROR, "You must specify an output filepath with " + TSOUT_DIR);
+                return false;
+              }
+              outputDir = arguments.get(0);
+              return true;
+            }),
+        TsDocletOption.ignored("-doctitle"),
+        TsDocletOption.ignored("-windowtitle"),
+        TsDocletOption.ignored("-notimestamp"));
   }
 
   @Override
