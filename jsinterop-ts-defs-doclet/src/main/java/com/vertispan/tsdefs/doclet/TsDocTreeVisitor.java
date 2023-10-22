@@ -125,7 +125,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
             .collect(Collectors.joining());
     String tags =
         node.getBlockTags().stream()
-            .map(tag -> tag.accept(this, element))
+            .map(tag -> " " + tag.accept(this, element))
             .collect(Collectors.joining("\n"));
     return body + "\n" + tags;
   }

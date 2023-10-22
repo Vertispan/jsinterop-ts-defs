@@ -57,7 +57,11 @@ import jsinterop.annotations.JsType;
  */
 @JsType
 public class JsTypeLinksMethods {
-  public void doSomethingA() {}
+
+  /** @return string sample */
+  public String doSomethingA() {
+    return "";
+  }
 
   public void doSomethingA2() {}
 }
