@@ -21,6 +21,7 @@ import com.sun.source.doctree.*;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
+import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import java.util.Optional;
@@ -67,7 +68,12 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
                 String refNamespace = refTsElement.getNamespace();
                 String parentNamespace = parentTsElement.getNamespace();
 
-                String name = refTsElement.getName();
+                boolean isSetterOrGetter = refTsElement.isSetter() || refTsElement.isGetter();
+
+                String name =
+                    isSetterOrGetter
+                        ? Formatting.nonGetSetName(refTsElement.getName())
+                        : refTsElement.getName();
                 String parentName = parentTsElement.getName();
                 if (refNamespace.equals(parentNamespace)) {
                   String fullName = refNamespace + "." + parentName + "." + name;
@@ -127,7 +133,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
         node.getBlockTags().stream()
             .map(tag -> tag.accept(this, element))
             .collect(Collectors.joining("\n"));
-    return body + "\n" + tags;
+    return " " + body + "\n" + tags;
   }
 
   @Override
@@ -145,6 +151,6 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitText(TextTree node, Element element) {
-    return " " + node.getBody();
+    return "" + node.getBody();
   }
 }
