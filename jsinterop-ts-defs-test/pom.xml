@@ -97,7 +97,7 @@
                             "install", so unless you need to run some other npm command,
                             you can remove this whole <configuration> section.
                             -->
-                            <arguments>install --prefix ${project.build.directory}/test-classes --save-dev @definitelytyped/dtslint typescript</arguments>
+                            <arguments>install --prefix ${project.build.directory}/test-classes --save-dev @definitelytyped/dtslint@0.0.182 typescript</arguments>
                         </configuration>
                     </execution>
                     <execution>
