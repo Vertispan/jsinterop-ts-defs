@@ -749,18 +749,11 @@ public class TsElement {
 
   public boolean requiresProtectedConstructor() {
     if (isJsType()) {
-      List<TsElement> constructors =
-          element.getEnclosedElements().stream()
-              .map(enclosedElement -> TsElement.of(enclosedElement, env))
-              .filter(TsElement::isConstructor)
-              .collect(Collectors.toList());
-      boolean allIgnored =
-          !constructors.isEmpty() && constructors.stream().allMatch(TsElement::isIgnored);
-
-      if (allIgnored) {
-        return true;
-      }
-
+      return element.getEnclosedElements().stream()
+          .map(enclosedElement -> TsElement.of(enclosedElement, env))
+          .filter(TsElement::isConstructor)
+          .filter(tsElement -> !tsElement.isPrivate())
+          .allMatch(TsElement::isIgnored);
     } else {
       Optional<TsElement> jsConstructor =
           element.getEnclosedElements().stream()
