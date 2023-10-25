@@ -115,7 +115,7 @@ import JsInterfaceWithIgnoredMembers = com.vertispan.tsdefs.tests.tsignore.JsInt
 
 import JsTypeGrandChild = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChild;
 import JsTypeGrandChild2 = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChild2;
-
+import JsTypeWithPrivateAndIgnoredConstructors = com.vertispan.tsdefs.tests.constructors.JsTypeWithPrivateAndIgnoredConstructors;
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
 
@@ -1036,5 +1036,18 @@ class ImplementsUnionTypeApiUndefined implements UnionTypeApi {
 
     arraysFunction(param1: Array<number | Array<number | undefined | null>>, param2: Array<number | Array<number | undefined | null>>): number | Array<Array<number | Array<number | undefined | null>>> | undefined | null {
         return undefined;
+    }
+}
+
+// @ts-expect-error
+const jsTypeWithPrivateAndIgnoredConstructors= new JsTypeWithPrivateAndIgnoredConstructors();
+// @ts-expect-error
+const jsTypeWithPrivateAndIgnoredConstructors= new JsTypeWithPrivateAndIgnoredConstructors("property");
+// @ts-expect-error
+const jsTypeWithPrivateAndIgnoredConstructors= new JsTypeWithPrivateAndIgnoredConstructors("property1", "property2");
+
+class ExtendsFromJsTypeWithPrivateAndIgnoredConstructors extends JsTypeWithPrivateAndIgnoredConstructors {
+    constructor() {
+        super();
     }
 }
