@@ -151,6 +151,24 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitText(TextTree node, Element element) {
-    return "" + node.getBody();
+    return node.getBody();
+  }
+
+  @Override
+  public String visitReturn(ReturnTree node, Element element) {
+    return "@return "
+        + node.getDescription().stream()
+            .map(docTree -> docTree.accept(this, element))
+            .collect(Collectors.joining());
+  }
+
+  @Override
+  public String visitParam(ParamTree node, Element element) {
+    return (node.isTypeParameter() ? "@typeParam " : "@param ")
+        + node.getName()
+        + " - "
+        + node.getDescription().stream()
+            .map(docTree -> docTree.accept(this, element))
+            .collect(Collectors.joining());
   }
 }

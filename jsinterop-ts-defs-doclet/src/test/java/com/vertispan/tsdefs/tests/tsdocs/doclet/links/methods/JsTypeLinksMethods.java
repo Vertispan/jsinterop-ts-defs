@@ -19,6 +19,7 @@ import com.vertispan.tsdefs.tests.tsdocs.doclet.links.methods.nested.JsTypeC;
 import com.vertispan.tsdefs.tests.tsdocs.doclet.links.methods.nested.JsTypeD;
 import com.vertispan.tsdefs.tests.tsdocs.doclet.links.methods.nested.JsTypeE;
 import com.vertispan.tsdefs.tests.tsdocs.doclet.links.methods.nested.JsTypeF;
+import elemental2.promise.Promise;
 import jsinterop.annotations.JsType;
 
 /**
@@ -64,4 +65,9 @@ public class JsTypeLinksMethods {
   }
 
   public void doSomethingA2() {}
+
+  /** @return {@link Promise} of {@link JsTypeC} */
+  public Promise<JsTypeC> getTypeC() {
+    return null;
+  }
 }
