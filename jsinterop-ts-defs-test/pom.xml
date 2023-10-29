@@ -3,7 +3,7 @@
     <parent>
         <artifactId>jsinterop-ts-defs</artifactId>
         <groupId>com.vertispan.tsdefs</groupId>
-        <version>HEAD-SNAPSHOT</version>
+        <version>1.0.0-RC2</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
