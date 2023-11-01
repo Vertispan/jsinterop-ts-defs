@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>com.vertispan.tsdefs</groupId>
     <artifactId>jsinterop-ts-defs</artifactId>
-    <version>1.0.0-RC2</version>
+    <version>1.0.0-RC3</version>
     <packaging>pom</packaging>
 
     <name>jsinterop-ts-defs</name>
