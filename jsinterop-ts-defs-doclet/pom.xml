@@ -7,10 +7,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>jsinterop-ts-defs-processor</artifactId>
+    <artifactId>jsinterop-ts-defs-doclet</artifactId>
     <packaging>jar</packaging>
 
-    <name>tsinterop-processor</name>
+    <name>tsinterop-doclet</name>
     <url>https://github.com/Vertispan/jsinterop-ts-defs</url>
 
     <properties>
