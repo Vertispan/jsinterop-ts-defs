@@ -70,14 +70,6 @@
 
     </properties>
 
-    <modules>
-        <module>jsinterop-ts-defs-processor</module>
-        <module>jsinterop-ts-defs-annotations</module>
-        <module>jsinterop-ts-defs-impl</module>
-        <module>jsinterop-ts-defs-doclet</module>
-        <module>jsinterop-ts-defs-test</module>
-    </modules>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -201,7 +193,26 @@
     </build>
     <profiles>
         <profile>
+            <id>env-dev</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>jsinterop-ts-defs-processor</module>
+                <module>jsinterop-ts-defs-annotations</module>
+                <module>jsinterop-ts-defs-impl</module>
+                <module>jsinterop-ts-defs-doclet</module>
+                <module>jsinterop-ts-defs-test</module>
+            </modules>
+        </profile>
+        <profile>
             <id>release</id>
+            <modules>
+                <module>jsinterop-ts-defs-processor</module>
+                <module>jsinterop-ts-defs-annotations</module>
+                <module>jsinterop-ts-defs-impl</module>
+                <module>jsinterop-ts-defs-doclet</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
