@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2024 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,21 +89,26 @@ public class ClassTypeVisitor extends TsElement {
 
   private void processSuperClass(TsClass tsClass, TypeMirror superclass) {
     TsElement superTsElement = TsElement.of(superclass, env);
+
     if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
-      TsClass.TsClassBuilder superBuilder =
-          TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
-      superTsElement.element().getEnclosedElements().forEach(e -> visit(superBuilder, e));
-      TsClass superTsClass = superBuilder.build();
-      tsClass.mergeFunctions(superTsClass);
-      tsClass.mergeProperties(superTsClass);
-    } else {
-      superTsElement
-          .getJavaSuperClass()
-          .ifPresent(
-              typeMirror -> {
-                processSuperClass(tsClass, typeMirror);
-              });
+      mergeSuperClass(tsClass, superTsElement);
     }
+
+    superTsElement
+        .getJavaSuperClass()
+        .ifPresent(
+            typeMirror -> {
+              processSuperClass(tsClass, typeMirror);
+            });
+  }
+
+  private void mergeSuperClass(TsClass tsClass, TsElement superTsElement) {
+    TsClass.TsClassBuilder superBuilder =
+        TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
+    superTsElement.element().getEnclosedElements().forEach(e -> visit(superBuilder, e));
+    TsClass superTsClass = superBuilder.build();
+    tsClass.mergeFunctions(superTsClass);
+    tsClass.mergeProperties(superTsClass);
   }
 
   private boolean isSameNameSpaceAsParent(TsElement e) {
