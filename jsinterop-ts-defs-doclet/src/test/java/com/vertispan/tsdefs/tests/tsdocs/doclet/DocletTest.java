@@ -67,4 +67,9 @@ public class DocletTest {
   public void testMethodsLinks() throws IOException {
     testDocs("links.methods");
   }
+
+  @Test
+  public void testIssue99() throws IOException {
+    testDocs("links.issue99");
+  }
 }
