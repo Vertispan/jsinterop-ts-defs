@@ -112,6 +112,7 @@ import UnionTypeApi = com.vertispan.tsdefs.tests.tsunion.UnionTypeApi;
 
 import JsTypeGrandChild = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChild;
 import JsTypeGrandChild2 = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChild2;
+import JsTypeGrandChildOfTsIgnoredParent = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChildOfTsIgnoredParent;
 import JsTypeWithPrivateAndIgnoredConstructors = com.vertispan.tsdefs.tests.constructors.JsTypeWithPrivateAndIgnoredConstructors;
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
@@ -562,6 +563,12 @@ jsTypeGrandChild2.doSomethingFromC();
 jsTypeGrandChild2.propertyFromB;
 // @ts-expect-error
 jsTypeGrandChild2.doSomethingFromB;
+
+const jsTypeGrandChildOfTsIgnoredParent = new JsTypeGrandChildOfTsIgnoredParent();
+jsTypeGrandChildOfTsIgnoredParent.propertyFromA;
+jsTypeGrandChildOfTsIgnoredParent.doSomethingFromA();
+jsTypeGrandChildOfTsIgnoredParent.propertyFromC;
+jsTypeGrandChildOfTsIgnoredParent.doSomethingFromC();
 
 // ------------------------ TsName ---------------------
 
