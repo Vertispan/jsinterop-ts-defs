@@ -665,6 +665,10 @@ public class TsElement {
     return element.getKind().isClass() && !isTsInterface();
   }
 
+  public boolean isEnum() {
+    return ElementKind.ENUM == element.getKind();
+  }
+
   public boolean isMethod() {
     return ElementKind.METHOD.equals(element.getKind());
   }

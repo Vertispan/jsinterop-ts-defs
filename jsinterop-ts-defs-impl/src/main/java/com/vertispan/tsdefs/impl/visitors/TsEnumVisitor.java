@@ -15,25 +15,28 @@
  */
 package com.vertispan.tsdefs.impl.visitors;
 
-import static java.util.Objects.nonNull;
-
-import com.vertispan.tsdefs.annotations.TsTypeDef;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.TsElement;
-import com.vertispan.tsdefs.impl.model.*;
+import com.vertispan.tsdefs.impl.model.TsBrandedType;
+import com.vertispan.tsdefs.impl.model.TsModifier;
+import com.vertispan.tsdefs.impl.model.TsType;
+import com.vertispan.tsdefs.impl.model.TypeScriptModule;
 import javax.lang.model.element.Element;
 
-public class TsEnumTypeVisitor extends TsElement {
+public class TsEnumVisitor extends TsElement {
 
-  public TsEnumTypeVisitor(Element element, HasProcessorEnv env) {
+  public TsEnumVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
   }
 
   public void visit(TypeScriptModule.TsModuleBuilder moduleBuilder) {
-    if (isClass() && isPublic() && isTsTypeDef()) {
+    if (isEnum() && isPublic()) {
 
-      TsEnum.TsEnumBuilder builder =
-          TsEnum.builder(getName(), getNamespace(), (TsCustomType) getType())
+      String name = getName();
+      String namespace = getNamespace();
+      TsType type = getType();
+      TsBrandedType.TsBrandedTypeBuilder builder =
+          TsBrandedType.builder(name, namespace, type)
               .setDocs(getDocs())
               .setDeprecated(isDeprecated())
               .addModifiers(TsModifier.EXPORT);
@@ -45,21 +48,12 @@ public class TsEnumTypeVisitor extends TsElement {
                 if (e.isStatic() && e.isPublic() && e.isField() && e.isFinal()) {
                   builder.addEnumeration(e.getName());
                 } else {
-                  new ClassMethodVisitor<TsEnum.TsEnumBuilder>(e.element(), env).visit(builder);
+                  new ClassMethodVisitor<TsBrandedType.TsBrandedTypeBuilder>(e.element(), env)
+                      .visit(builder);
                 }
               });
 
-      moduleBuilder.addTsEnum(builder.build());
+      moduleBuilder.addBrandedType(builder.build());
     }
-  }
-
-  public TsType getType() {
-    TsTypeDef tsTypeDef = element.getAnnotation(TsTypeDef.class);
-    if (nonNull(tsTypeDef.name())
-        && !tsTypeDef.name().trim().isEmpty()
-        && !"<auto>".equals(tsTypeDef.name())) {
-      return TsCustomType.of(tsTypeDef.name(), getNamespace(), TsType.of(tsTypeDef.tsType()));
-    }
-    return TsCustomType.of(getName() + "Type", getNamespace(), TsType.of(tsTypeDef.tsType()));
   }
 }

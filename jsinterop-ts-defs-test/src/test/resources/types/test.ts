@@ -117,6 +117,11 @@ import JsTypeGrandChild = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChil
 import JsTypeGrandChild2 = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChild2;
 import JsTypeGrandChildOfTsIgnoredParent = com.vertispan.tsdefs.tests.inheritance.JsTypeGrandChildOfTsIgnoredParent;
 import JsTypeWithPrivateAndIgnoredConstructors = com.vertispan.tsdefs.tests.constructors.JsTypeWithPrivateAndIgnoredConstructors;
+
+// ----------------- Branded -------------------
+import Direction = com.vertispan.tsdefs.tests.branded.Direction;
+import DirectionType = com.vertispan.tsdefs.tests.branded.DirectionType;
+
 // ---------- Properties tests -------------------------
 const jsTypeWithProperties = new JsTypeWithProperties();
 
@@ -1056,5 +1061,20 @@ const jsTypeWithPrivateAndIgnoredConstructors= new JsTypeWithPrivateAndIgnoredCo
 class ExtendsFromJsTypeWithPrivateAndIgnoredConstructors extends JsTypeWithPrivateAndIgnoredConstructors {
     constructor() {
         super();
+    }
+}
+
+class DirectionClient {
+    useDirection(direction:DirectionType):void {
+        return;
+    }
+
+    testDirection():void{
+        this.useDirection(Direction.LEFT);
+        this.useDirection(Direction.DOWN);
+        this.useDirection(Direction.RIGHT);
+        this.useDirection(Direction.UP);
+        //@ts-expect-error
+        this.useDirection("angle");
     }
 }
