@@ -26,6 +26,7 @@ public class Formatting {
   public static final String NONE = "";
 
   public static final String NEW_LINE = "\n";
+  public static final String CR = "\r";
   public static final String SPACE = " ";
   public static final String END_LINE = ";";
   public static final String COMMA = ", ";

@@ -45,7 +45,8 @@ public class TypeVisitor extends TsElement {
     validate();
     new ClassTypeVisitor(element, env).visit(module);
     new InterfaceTypeVisitor(element, env).visit(module);
-    new TsEnumTypeVisitor(element, env).visit(module);
+    new TsTypeDefVisitor(element, env).visit(module);
+    new TsEnumVisitor(element, env).visit(module);
   }
 
   private void validate() {
