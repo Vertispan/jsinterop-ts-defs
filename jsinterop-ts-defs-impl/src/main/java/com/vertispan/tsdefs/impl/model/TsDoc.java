@@ -32,6 +32,10 @@ public class TsDoc {
     return TsDoc.of("");
   }
 
+  public static TsDoc inherited() {
+    return TsDoc.of(" @inheritDoc");
+  }
+
   private TsDoc(String docs) {
     this.docs = docs;
   }
