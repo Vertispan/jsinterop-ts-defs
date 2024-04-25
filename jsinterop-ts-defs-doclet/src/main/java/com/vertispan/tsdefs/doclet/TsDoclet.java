@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.annotations.TsModule;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.LogWrapper;
+import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsDoc;
 import com.vertispan.tsdefs.impl.model.TypeScriptModule;
 import com.vertispan.tsdefs.impl.visitors.TypeVisitor;
@@ -212,8 +213,17 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
             Optional.ofNullable(path).map(treePath -> env.getDocTrees().getDocCommentTree(path));
         return docCommentTree
             .map(doctree -> TsDoc.of(doctree.accept(new TsDocTreeVisitor(this, this.env), element)))
-            .orElse(TsDoc.empty());
+            .orElse(inheritedDocsOrEmpty(element));
       }
+    }
+    return inheritedDocsOrEmpty(element);
+  }
+
+  private TsDoc inheritedDocsOrEmpty(Element element) {
+
+    TsElement tsElement = TsElement.of(element, this);
+    if (tsElement.overridesAnyMethod()) {
+      return TsDoc.inherited();
     }
     return TsDoc.empty();
   }

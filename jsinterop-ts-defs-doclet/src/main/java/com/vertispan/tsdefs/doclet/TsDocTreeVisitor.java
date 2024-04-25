@@ -171,4 +171,9 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
             .map(docTree -> docTree.accept(this, element))
             .collect(Collectors.joining());
   }
+
+  @Override
+  public String visitInheritDoc(InheritDocTree node, Element element) {
+    return "@inheritDoc";
+  }
 }
