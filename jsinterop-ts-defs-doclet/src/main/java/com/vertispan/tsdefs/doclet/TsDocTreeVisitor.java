@@ -139,12 +139,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
   @Override
   public String visitLiteral(LiteralTree node, Element element) {
     if (nonNull(node.getBody())) {
-      String body = node.getBody().getBody();
-      String wrap = "`";
-      if (body.contains(System.lineSeparator())) {
-        wrap = "```";
-      }
-      return wrap + node.getBody().getBody() + wrap;
+      return "<code>" + node.getBody().getBody() + "</code>";
     }
     return super.visitLiteral(node, element);
   }
