@@ -20,10 +20,12 @@
 package com.vertispan.tsdefs.processor;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import com.google.auto.common.BasicAnnotationProcessor.ProcessingStep;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
+import com.vertispan.tsdefs.annotations.TsInterface;
 import com.vertispan.tsdefs.annotations.TsModule;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
@@ -80,7 +82,10 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
       // We need to exclude native types from being exported.
       Set<Element> jsTypes =
           elementsByAnnotation.get(JsType.class).stream()
-              .filter(element -> !element.getAnnotation(JsType.class).isNative())
+              .filter(
+                  element ->
+                      !element.getAnnotation(JsType.class).isNative()
+                          || (nonNull(element.getAnnotation(TsInterface.class))))
               .collect(Collectors.toSet());
 
       // We also list types that might not be annotated with JsType but have members annotated using
@@ -119,7 +124,8 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
           .filter(
               element ->
                   isNull(element.getAnnotation(JsType.class))
-                      || !element.getAnnotation(JsType.class).isNative())
+                      || !element.getAnnotation(JsType.class).isNative()
+                      || (nonNull(element.getAnnotation(TsInterface.class))))
           .forEach(
               e -> {
                 try {

@@ -20,6 +20,7 @@ import static java.util.Objects.nonNull;
 
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.util.TreePath;
+import com.vertispan.tsdefs.annotations.TsInterface;
 import com.vertispan.tsdefs.annotations.TsModule;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
@@ -106,7 +107,8 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
               .filter(
                   element ->
                       nonNull(element.getAnnotation(JsType.class))
-                          && !element.getAnnotation(JsType.class).isNative())
+                          && (!element.getAnnotation(JsType.class).isNative()
+                              || nonNull(element.getAnnotation(TsInterface.class))))
               .collect(Collectors.toSet());
 
       Set<Element> jsFunctions =
@@ -161,7 +163,8 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
           .filter(
               element ->
                   isNull(element.getAnnotation(JsType.class))
-                      || !element.getAnnotation(JsType.class).isNative())
+                      || (!element.getAnnotation(JsType.class).isNative()
+                          || nonNull(element.getAnnotation(TsInterface.class))))
           .forEach(
               e -> {
                 try {

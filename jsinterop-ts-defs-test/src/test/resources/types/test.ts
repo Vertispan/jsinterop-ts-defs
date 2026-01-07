@@ -45,6 +45,8 @@ import JsTypeWithSettersAndGetters = com.vertispan.tsdefs.tests.settergetter.JsT
 import JsTypeInterface = com.vertispan.tsdefs.tests.interfaces.JsTypeInterface;
 import JsTypeChild = com.vertispan.tsdefs.tests.inheritance.JsTypeChild;
 import JsInterfaceByTsName = com.vertispan.tsdefs.tests.tsname.JsInterfaceByTsName;
+import NativeInterface = com.vertispan.tsdefs.tests.tsinterface.NativeInterface;
+
 // @ts-expect-error
 import JsInterfaceWithTsName = com.vertispan.tsdefs.tests.tsname.JsInterfaceWithTsName;
 // @ts-expect-error
@@ -98,6 +100,8 @@ import JsTypeAsTsInterface = com.vertispan.tsdefs.tests.tsinterface.JsTypeAsTsIn
 
 import JsTypeWithStaticMethods = com.vertispan.tsdefs.tests.methods.JsTypeWithStaticMethods;
 
+// @ts-expect-error
+import NotAnnotatedNativeInterface = com.vertispan.tsdefs.tests.tsinterface.NotAnnotatedNativeInterface;
 // ---------- JsNullable ---------------
 
 import JsInterfaceWithJsNullableSetGet = com.vertispan.tsdefs.tests.jsnullable.JsInterfaceWithJsNullableSetGet
@@ -480,6 +484,16 @@ implementingJsTypeInterface.getPropertyA();
 implementingJsTypeInterface.setPropertyA("text");
 // TODO: What should we do with methods in interfaces and the method define a different namespace
 implementingJsTypeInterface.methodFromJsTypeInterface();
+
+class ImplementingNativeInterface implements NativeInterface {
+
+    doSomething(): void {
+        return;
+    }
+}
+
+const implementingNativeInterface = new ImplementingNativeInterface();
+implementingNativeInterface.doSomething();
 
 // ------------------ Inheritance ------------------------
 
