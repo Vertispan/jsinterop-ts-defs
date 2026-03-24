@@ -29,7 +29,18 @@ public class ArrayTsType extends TsType {
   }
 
   @Override
+  public String emit(String parentNamespace) {
+    if (isTsReadOnly() && !componentType.isTsReadOnly()) {
+      return emitType(parentNamespace);
+    }
+    return super.emit(parentNamespace);
+  }
+
+  @Override
   public String emitType(String parentNamespace) {
+    if (isTsReadOnly() && !componentType.isTsReadOnly()) {
+      return "readonly " + componentType.emit(parentNamespace) + "[]";
+    }
     return componentType.emit(parentNamespace) + "[]";
   }
 

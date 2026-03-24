@@ -26,7 +26,7 @@ public class TsType {
   protected final String name;
   protected final String namespace;
   private List<TsType> bounds = new ArrayList<>();
-  private boolean nullable;
+  private boolean tsReadOnly;
 
   public static TsType of(String name, String namespace) {
     return new TsType(name, namespace);
@@ -57,16 +57,23 @@ public class TsType {
     return namespace;
   }
 
-  public boolean isNullable() {
-    return nullable;
-  }
-
   public TsType addBounds(TsType tsType) {
     this.bounds.add(tsType);
     return this;
   }
 
+  public void setTsReadOnly(boolean tsReadOnly) {
+    this.tsReadOnly = tsReadOnly;
+  }
+
+  public boolean isTsReadOnly() {
+    return tsReadOnly;
+  }
+
   public String emit(String parentNamespace) {
+    if (tsReadOnly) {
+      return "Readonly<" + emitType(parentNamespace) + ">";
+    }
     return emitType(parentNamespace);
   }
 
