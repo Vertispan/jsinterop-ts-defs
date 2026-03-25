@@ -1012,6 +1012,13 @@ arrayTypeTest.takesTsReadonlyTypeArg(readonlyMapArg);
 // @ts-expect-error
 arrayTypeTest.takesTsReadonlyTypeArg(new Map<number, string>());
 
+const plainMapArg: Map<Readonly<string>, string> = new Map<Readonly<string>, string>();
+arrayTypeTest.takesTsReadonlyTypeArg(plainMapArg);
+const noReadonlyMapArg: Map<string, string> = new Map<string, string>();
+arrayTypeTest.takesTsReadonlyTypeArg(noReadonlyMapArg);
+const plainArrayArg: string[] = ["text"];
+arrayTypeTest.tsReadonlyReadonlyArrayProperty = plainArrayArg;
+
 arrayTypeTest.doSomethingAndReturnReadonlyString();
 
 // --------------------- TsIgnored members ----------------------
