@@ -81,7 +81,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
                       .replace(namespace + ".", "")
                       .replace(tsElement.getName() + ".", "");
                 } else {
-                  return refNamespace + "." + name;
+                  return refNamespace + "." + parentNamespace + "." + name;
                 }
               }
               return formatName(TsElement.of(referencedElement, env));
@@ -100,7 +100,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   public String formatName(TsElement tsElement) {
     String namespace = tsElement.getNamespace();
-    String jsName = tsElement.getName();
+    String jsName = tsElement.getFqName();
     return namespace.isEmpty() ? jsName : (namespace + "." + jsName);
   }
 
