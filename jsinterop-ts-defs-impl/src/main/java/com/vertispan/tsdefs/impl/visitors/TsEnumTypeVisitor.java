@@ -43,7 +43,7 @@ public class TsEnumTypeVisitor extends TsElement {
           .forEach(
               e -> {
                 if (e.isStatic() && e.isPublic() && e.isField() && e.isFinal()) {
-                  builder.addEnumeration(e.getName());
+                  builder.addEnumeration(new TsEnumEnumeration(e.getName(), e.getDocs()));
                 } else {
                   new ClassMethodVisitor<TsEnum.TsEnumBuilder>(e.element(), env).visit(builder);
                 }

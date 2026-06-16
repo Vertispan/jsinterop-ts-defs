@@ -30,7 +30,7 @@ public class TsEnum implements HasNamespace {
   private final String namespace;
   private TsCustomType type;
   private final Set<TsModifier> modifiers = new LinkedHashSet<>();
-  private final Set<String> enumerations = new LinkedHashSet<>();
+  private final Set<TsEnumEnumeration> enumerations = new LinkedHashSet<>();
   private final Set<TsMethod> functions = new LinkedHashSet<>();
   private TsDoc tsDoc;
   private boolean deprecated;
@@ -70,8 +70,8 @@ public class TsEnum implements HasNamespace {
     enumerations.stream()
         .map(
             enumeration ->
-                TsProperty.builder(enumeration, TsType.of(type.name))
-                    .setDocs(TsDoc.empty())
+                TsProperty.builder(enumeration.getName(), TsType.of(type.name))
+                    .setDocs(enumeration.getTsDoc())
                     .addModifiers(TsModifier.STATIC, TsModifier.READONLY)
                     .build())
         .forEach(classBuilder::addProperty);
@@ -90,8 +90,8 @@ public class TsEnum implements HasNamespace {
       this.tsEnum = new TsEnum(name, namespace, type);
     }
 
-    public TsEnumBuilder addEnumeration(String name) {
-      this.tsEnum.enumerations.add(name);
+    public TsEnumBuilder addEnumeration(TsEnumEnumeration enumeration) {
+      this.tsEnum.enumerations.add(enumeration);
       return this;
     }
 
