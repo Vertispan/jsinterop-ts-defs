@@ -460,7 +460,7 @@ jsTypeWithSettersAndGetters.setFlag;
 // ----------- Interfaces -------------------------------
 
 class ImplementingJsTypeInterface implements JsTypeInterface {
-    propertyA: string;
+    propertyA!: string;
 
     methodFromJsTypeInterface(): string {
         return "";
@@ -928,7 +928,7 @@ extendsInterfaceWithJsNullableProperty.propertyTow;
 extendsInterfaceWithJsNullableProperty.propertyThree;
 
 class ImplementsTsInterfaceWithJsNullableFields implements TsInterfaceWithJsNullableFields {
-    type: string;
+    type!: string;
 }
 
 // ----------------- TsInterface --------------------
@@ -938,7 +938,7 @@ const typeExtendingTsInterfaceType = new TypeExtendingTsInterfaceType();
 typeExtendingTsInterfaceType.property;
 
 class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
-    property: string;
+    property!: string;
 
     doSomething(): void {
         const x = "";
