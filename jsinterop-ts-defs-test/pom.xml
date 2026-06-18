@@ -19,6 +19,8 @@
 
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
+        <dtslint.home>${project.build.directory}/dtslint-home</dtslint.home>
+        <npm.cache.dir>${project.build.directory}/npm-cache</npm.cache.dir>
     </properties>
 
     <dependencies>
@@ -98,6 +100,11 @@
                             you can remove this whole <configuration> section.
                             -->
                             <arguments>install --prefix ${project.build.directory}/test-classes --save-dev @definitelytyped/dtslint@0.0.182 typescript</arguments>
+                            <environmentVariables>
+                                <HOME>${dtslint.home}</HOME>
+                                <USERPROFILE>${dtslint.home}</USERPROFILE>
+                                <NPM_CONFIG_CACHE>${npm.cache.dir}</NPM_CONFIG_CACHE>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                     <execution>
@@ -115,6 +122,11 @@
                             you can remove this whole <configuration> section.
                             -->
                             <arguments>run --prefix ${project.build.directory}/test-classes dtslint</arguments>
+                            <environmentVariables>
+                                <HOME>${dtslint.home}</HOME>
+                                <USERPROFILE>${dtslint.home}</USERPROFILE>
+                                <NPM_CONFIG_CACHE>${npm.cache.dir}</NPM_CONFIG_CACHE>
+                            </environmentVariables>
                         </configuration>
                     </execution>
                 </executions>
