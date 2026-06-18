@@ -114,7 +114,7 @@ public class TsElement {
   private boolean matchGetterPattern() {
     ExecutableElement executableElement = (ExecutableElement) element;
     return !isVoidType(executableElement.getReturnType(), env)
-        && executableElement.getParameters().size() == 0;
+        && executableElement.getParameters().isEmpty();
   }
 
   public boolean isSetter() {
@@ -456,6 +456,24 @@ public class TsElement {
                 env.elements().overrides(method, elementMethod, (TypeElement) element));
   }
 
+  public boolean matchingAnySuperMethod(
+      ExecutableElement method, BiPredicate<ExecutableElement, ExecutableElement> predicate) {
+    TsElement tsElement = TsElement.of(method.getEnclosingElement(), env);
+    return Stream.concat(
+            tsElement.allMethodsAndSuperClassesMethods().stream(),
+            tsElement.allSuperInterfacesMethods().stream())
+        .anyMatch(elementMethod -> predicate.test(method, elementMethod));
+  }
+
+  public boolean overridesAnyMethod() {
+    return this.isMethod()
+        && matchingAnySuperMethod(
+            (ExecutableElement) this.element,
+            (method, superMethod) ->
+                env.elements()
+                    .overrides(method, superMethod, (TypeElement) element.getEnclosingElement()));
+  }
+
   public Optional<TsElement> superElement() {
     TypeMirror superclass = ((TypeElement) element).getSuperclass();
     if (nonNull(superclass) && !superclass.getKind().equals(TypeKind.NONE)) {
@@ -695,7 +713,24 @@ public class TsElement {
   }
 
   public boolean isDeprecated() {
+    return isDeprecatedElement() || inheritsDeprecated();
+  }
+
+  private boolean isDeprecatedElement() {
     return nonNull(getAnnotation(Deprecated.class));
+  }
+
+  private boolean inheritsDeprecated() {
+    return (isMethod() && inheritsDeprecatedMethod());
+  }
+
+  private boolean inheritsDeprecatedMethod() {
+    return matchingAnySuperMethod(
+        (ExecutableElement) this.element,
+        (method, superMethod) ->
+            env.elements()
+                    .overrides(method, superMethod, (TypeElement) element.getEnclosingElement())
+                && TsElement.of(superMethod, env).isDeprecatedElement());
   }
 
   public String getGetterName() {
@@ -785,5 +820,9 @@ public class TsElement {
 
   public boolean isUnionMember() {
     return isJsOverlay() && isMethod() && nonNull(getAnnotation(TsUnionMember.class));
+  }
+
+  public interface BiPredicate<T, C> {
+    boolean test(T t, C c);
   }
 }
