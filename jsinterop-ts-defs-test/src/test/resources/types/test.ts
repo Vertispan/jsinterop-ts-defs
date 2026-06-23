@@ -112,6 +112,9 @@ import TsInterfaceWithJsNullableFields = com.vertispan.tsdefs.tests.jsnullable.T
 
 import UnionTypeApi = com.vertispan.tsdefs.tests.tsunion.UnionTypeApi;
 
+// ---------------- TsReadOnly ----------------
+import ArrayTypeTest = com.vertispan.tsdefs.tests.tsreadonly.ArrayTypeTest;
+
 import JsTypeWithTsIgnoredMembers = com.vertispan.tsdefs.tests.tsignore.JsTypeWithTsIgnoredMembers;
 import JsInterfaceWithIgnoredMembers = com.vertispan.tsdefs.tests.tsignore.JsInterfaceWithIgnoredMembers;
 
@@ -944,6 +947,79 @@ class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
         const x = "";
     }
 }
+
+// --------------------- TsReadOnly ----------------------
+
+const arrayTypeTest = new ArrayTypeTest();
+
+arrayTypeTest.readonlyProperty;
+
+// $ExpectType Readonly<{ [key: string]: string; }>
+arrayTypeTest.mutableProperty;
+// @ts-expect-error
+arrayTypeTest.mutableProperty["key"] = "value";
+
+arrayTypeTest.mutableTypeArg;
+
+// $ExpectType string[]
+arrayTypeTest.jsArrayProperty;
+arrayTypeTest.jsArrayOfTsReadonly;
+arrayTypeTest.jsMapOfTsReadonlyStringAndString;
+// $ExpectType Readonly<Map<string, string>>
+arrayTypeTest.tsReadonlyJsMapOfStringAndString;
+
+arrayTypeTest.tsReadonlyReadonlyArrayProperty;
+// @ts-expect-error
+arrayTypeTest.tsReadonlyReadonlyArrayProperty[0] = "text";
+// @ts-expect-error
+arrayTypeTest.tsReadonlyReadonlyArrayProperty.push("text");
+
+// $ExpectType readonly string[]
+arrayTypeTest.tsReadonlyReadonlyArrayPropertyWithAnnotation;
+// @ts-expect-error
+arrayTypeTest.tsReadonlyReadonlyArrayPropertyWithAnnotation.push("text");
+
+arrayTypeTest.tsReadonly2dArrayProperty;
+// @ts-expect-error
+arrayTypeTest.tsReadonly2dArrayProperty[0] = ["text"];
+// @ts-expect-error
+arrayTypeTest.tsReadonly2dArrayProperty.push(["text"]);
+
+// $ExpectType readonly string[][]
+arrayTypeTest.tsReadonlyType2dArrayProperty;
+// @ts-expect-error
+arrayTypeTest.tsReadonlyType2dArrayProperty.push(["text"]);
+arrayTypeTest.tsReadonlyType2dArrayProperty[0].push("text");
+
+// $ExpectType string[]
+arrayTypeTest.finalReadonlyArrayProperty;
+// @ts-expect-error
+arrayTypeTest.finalReadonlyArrayProperty = ["text"];
+arrayTypeTest.finalReadonlyArrayProperty.push("text");
+
+arrayTypeTest.doSomethingA();
+// @ts-expect-error
+arrayTypeTest.doSomethingA().push("text");
+
+// $ExpectType string
+arrayTypeTest.takesTsReadonlyArg("text");
+// @ts-expect-error
+arrayTypeTest.takesTsReadonlyArg(1.0);
+
+const readonlyMapArg: Readonly<Map<Readonly<string>, string>> = new Map<Readonly<string>, string>();
+// $ExpectType string
+arrayTypeTest.takesTsReadonlyTypeArg(readonlyMapArg);
+// @ts-expect-error
+arrayTypeTest.takesTsReadonlyTypeArg(new Map<number, string>());
+
+const plainMapArg: Map<Readonly<string>, string> = new Map<Readonly<string>, string>();
+arrayTypeTest.takesTsReadonlyTypeArg(plainMapArg);
+const noReadonlyMapArg: Map<string, string> = new Map<string, string>();
+arrayTypeTest.takesTsReadonlyTypeArg(noReadonlyMapArg);
+const plainArrayArg: string[] = ["text"];
+arrayTypeTest.tsReadonlyReadonlyArrayProperty = plainArrayArg;
+
+arrayTypeTest.doSomethingAndReturnReadonlyString();
 
 // --------------------- TsIgnored members ----------------------
 

@@ -17,6 +17,7 @@ package com.vertispan.tsdefs.impl.builders;
 
 import static java.util.Objects.nonNull;
 
+import com.vertispan.tsdefs.annotations.TsReadOnly;
 import com.vertispan.tsdefs.annotations.TsTypeDef;
 import com.vertispan.tsdefs.annotations.TsTypeRef;
 import com.vertispan.tsdefs.impl.Formatting;
@@ -52,7 +53,14 @@ public class JavaToTsTypeConverter {
   }
 
   public TsType toTsType(TypeMirror type, boolean checkTypeDef) {
+    TsType tsType = getTsType(type, checkTypeDef);
+    if (!tsType.isTsReadOnly()) {
+      tsType.setTsReadOnly(isTsReadOnlyType(type));
+    }
+    return tsType;
+  }
 
+  private TsType getTsType(TypeMirror type, boolean checkTypeDef) {
     if (checkTypeDef && TsElement.of(type, env).isTsTypeDef()) {
       Optional<TsType> tsType = fromTsTypeDef(TsElement.of(type, env).element);
       if (tsType.isPresent()) {
@@ -111,8 +119,10 @@ public class JavaToTsTypeConverter {
           return TsElement.of(arrayComponentType, env)
               .typeOrNullable(ParameterizedTsType.of("Array", "", unionType(arrayComponentType)));
         } else {
-          return TsElement.of(arrayComponentType, env)
-              .typeOrNullable(ArrayTsType.of(toTsType(arrayComponentType)));
+          ArrayTsType arrayType = ArrayTsType.of(toTsType(arrayComponentType));
+          arrayType.setTsReadOnly(
+              TsElement.of(element, env).isTsReadOnly() || isTsReadOnlyType(element.asType()));
+          return TsElement.of(arrayComponentType, env).typeOrNullable(arrayType);
         }
       }
 
@@ -261,6 +271,13 @@ public class JavaToTsTypeConverter {
         .map(Optional::get)
         .findFirst()
         .orElse(typeMirror);
+  }
+
+  public boolean isTsReadOnlyType(TypeMirror typeMirror) {
+    List<? extends AnnotationMirror> annotations = typeMirror.getAnnotationMirrors();
+    return annotations.stream()
+        .anyMatch(
+            annotationMirror -> isSameType(annotationMirror.getAnnotationType(), TsReadOnly.class));
   }
 
   public boolean isSameType(TypeMirror typeMirror, Class<?> targetClass) {

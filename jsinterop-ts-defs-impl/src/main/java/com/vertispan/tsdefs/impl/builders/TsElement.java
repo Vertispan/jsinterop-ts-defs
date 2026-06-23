@@ -289,6 +289,9 @@ public class TsElement {
         ((TsNullableType) elementTsType).setUndefined(false);
       }
     }
+    if (!elementTsType.isTsReadOnly()) {
+      elementTsType.setTsReadOnly(isTsReadOnly());
+    }
     return elementTsType;
   }
 
@@ -654,8 +657,11 @@ public class TsElement {
   }
 
   public boolean isTsTypeDef() {
-    //    return nonNull(element) && nonNull(getAnnotation(TsTypeDef.class));
     return nonNull(getAnnotation(TsTypeDef.class));
+  }
+
+  public boolean isTsReadOnly() {
+    return nonNull(getAnnotation(TsReadOnly.class));
   }
 
   public boolean isTsInterface() {
