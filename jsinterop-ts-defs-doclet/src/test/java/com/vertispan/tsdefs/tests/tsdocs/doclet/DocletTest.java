@@ -82,4 +82,9 @@ public class DocletTest {
   public void testIssue106() throws IOException {
     testDocs("links.issue106");
   }
+
+  @Test
+  public void testIssue117() throws IOException {
+    testDocs("docs.issue117");
+  }
 }
