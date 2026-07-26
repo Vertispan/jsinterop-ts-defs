@@ -1,9 +1,9 @@
 {
   "devDependencies": {
-    "@definitelytyped/dtslint": "^0.0.146"
+    "typescript": "6.0.3"
   },
   "types": "types",
   "scripts": {
-    "dtslint": "dtslint types"
+    "typecheck": "node ./node_modules/typescript/lib/tsc.js -p types/tsconfig.json"
   }
 }
