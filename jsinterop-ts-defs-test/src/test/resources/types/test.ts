@@ -1,6 +1,24 @@
 // Minimum TypeScript Version: 4.3
 import {com} from "./index";
 
+type IsAny<T> = 0 extends (1 & T) ? true : false;
+type Equal<A, B> =
+    IsAny<A> extends true
+        ? (IsAny<B> extends true ? true : false)
+        : IsAny<B> extends true
+            ? false
+            : ((<T>() => T extends A ? 1 : 2) extends
+                (<T>() => T extends B ? 1 : 2)
+                    ? ((<T>() => T extends B ? 1 : 2) extends
+                        (<T>() => T extends A ? 1 : 2)
+                            ? true
+                            : false)
+                    : false);
+
+declare const expectType: <Expected>() => <Actual>(
+    actual: Equal<Actual, Expected> extends true ? Actual : never,
+) => void;
+
 // --- JsTypes imports -----------------------------------
 // --- Classes that are not JS types should not be exported ---
 // @ts-expect-error
@@ -17,6 +35,7 @@ import JsTypeWithPropertiesAndNameAndNameSpace = com.vertispan.tsdefs.tests.prop
 
 import DifferentJsTypeWithPropertiesAndNameAndNameSpace = com.vertispan.differentNameSpace.DifferentJsTypeWithPropertiesAndNameAndNameSpace;
 import OtherType = com.vertispan.differentNameSpace.OtherType;
+import OtherJsType = com.vertispan.tsdefs.tests.properties.OtherJsType;
 
 // --- JsTypes properties should be exported with the correct type
 import JsTypeWithProperties = com.vertispan.tsdefs.tests.properties.JsTypeWithProperties;
@@ -129,30 +148,18 @@ const jsTypeWithProperties = new JsTypeWithProperties();
 
 const fromOtherNameSpace = new OtherNameSpace();
 
-// $ExpectType number
-jsTypeWithProperties.intProperty;
-// $ExpectType unknown
-jsTypeWithProperties.integerProperty;
-// $ExpectType number
-jsTypeWithProperties.doubleProperty;
-// $ExpectType number
-jsTypeWithProperties.doubleWrapperProperty;
-// $ExpectType unknown
-jsTypeWithProperties.floatProperty;
-// $ExpectType unknown
-jsTypeWithProperties.floatWrapperProperty;
-// $ExpectType boolean
-jsTypeWithProperties.booleanProperty;
-// $ExpectType boolean
-jsTypeWithProperties.booleanWrapperProperty;
-// $ExpectType void
-jsTypeWithProperties.voidType;
-// $ExpectType string
-jsTypeWithProperties.stringProperty;
-// $ExpectType string
-jsTypeWithProperties.differentName;
-// $ExpectType OtherJsType
-jsTypeWithProperties.otherJsTypeProperty;
+expectType<number>()(jsTypeWithProperties.intProperty);
+expectType<unknown>()(jsTypeWithProperties.integerProperty);
+expectType<number>()(jsTypeWithProperties.doubleProperty);
+expectType<number>()(jsTypeWithProperties.doubleWrapperProperty);
+expectType<unknown>()(jsTypeWithProperties.floatProperty);
+expectType<unknown>()(jsTypeWithProperties.floatWrapperProperty);
+expectType<boolean>()(jsTypeWithProperties.booleanProperty);
+expectType<boolean>()(jsTypeWithProperties.booleanWrapperProperty);
+expectType<void>()(jsTypeWithProperties.voidType);
+expectType<string>()(jsTypeWithProperties.stringProperty);
+expectType<string>()(jsTypeWithProperties.differentName);
+expectType<OtherJsType>()(jsTypeWithProperties.otherJsTypeProperty);
 // @ts-expect-error
 jsTypeWithProperties.withDifferentName;
 // @ts-expect-error
@@ -316,28 +323,23 @@ class nonJsTypeWithJsIgnoredConstructor_child3 extends NonJsTypeWithJsIgnoredCon
 
 const jsTypeWithMethods = new JsTypeWithMethods();
 
-// $ExpectType void
-jsTypeWithMethods.takesNothingReturnVoid();
-// $ExpectType void
-jsTypeWithMethods.takesNothingReturnVoidRenamed();
+expectType<void>()(jsTypeWithMethods.takesNothingReturnVoid());
+expectType<void>()(jsTypeWithMethods.takesNothingReturnVoidRenamed());
 // @ts-expect-error
 jsTypeWithMethods.takesNothingReturnVoidWithDifferentName();
-// @$ExpectType string
-jsTypeWithMethods.takesDoubleReturnString(1.0);
+expectType<string>()(jsTypeWithMethods.takesDoubleReturnString(1.0));
 // @ts-expect-error
 jsTypeWithMethods.takesDoubleReturnString("text");
 // @ts-expect-error
 jsTypeWithMethods.takesDoubleReturnString(true);
-// @$ExpectType string
-jsTypeWithMethods.takesMultipleParamsReturnString("text", 1.0, true);
+expectType<string>()(jsTypeWithMethods.takesMultipleParamsReturnString("text", 1.0, true));
 // @ts-expect-error
 jsTypeWithMethods.takesMultipleParamsReturnString(1.0, "text", true);
 // @ts-expect-error
 jsTypeWithMethods.takesMultipleParamsReturnString(true, "text", 1.0);
 // @ts-expect-error
 jsTypeWithMethods.protectedMethod();
-// @$ExpectType string
-jsTypeWithMethods.privateMethodButExported(1.0);
+expectType<string>()(jsTypeWithMethods.privateMethodButExported(1.0));
 // @ts-expect-error
 jsTypeWithMethods.privateMethodButNotExported(1.0);
 jsTypeWithMethods.jsPropertyMethod;
@@ -602,36 +604,21 @@ class ImplementsJsInterfaceWithTsName implements JsInterfaceByTsName {
 
 const jsTypeWithDataTypes = new JsTypeWithDataTypes();
 
-// $ExpectType object
-jsTypeWithDataTypes.objectProperty;
-// $ExpectType Object
-jsTypeWithDataTypes.jsObjectProperty;
-// $ExpectType string[]
-jsTypeWithDataTypes.stringArrayProperty;
-// $ExpectType string[][]
-jsTypeWithDataTypes.string2DArrayProperty;
-// $ExpectType unknown
-jsTypeWithDataTypes.stringListProperty;
-// $ExpectType unknown
-jsTypeWithDataTypes.mapProperty;
-// $ExpectType Map<string, number>
-jsTypeWithDataTypes.jsMapProperty;
-// $ExpectType unknown
-jsTypeWithDataTypes.setProperty;
-// $ExpectType Set<string>
-jsTypeWithDataTypes.jsSetProperty;
-// $ExpectType string[]
-jsTypeWithDataTypes.jsArrayProperty;
-// $ExpectType { [key: string]: string; }
-jsTypeWithDataTypes.jsPropertyMapProperty;
-// $ExpectType any
-jsTypeWithDataTypes.anyProperty;
-// $ExpectType Number
-jsTypeWithDataTypes.jsNumberProperty;
-// $ExpectType { [key: string]: any; }[]
-jsTypeWithDataTypes.propertyMapArray;
-// $ExpectType { [key: string]: any; }[][]
-jsTypeWithDataTypes.propertyMap2dArray;
+expectType<object>()(jsTypeWithDataTypes.objectProperty);
+expectType<Object>()(jsTypeWithDataTypes.jsObjectProperty);
+expectType<string[]>()(jsTypeWithDataTypes.stringArrayProperty);
+expectType<string[][]>()(jsTypeWithDataTypes.string2DArrayProperty);
+expectType<unknown>()(jsTypeWithDataTypes.stringListProperty);
+expectType<unknown>()(jsTypeWithDataTypes.mapProperty);
+expectType<Map<string, number>>()(jsTypeWithDataTypes.jsMapProperty);
+expectType<unknown>()(jsTypeWithDataTypes.setProperty);
+expectType<Set<string>>()(jsTypeWithDataTypes.jsSetProperty);
+expectType<string[]>()(jsTypeWithDataTypes.jsArrayProperty);
+expectType<{ [key: string]: string; }>()(jsTypeWithDataTypes.jsPropertyMapProperty);
+expectType<any>()(jsTypeWithDataTypes.anyProperty);
+expectType<Number>()(jsTypeWithDataTypes.jsNumberProperty);
+expectType<{ [key: string]: any; }[]>()(jsTypeWithDataTypes.propertyMapArray);
+expectType<{ [key: string]: any; }[][]>()(jsTypeWithDataTypes.propertyMap2dArray);
 
 // --------------- JsFunctions --------------------------
 
@@ -641,10 +628,8 @@ jsFunctionsClient.useVoidFunction(() => {
     const a = "";
 });
 jsFunctionsClient.useFunctionWithArgs((id, name) => {
-    // $ExpectType number
-    const idType = id;
-    // $ExpectType string
-    const nameType = name;
+    expectType<number>()(id);
+    expectType<string>()(name);
 });
 jsFunctionsClient.useFunctionWithReturnType((id, name) => {
     return true;
@@ -653,110 +638,79 @@ jsFunctionsClient.useFunctionWithReturnType((id, name) => {
 jsFunctionsClient.useFunctionWithReturnType((id, name) => {
     return 1.0;
 });
-// $ExpectType (id: number, name: string) => boolean
 const aFunction = jsFunctionsClient.useFunctionAndReturnFunction((id, name) => true);
+expectType<(id: number, name: string) => boolean>()(aFunction);
 
 
 // -------------- Generics -------------------
 
 const genericJsTypeOfString = new GenericJsType<string>();
-// $ExpectType string
-genericJsTypeOfString.propertyOfT;
-// $ExpectType string
-genericJsTypeOfString.takesNothingReturnT();
-// $ExpectType string
-genericJsTypeOfString.takeTReturnT("text");
+expectType<string>()(genericJsTypeOfString.propertyOfT);
+expectType<string>()(genericJsTypeOfString.takesNothingReturnT());
+expectType<string>()(genericJsTypeOfString.takeTReturnT("text"));
 // @ts-expect-error
 genericJsTypeOfString.takeTReturnT(1.0);
 
 const genericJsTypeOfNumber = new GenericJsType<number>();
-// $ExpectType number
-genericJsTypeOfNumber.propertyOfT;
-// $ExpectType number
-genericJsTypeOfNumber.takesNothingReturnT();
-// $ExpectType number
-genericJsTypeOfNumber.takeTReturnT(1.0);
+expectType<number>()(genericJsTypeOfNumber.propertyOfT);
+expectType<number>()(genericJsTypeOfNumber.takesNothingReturnT());
+expectType<number>()(genericJsTypeOfNumber.takeTReturnT(1.0));
 // @ts-expect-error
 genericJsTypeOfNumber.takeTReturnT("text");
 
 const genericJsTypeExtendsGenericJsType = new GenericJsTypeExtendsGenericJsTye<string>();
-// $ExpectType string
-genericJsTypeExtendsGenericJsType.childPropertyOfT;
-// $ExpectType string
-genericJsTypeExtendsGenericJsType.parentMethodOfT("string");
+expectType<string>()(genericJsTypeExtendsGenericJsType.childPropertyOfT);
+expectType<string>()(genericJsTypeExtendsGenericJsType.parentMethodOfT("string"));
 // @ts-expect-error
 genericJsTypeExtendsGenericJsType.parentMethodOfT(1.0);
-// $ExpectType string
-genericJsTypeExtendsGenericJsType.propertyOfT;
-// $ExpectType string
-genericJsTypeExtendsGenericJsType.takesNothingReturnT();
-// $ExpectType string
-genericJsTypeExtendsGenericJsType.takeTReturnT("text");
+expectType<string>()(genericJsTypeExtendsGenericJsType.propertyOfT);
+expectType<string>()(genericJsTypeExtendsGenericJsType.takesNothingReturnT());
+expectType<string>()(genericJsTypeExtendsGenericJsType.takeTReturnT("text"));
 // @ts-expect-error
 genericJsTypeExtendsGenericJsType.takeTReturnT(1.0);
 
 const jsTypeExtendsAbstractGenericJsType = new JsTypeExtendsAbstractGenericJsType();
-// $ExpectType string
-jsTypeExtendsAbstractGenericJsType.abstractTakesCReturnT(1.0);
+expectType<string>()(jsTypeExtendsAbstractGenericJsType.abstractTakesCReturnT(1.0));
 // @ts-expect-error
 jsTypeExtendsAbstractGenericJsType.abstractTakesCReturnT("text");
 
 const jsTypeImplementingGenericInterfaces = new JsTypeImplementingGenericInterfaces<boolean>();
-// $ExpectType string
-jsTypeImplementingGenericInterfaces.genericInterfaceOneMethod();
-// $ExpectType string
-jsTypeImplementingGenericInterfaces.genericPropertyOne;
+expectType<string>()(jsTypeImplementingGenericInterfaces.genericInterfaceOneMethod());
+expectType<string>()(jsTypeImplementingGenericInterfaces.genericPropertyOne);
 jsTypeImplementingGenericInterfaces.genericPropertyOne = "text";
 // @ts-expect-error
 jsTypeImplementingGenericInterfaces.genericPropertyOne = 1.0;
 
-// $ExpectType number
-jsTypeImplementingGenericInterfaces.genericInterfaceTwoMethod();
-// $ExpectType number
-jsTypeImplementingGenericInterfaces.genericPropertyTwo;
+expectType<number>()(jsTypeImplementingGenericInterfaces.genericInterfaceTwoMethod());
+expectType<number>()(jsTypeImplementingGenericInterfaces.genericPropertyTwo);
 jsTypeImplementingGenericInterfaces.genericPropertyTwo = 1.0;
 // @ts-expect-error
 jsTypeImplementingGenericInterfaces.genericPropertyTwo = "text";
 
-// $ExpectType boolean
-jsTypeImplementingGenericInterfaces.genericInterfaceThreeMethod();
-// $ExpectType boolean
-jsTypeImplementingGenericInterfaces.genericPropertyThree;
+expectType<boolean>()(jsTypeImplementingGenericInterfaces.genericInterfaceThreeMethod());
+expectType<boolean>()(jsTypeImplementingGenericInterfaces.genericPropertyThree);
 jsTypeImplementingGenericInterfaces.genericPropertyThree = true;
 // @ts-expect-error
 jsTypeImplementingGenericInterfaces.genericPropertyThree = 1.0;
 
 const nonGenericJsTypeExtendsGenericJsType = new NonGenericJsTypeExtendsGenericJsType();
-// $ExpectType number
-nonGenericJsTypeExtendsGenericJsType.childProperty;
-// $ExpectType string
-nonGenericJsTypeExtendsGenericJsType.takesNothingReturnT();
-// $ExpectType string
-nonGenericJsTypeExtendsGenericJsType.propertyOfT;
-// $ExpectType string
-nonGenericJsTypeExtendsGenericJsType.takesNothingReturnT();
-// $ExpectType string
-nonGenericJsTypeExtendsGenericJsType.takeTReturnT("text");
+expectType<number>()(nonGenericJsTypeExtendsGenericJsType.childProperty);
+expectType<string>()(nonGenericJsTypeExtendsGenericJsType.takesNothingReturnT());
+expectType<string>()(nonGenericJsTypeExtendsGenericJsType.propertyOfT);
+expectType<string>()(nonGenericJsTypeExtendsGenericJsType.takesNothingReturnT());
+expectType<string>()(nonGenericJsTypeExtendsGenericJsType.takeTReturnT("text"));
 // @ts-expect-error
 nonGenericJsTypeExtendsGenericJsType.takeTReturnT(1.0);
 
 const dualGenericsJsType = new DualGenericsJsType<string, number>();
-// $ExpectType string
-dualGenericsJsType.propertyOfT;
-// $ExpectType number
-dualGenericsJsType.propertyOfC;
-// $ExpectType string
-dualGenericsJsType.takesNothingReturnT();
-// $ExpectType string
-dualGenericsJsType.takeTReturnT("text")
-// $ExpectType number
-dualGenericsJsType.takesNothingReturnC()
-// $ExpectType number
-dualGenericsJsType.takeCReturnC(1.0)
-// $ExpectType string
-dualGenericsJsType.takesCReturnT(1.0)
-// $ExpectType number
-dualGenericsJsType.takesTReturnC("text")
+expectType<string>()(dualGenericsJsType.propertyOfT);
+expectType<number>()(dualGenericsJsType.propertyOfC);
+expectType<string>()(dualGenericsJsType.takesNothingReturnT());
+expectType<string>()(dualGenericsJsType.takeTReturnT("text"));
+expectType<number>()(dualGenericsJsType.takesNothingReturnC());
+expectType<number>()(dualGenericsJsType.takeCReturnC(1.0));
+expectType<string>()(dualGenericsJsType.takesCReturnT(1.0));
+expectType<number>()(dualGenericsJsType.takesTReturnC("text"));
 
 const usingInterfaceWithMethodTypeArgs = new UsingInterfaceWithMethodTypeArgs<number>();
 
@@ -806,8 +760,7 @@ class ItemDetailsChild extends ItemDetails {
 const itemDetails = new ItemDetailsChild();
 // TODO : The dtslint will always unwrap the type alias, will need to look for a different way to test this.
 // We should expect the type to be ItemTypeType instead of string
-// $ExpectType string
-itemDetails.type;
+expectType<string>()(itemDetails.type);
 
 // --------------------- JsNullable ---------------
 const jsTypeWithJsNullableMembers = new JsTypeWithJsNullableMembers();
@@ -937,8 +890,7 @@ class ImplementsTsInterfaceWithJsNullableFields implements TsInterfaceWithJsNull
 // ----------------- TsInterface --------------------
 
 const typeExtendingTsInterfaceType = new TypeExtendingTsInterfaceType();
-// $ExpectType string
-typeExtendingTsInterfaceType.property;
+expectType<string>()(typeExtendingTsInterfaceType.property);
 
 class JsTypeAsTsInterfaceChild implements JsTypeAsTsInterface {
     property!: string;
@@ -954,19 +906,16 @@ const arrayTypeTest = new ArrayTypeTest();
 
 arrayTypeTest.readonlyProperty;
 
-// $ExpectType Readonly<{ [key: string]: string; }>
-arrayTypeTest.mutableProperty;
+expectType<Readonly<{ [key: string]: string; }>>()(arrayTypeTest.mutableProperty);
 // @ts-expect-error
 arrayTypeTest.mutableProperty["key"] = "value";
 
 arrayTypeTest.mutableTypeArg;
 
-// $ExpectType string[]
-arrayTypeTest.jsArrayProperty;
+expectType<string[]>()(arrayTypeTest.jsArrayProperty);
 arrayTypeTest.jsArrayOfTsReadonly;
 arrayTypeTest.jsMapOfTsReadonlyStringAndString;
-// $ExpectType Readonly<Map<string, string>>
-arrayTypeTest.tsReadonlyJsMapOfStringAndString;
+expectType<Readonly<Map<string, string>>>()(arrayTypeTest.tsReadonlyJsMapOfStringAndString);
 
 arrayTypeTest.tsReadonlyReadonlyArrayProperty;
 // @ts-expect-error
@@ -974,8 +923,7 @@ arrayTypeTest.tsReadonlyReadonlyArrayProperty[0] = "text";
 // @ts-expect-error
 arrayTypeTest.tsReadonlyReadonlyArrayProperty.push("text");
 
-// $ExpectType readonly string[]
-arrayTypeTest.tsReadonlyReadonlyArrayPropertyWithAnnotation;
+expectType<readonly string[]>()(arrayTypeTest.tsReadonlyReadonlyArrayPropertyWithAnnotation);
 // @ts-expect-error
 arrayTypeTest.tsReadonlyReadonlyArrayPropertyWithAnnotation.push("text");
 
@@ -985,14 +933,12 @@ arrayTypeTest.tsReadonly2dArrayProperty[0] = ["text"];
 // @ts-expect-error
 arrayTypeTest.tsReadonly2dArrayProperty.push(["text"]);
 
-// $ExpectType readonly string[][]
-arrayTypeTest.tsReadonlyType2dArrayProperty;
+expectType<readonly string[][]>()(arrayTypeTest.tsReadonlyType2dArrayProperty);
 // @ts-expect-error
 arrayTypeTest.tsReadonlyType2dArrayProperty.push(["text"]);
 arrayTypeTest.tsReadonlyType2dArrayProperty[0].push("text");
 
-// $ExpectType string[]
-arrayTypeTest.finalReadonlyArrayProperty;
+expectType<string[]>()(arrayTypeTest.finalReadonlyArrayProperty);
 // @ts-expect-error
 arrayTypeTest.finalReadonlyArrayProperty = ["text"];
 arrayTypeTest.finalReadonlyArrayProperty.push("text");
@@ -1001,14 +947,12 @@ arrayTypeTest.doSomethingA();
 // @ts-expect-error
 arrayTypeTest.doSomethingA().push("text");
 
-// $ExpectType string
-arrayTypeTest.takesTsReadonlyArg("text");
+expectType<string>()(arrayTypeTest.takesTsReadonlyArg("text"));
 // @ts-expect-error
 arrayTypeTest.takesTsReadonlyArg(1.0);
 
 const readonlyMapArg: Readonly<Map<Readonly<string>, string>> = new Map<Readonly<string>, string>();
-// $ExpectType string
-arrayTypeTest.takesTsReadonlyTypeArg(readonlyMapArg);
+expectType<string>()(arrayTypeTest.takesTsReadonlyTypeArg(readonlyMapArg));
 // @ts-expect-error
 arrayTypeTest.takesTsReadonlyTypeArg(new Map<number, string>());
 

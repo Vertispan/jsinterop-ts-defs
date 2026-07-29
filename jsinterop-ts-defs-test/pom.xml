@@ -65,6 +65,32 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-typescript-test-manifest</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/test-classes</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/src/test/resources</directory>
+                                    <includes>
+                                        <include>package.json</include>
+                                        <include>package-lock.json</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>com.github.eirslett</groupId>
                 <artifactId>frontend-maven-plugin</artifactId>
                 <version>1.12.1</version>
@@ -99,7 +125,7 @@
                             "install", so unless you need to run some other npm command,
                             you can remove this whole <configuration> section.
                             -->
-                            <arguments>install --prefix ${project.build.directory}/test-classes --save-dev @definitelytyped/dtslint@0.0.182 typescript</arguments>
+                            <arguments>ci --prefix ${project.build.directory}/test-classes</arguments>
                             <environmentVariables>
                                 <HOME>${dtslint.home}</HOME>
                                 <USERPROFILE>${dtslint.home}</USERPROFILE>
@@ -121,7 +147,7 @@
                             "install", so unless you need to run some other npm command,
                             you can remove this whole <configuration> section.
                             -->
-                            <arguments>run --prefix ${project.build.directory}/test-classes dtslint</arguments>
+                            <arguments>run --prefix ${project.build.directory}/test-classes typecheck</arguments>
                             <environmentVariables>
                                 <HOME>${dtslint.home}</HOME>
                                 <USERPROFILE>${dtslint.home}</USERPROFILE>
