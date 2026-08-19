@@ -150,6 +150,13 @@ public class TsElement {
     return getDeclaredJsName().orElse(elementName());
   }
 
+  public String getFqName() {
+    if (ElementKind.PACKAGE == element.getEnclosingElement().getKind()) {
+      return TsElement.of(element, env).getName();
+    }
+    return TsElement.of(element.getEnclosingElement(), env).getFqName() + "." + getName();
+  }
+
   // TODO: This is a workaround for when types like <?> and <T> or <String[][]> do not actually
   // translate to an element and the element is null, I need to stop mixing types and elements and
   // provide a better way to get the information from a type or element.
