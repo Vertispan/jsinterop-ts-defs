@@ -45,6 +45,11 @@ import jsinterop.annotations.*;
 
 public class TsElement {
 
+  private static final String UNSUPPORTED_LITERAL_TYPE_MESSAGE =
+      "@TsLiteral is not supported on %s;"
+          + " only String, boolean/Boolean, double/Double, and int"
+          + " are supported across the Java/JavaScript boundary";
+
   protected final Element element;
   protected final HasProcessorEnv env;
   private final JavaToTsTypeConverter typeConverter;
@@ -317,13 +322,142 @@ public class TsElement {
         env.messager().printMessage(Diagnostic.Kind.ERROR, "Referenced type not found", element);
         return TsType.of("unknown");
       }
-    } else {
-      if (element instanceof ExecutableElement) {
-        return typeConverter.toTsType(((ExecutableElement) element).getReturnType());
-      } else {
-        return typeConverter.toTsType(element.asType());
+    }
+
+    Optional<TsType> literalType = getLiteralType();
+    if (literalType.isPresent()) {
+      return literalType.get();
+    }
+
+    if (element instanceof ExecutableElement) {
+      return typeConverter.toTsType(((ExecutableElement) element).getReturnType());
+    }
+    return typeConverter.toTsType(element.asType());
+  }
+
+  private Optional<TsType> getLiteralType() {
+    TsLiteral literal = getLiteralAnnotation();
+    if (literal == null) {
+      return Optional.empty();
+    }
+
+    TypeMirror typeMirror = literalTypeMirror();
+    if (isUnsupportedLiteralType(typeMirror)) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror),
+              element);
+      return Optional.empty();
+    }
+
+    if (element instanceof VariableElement) {
+      Object constantValue = ((VariableElement) element).getConstantValue();
+      if (nonNull(constantValue)) {
+        return Optional.of(TsType.of(formatLiteralValue(constantValue)));
       }
     }
+    String literalValue = literal.value();
+    if (literalValue != null && !literalValue.isEmpty()) {
+      return Optional.of(TsType.of(formatLiteralValue(literalValue, typeMirror)));
+    }
+    return Optional.empty();
+  }
+
+  private String formatLiteralValue(Object value) {
+    if (value instanceof String) {
+      return "\"" + escapeLiteralStr((String) value) + "\"";
+    }
+    return value.toString();
+  }
+
+  private String formatLiteralValue(String value, TypeMirror typeMirror) {
+    if (JavaToTsTypeConverter.isSameType(typeMirror, String.class, env)) {
+      return "\"" + escapeLiteralStr(value) + "\"";
+    }
+    return value;
+  }
+
+  private boolean isUnsupportedLiteralType(TypeMirror typeMirror) {
+    return isUnsupportedLiteralType(typeMirror, env);
+  }
+
+  private static boolean isUnsupportedLiteralType(TypeMirror typeMirror, HasProcessorEnv env) {
+    TypeKind kind = typeMirror.getKind();
+    return kind == TypeKind.LONG
+        || kind == TypeKind.BYTE
+        || kind == TypeKind.SHORT
+        || kind == TypeKind.FLOAT
+        || kind == TypeKind.CHAR
+        || JavaToTsTypeConverter.isSameType(typeMirror, Long.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Byte.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Short.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Float.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Integer.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Character.class, env);
+  }
+
+  private TsLiteral getLiteralAnnotation() {
+    TsLiteral literal = getAnnotation(TsLiteral.class);
+    if (literal != null) {
+      return literal;
+    }
+    if (element instanceof ExecutableElement) {
+      return ((ExecutableElement) element).getReturnType().getAnnotation(TsLiteral.class);
+    }
+    if (element != null) {
+      return element.asType().getAnnotation(TsLiteral.class);
+    }
+    return null;
+  }
+
+  private TypeMirror literalTypeMirror() {
+    if (element instanceof ExecutableElement) {
+      return ((ExecutableElement) element).getReturnType();
+    }
+    return element.asType();
+  }
+
+  /**
+   * Resolves a literal type from a {@link TypeMirror}'s TYPE_USE annotations. This handles the case
+   * where {@code @TsLiteral} is used as a type-use annotation on type arguments, e.g. {@code
+   * Supertype<@TsLiteral("hello") String>}.
+   */
+  public static Optional<TsType> getLiteralTypeFromMirror(
+      TypeMirror typeMirror, HasProcessorEnv env) {
+    for (AnnotationMirror am : typeMirror.getAnnotationMirrors()) {
+      if (am.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral")) {
+        if (isUnsupportedLiteralType(typeMirror, env)) {
+          env.messager()
+              .printMessage(
+                  Diagnostic.Kind.ERROR,
+                  String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror));
+          return Optional.empty();
+        }
+        for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
+            am.getElementValues().entrySet()) {
+          if (entry.getKey().getSimpleName().contentEquals("value")) {
+            String value = entry.getValue().getValue().toString();
+            if (!value.isEmpty()) {
+              if (JavaToTsTypeConverter.isSameType(typeMirror, String.class, env)) {
+                return Optional.of(TsType.of("\"" + escapeLiteralStr(value) + "\""));
+              }
+              return Optional.of(TsType.of(value));
+            }
+          }
+        }
+      }
+    }
+    return Optional.empty();
+  }
+
+  private static String escapeLiteralStr(String value) {
+    return value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
+        .replace("\n", "\\n")
+        .replace("\r", "\\r")
+        .replace("\t", "\\t");
   }
 
   public List<ExecutableElement> allSuperMethods() {
@@ -835,7 +969,9 @@ public class TsElement {
   }
 
   public boolean isUnionMember() {
-    return isJsOverlay() && isMethod() && nonNull(getAnnotation(TsUnionMember.class));
+    return isJsOverlay()
+        && nonNull(getAnnotation(TsUnionMember.class))
+        && (isMethod() || isField());
   }
 
   public interface BiPredicate<T, C> {

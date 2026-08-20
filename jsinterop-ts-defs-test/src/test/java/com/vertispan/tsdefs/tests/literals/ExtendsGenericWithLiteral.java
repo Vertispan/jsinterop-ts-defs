@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.annotations;
+package com.vertispan.tsdefs.tests.literals;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.vertispan.tsdefs.annotations.TsLiteral;
+import com.vertispan.tsdefs.tests.generics.GenericJsType;
+import jsinterop.annotations.JsType;
 
 /**
- * A type annotated with this annotation will be treated as a type member in a union type presented
- * by {@link TsUnion}
+ * Tests that @TsLiteral as a TYPE_USE annotation on a generic type argument produces a literal type
+ * in the generated TS output, e.g. {@code class ExtendsGenericWithLiteral extends
+ * GenericJsType<"hello">}.
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
-@Documented
-public @interface TsUnionMember {}
+@JsType
+public class ExtendsGenericWithLiteral extends GenericJsType<@TsLiteral("hello") String> {
+  public String name;
+}

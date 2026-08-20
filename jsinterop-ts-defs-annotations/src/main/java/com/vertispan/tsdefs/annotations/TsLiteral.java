@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,18 @@
  */
 package com.vertispan.tsdefs.annotations;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.*;
 
 /**
- * A type annotated with this annotation will be treated as a type member in a union type presented
- * by {@link TsUnion}
+ * Marks a value as being typed in TS as a literal rather than the declared type.
+ *
+ * <p>Constant fields can omit the value and will use the Java constant value. Other uses, such as
+ * method return types, parameters, or type-use annotations, should supply an explicit literal
+ * value.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Documented
-public @interface TsUnionMember {}
+public @interface TsLiteral {
+  String value() default "";
+}

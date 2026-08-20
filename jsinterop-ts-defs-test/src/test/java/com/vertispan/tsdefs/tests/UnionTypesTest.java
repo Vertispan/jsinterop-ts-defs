@@ -31,4 +31,11 @@ public class UnionTypesTest {
 
     assertThat(tsType3.emit("")).isEqualTo("string|number");
   }
+
+  @Test
+  public void testLiteralUnionTypesPreserveOrder() {
+    TsType tsType = TsUnionType.of(TsType.of("\"one\""), TsType.of("number"), TsType.of("\"two\""));
+
+    assertThat(tsType.emit("")).isEqualTo("\"one\"|number|\"two\"");
+  }
 }
