@@ -18,7 +18,7 @@ package com.vertispan.tsdefs.tests.jsclasses;
 import jsinterop.annotations.JsType;
 
 @JsType
-public interface GlobalTypeWithInnerClass {
+public interface OuterClassWithInnerClass {
 
   @JsType
   public static class InnerClass {
