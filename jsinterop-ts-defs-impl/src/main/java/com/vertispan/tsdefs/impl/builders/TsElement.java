@@ -342,7 +342,7 @@ public class TsElement {
     }
 
     TypeMirror typeMirror = literalTypeMirror();
-    if (isUnsupportedLiteralType(typeMirror)) {
+    if (!isSupportedLiteralType(typeMirror)) {
       env.messager()
           .printMessage(
               Diagnostic.Kind.ERROR,
@@ -378,23 +378,18 @@ public class TsElement {
     return value;
   }
 
-  private boolean isUnsupportedLiteralType(TypeMirror typeMirror) {
-    return isUnsupportedLiteralType(typeMirror, env);
+  private boolean isSupportedLiteralType(TypeMirror typeMirror) {
+    return isSupportedLiteralType(typeMirror, env);
   }
 
-  private static boolean isUnsupportedLiteralType(TypeMirror typeMirror, HasProcessorEnv env) {
+  private static boolean isSupportedLiteralType(TypeMirror typeMirror, HasProcessorEnv env) {
     TypeKind kind = typeMirror.getKind();
-    return kind == TypeKind.LONG
-        || kind == TypeKind.BYTE
-        || kind == TypeKind.SHORT
-        || kind == TypeKind.FLOAT
-        || kind == TypeKind.CHAR
-        || JavaToTsTypeConverter.isSameType(typeMirror, Long.class, env)
-        || JavaToTsTypeConverter.isSameType(typeMirror, Byte.class, env)
-        || JavaToTsTypeConverter.isSameType(typeMirror, Short.class, env)
-        || JavaToTsTypeConverter.isSameType(typeMirror, Float.class, env)
-        || JavaToTsTypeConverter.isSameType(typeMirror, Integer.class, env)
-        || JavaToTsTypeConverter.isSameType(typeMirror, Character.class, env);
+    return kind == TypeKind.BOOLEAN
+        || kind == TypeKind.DOUBLE
+        || kind == TypeKind.INT
+        || JavaToTsTypeConverter.isSameType(typeMirror, String.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Boolean.class, env)
+        || JavaToTsTypeConverter.isSameType(typeMirror, Double.class, env);
   }
 
   private TsLiteral getLiteralAnnotation() {
@@ -427,7 +422,7 @@ public class TsElement {
       TypeMirror typeMirror, HasProcessorEnv env) {
     for (AnnotationMirror am : typeMirror.getAnnotationMirrors()) {
       if (am.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral")) {
-        if (isUnsupportedLiteralType(typeMirror, env)) {
+        if (!isSupportedLiteralType(typeMirror, env)) {
           env.messager()
               .printMessage(
                   Diagnostic.Kind.ERROR,

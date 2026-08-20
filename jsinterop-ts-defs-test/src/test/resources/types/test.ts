@@ -1121,6 +1121,21 @@ LiteralAPIs.acceptsBooleanLiteral(false);
 // @ts-expect-error
 LiteralAPIs.acceptsBooleanLiteral(true);
 
+expectType<3.14>()(LiteralAPIs.returnsBoxedDoubleLiteral());
+LiteralAPIs.acceptsBoxedDoubleLiteral(2.718);
+// @ts-expect-error
+LiteralAPIs.acceptsBoxedDoubleLiteral(99.9);
+
+expectType<true>()(LiteralAPIs.returnsBoxedBooleanLiteral());
+LiteralAPIs.acceptsBoxedBooleanLiteral(false);
+// @ts-expect-error
+LiteralAPIs.acceptsBoxedBooleanLiteral(true);
+
+expectType<7>()(LiteralAPIs.returnsIntLiteral());
+LiteralAPIs.acceptsIntLiteral(7);
+// @ts-expect-error
+LiteralAPIs.acceptsIntLiteral(8);
+
 import ExtendsGenericWithLiteral = com.vertispan.tsdefs.tests.literals.ExtendsGenericWithLiteral;
 
 let literalGeneric = new ExtendsGenericWithLiteral();

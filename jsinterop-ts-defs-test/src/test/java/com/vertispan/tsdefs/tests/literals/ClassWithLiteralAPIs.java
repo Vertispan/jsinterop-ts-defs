@@ -41,4 +41,22 @@ public class ClassWithLiteralAPIs {
   }
 
   public static void acceptsBooleanLiteral(@TsLiteral("false") boolean param) {}
+
+  public static @TsLiteral("3.14") Double returnsBoxedDoubleLiteral() {
+    return 3.14;
+  }
+
+  public static void acceptsBoxedDoubleLiteral(@TsLiteral("2.718") Double param) {}
+
+  public static @TsLiteral("true") Boolean returnsBoxedBooleanLiteral() {
+    return true;
+  }
+
+  public static void acceptsBoxedBooleanLiteral(@TsLiteral("false") Boolean param) {}
+
+  public static @TsLiteral("7") int returnsIntLiteral() {
+    return 7;
+  }
+
+  public static void acceptsIntLiteral(@TsLiteral("7") int param) {}
 }

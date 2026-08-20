@@ -18,15 +18,22 @@ package com.vertispan.tsdefs.annotations;
 import java.lang.annotation.*;
 
 /**
- * Marks a value as being typed in TS as a literal rather than the declared type.
+ * Marks a method or field as being typed in TS as a literal rather than the declared type.
  *
  * <p>Constant fields can omit the value and will use the Java constant value. Other uses, such as
  * method return types, parameters, or type-use annotations, should supply an explicit literal
  * value.
+ *
+ * <p>Supported types are {@code String}, {@code boolean}/{@code Boolean}, {@code double}/{@code
+ * Double}, and {@code int}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE_USE})
 @Documented
 public @interface TsLiteral {
+  /**
+   * The literal value to emit in the TypeScript definition. If empty, the Java constant value of
+   * the annotated field will be used instead.
+   */
   String value() default "";
 }
