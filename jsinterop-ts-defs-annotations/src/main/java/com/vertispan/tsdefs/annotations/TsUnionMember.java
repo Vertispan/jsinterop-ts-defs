@@ -22,10 +22,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A type annotated with this annotation will be treated as a type member in a union type presented
- * by {@link TsUnion}
+ * Marks a method or field as a member of a union type defined by {@link TsUnion}. When applied to a
+ * {@link jsinterop.annotations.JsOverlay} method, the method's return type becomes a member of the
+ * union. When applied to a {@code @JsOverlay} constant field annotated with {@link TsLiteral}, the
+ * field's literal value becomes a member of the union.
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
+@Target({ElementType.METHOD, ElementType.FIELD})
 @Documented
 public @interface TsUnionMember {}

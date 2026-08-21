@@ -17,7 +17,6 @@ package com.vertispan.tsdefs.impl.model;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -43,7 +42,7 @@ public class TsUnionType extends TsType {
   }
 
   public static TsUnionType of(TsType... types) {
-    return new TsUnionType(new HashSet<>(Arrays.asList(types)));
+    return new TsUnionType(new LinkedHashSet<>(Arrays.asList(types)));
   }
 
   public static TsUnionType of(Set<TsType> types) {
