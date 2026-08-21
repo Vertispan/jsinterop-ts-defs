@@ -555,6 +555,9 @@ public class TsElement {
   }
 
   public Boolean isStatic() {
+    if (isClass() || isInterface()) {
+      return false;
+    }
     return element.getModifiers().contains(Modifier.STATIC);
   }
 
