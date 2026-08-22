@@ -16,7 +16,6 @@
 package com.vertispan.tsdefs.impl.model;
 
 import static com.vertispan.tsdefs.impl.Formatting.NEW_LINE;
-import static java.util.Objects.nonNull;
 
 import com.vertispan.tsdefs.impl.builders.HasDocs;
 import com.vertispan.tsdefs.impl.builders.HasFunctions;
@@ -25,24 +24,25 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-public class TsEnum implements HasNamespace {
+public class TsBrandedType implements HasNamespace {
   private final String name;
   private final String namespace;
-  private TsCustomType type;
+  private TsType type;
   private final Set<TsModifier> modifiers = new LinkedHashSet<>();
   private final Set<String> enumerations = new LinkedHashSet<>();
   private final Set<TsMethod> functions = new LinkedHashSet<>();
   private TsDoc tsDoc;
   private boolean deprecated;
 
-  private TsEnum(String name, String namespace, TsCustomType type) {
+  private TsBrandedType(String name, String namespace, TsType type) {
     this.name = name;
     this.namespace = namespace;
     this.type = type;
   }
 
-  public static TsEnumBuilder builder(String name, String namespace, TsCustomType type) {
-    return new TsEnumBuilder(name, namespace, type);
+  public static TsBrandedType.TsBrandedTypeBuilder builder(
+      String name, String namespace, TsType type) {
+    return new TsBrandedType.TsBrandedTypeBuilder(name, namespace, type);
   }
 
   public String getName() {
@@ -59,18 +59,17 @@ public class TsEnum implements HasNamespace {
 
   public String emit(String indent, String parentNamespace) {
     StringBuffer sb = new StringBuffer();
-    if (nonNull(tsDoc)) {
-      sb.append(tsDoc.emit(indent, deprecated));
-    }
-    sb.append(type.emitType(indent, parentNamespace));
+
+    TsBrand tsBrand = new TsBrand(name, namespace);
+    sb.append(tsBrand.emit(indent));
     sb.append(NEW_LINE);
 
     TsClass.TsClassBuilder classBuilder =
-        TsClass.builder(name, namespace).addModifiers(TsModifier.EXPORT).setDocs(TsDoc.empty());
+        TsClass.builder(name, namespace).addModifiers(TsModifier.EXPORT).setDocs(tsDoc);
     enumerations.stream()
         .map(
             enumeration ->
-                TsProperty.builder(enumeration, TsType.of(type.name))
+                TsProperty.builder(enumeration, tsBrand.getType())
                     .setDocs(TsDoc.empty())
                     .addModifiers(TsModifier.STATIC, TsModifier.READONLY)
                     .build())
@@ -83,41 +82,43 @@ public class TsEnum implements HasNamespace {
     return sb.toString();
   }
 
-  public static class TsEnumBuilder implements HasDocs<TsEnumBuilder>, HasFunctions<TsEnumBuilder> {
-    private final TsEnum tsEnum;
+  public static class TsBrandedTypeBuilder
+      implements HasDocs<TsBrandedType.TsBrandedTypeBuilder>,
+          HasFunctions<TsBrandedType.TsBrandedTypeBuilder> {
+    private final TsBrandedType tsEnum;
 
-    private TsEnumBuilder(String name, String namespace, TsCustomType type) {
-      this.tsEnum = new TsEnum(name, namespace, type);
+    private TsBrandedTypeBuilder(String name, String namespace, TsType type) {
+      this.tsEnum = new TsBrandedType(name, namespace, type);
     }
 
-    public TsEnumBuilder addEnumeration(String name) {
+    public TsBrandedType.TsBrandedTypeBuilder addEnumeration(String name) {
       this.tsEnum.enumerations.add(name);
       return this;
     }
 
-    public TsEnumBuilder addModifiers(TsModifier... modifiers) {
+    public TsBrandedType.TsBrandedTypeBuilder addModifiers(TsModifier... modifiers) {
       this.tsEnum.modifiers.addAll(Arrays.asList(modifiers));
       return this;
     }
 
     @Override
-    public TsEnumBuilder setDocs(TsDoc tsDoc) {
+    public TsBrandedType.TsBrandedTypeBuilder setDocs(TsDoc tsDoc) {
       this.tsEnum.tsDoc = tsDoc;
       return this;
     }
 
-    public TsEnumBuilder setDeprecated(boolean deprecated) {
+    public TsBrandedType.TsBrandedTypeBuilder setDeprecated(boolean deprecated) {
       this.tsEnum.deprecated = deprecated;
       return this;
     }
 
     @Override
-    public TsEnumBuilder addFunction(TsMethod function) {
+    public TsBrandedType.TsBrandedTypeBuilder addFunction(TsMethod function) {
       this.tsEnum.functions.add(function);
       return this;
     }
 
-    public TsEnum build() {
+    public TsBrandedType build() {
       return this.tsEnum;
     }
   }

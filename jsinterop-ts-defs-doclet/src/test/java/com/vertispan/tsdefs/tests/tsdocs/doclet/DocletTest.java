@@ -74,6 +74,11 @@ public class DocletTest {
   }
 
   @Test
+  public void brandedTypes() throws IOException {
+    testDocs("branded");
+  }
+
+  @Test
   public void testIssue104() throws IOException {
     testDocs("links.issue104");
   }

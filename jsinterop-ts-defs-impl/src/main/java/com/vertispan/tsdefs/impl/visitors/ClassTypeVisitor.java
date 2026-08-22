@@ -37,7 +37,7 @@ public class ClassTypeVisitor extends TsElement {
   }
 
   public void visit(TypeScriptModule.TsModuleBuilder moduleBuilder) {
-    if (isClass() && isPublic() && !isTsTypeDef() && !isTsIgnored()) {
+    if (isClass() && isPublic() && !isTsTypeDef() && !isTsIgnored() && !isEnum()) {
 
       TsClass.TsClassBuilder builder =
           TsClass.builder(getName(), getNamespace())

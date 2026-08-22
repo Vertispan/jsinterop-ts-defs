@@ -28,7 +28,8 @@ public class TsNamespace {
   private List<TsInterface> tsInterfaces = new ArrayList<>();
   private List<TsFunction> tsFunctions = new ArrayList<>();
   private List<TsClass> tsClasses = new ArrayList<>();
-  private List<TsEnum> tsEnums = new ArrayList<>();
+  private List<TsTypeDef> tsTypeDefs = new ArrayList<>();
+  private List<TsBrandedType> tsBrandedTypes = new ArrayList<>();
 
   public TsNamespace(String namespace) {
     this.namespace = namespace;
@@ -52,14 +53,19 @@ public class TsNamespace {
     this.tsFunctions.add(tsFunction);
   }
 
-  public void addTsEnum(TsEnum tsEnum) {
-    this.tsEnums.add(tsEnum);
+  public void addTsTypeDef(TsTypeDef tsTypeDef) {
+    this.tsTypeDefs.add(tsTypeDef);
+  }
+
+  public void addBrandedType(TsBrandedType tsBrandedType) {
+    this.tsBrandedTypes.add(tsBrandedType);
   }
 
   public boolean isEmpty() {
     return tsInterfaces.isEmpty()
         && tsFunctions.isEmpty()
-        && tsEnums.isEmpty()
+        && tsTypeDefs.isEmpty()
+        && tsBrandedTypes.isEmpty()
         && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty));
   }
 
@@ -96,9 +102,16 @@ public class TsNamespace {
             .collect(Collectors.joining(NEW_LINE, optionalln(tsClasses), optionalln(tsClasses))));
 
     sb.append(
-        tsEnums.stream()
-            .map(tsEnum -> tsEnum.emit(indent + INDENT, namespace))
-            .collect(Collectors.joining(NEW_LINE, optionalln(tsEnums), optionalln(tsEnums))));
+        tsTypeDefs.stream()
+            .map(tsTypeDef -> tsTypeDef.emit(indent + INDENT, namespace))
+            .collect(Collectors.joining(NEW_LINE, optionalln(tsTypeDefs), optionalln(tsTypeDefs))));
+
+    sb.append(
+        tsBrandedTypes.stream()
+            .map(tsTypeDef -> tsTypeDef.emit(indent + INDENT, namespace))
+            .collect(
+                Collectors.joining(
+                    NEW_LINE, optionalln(tsBrandedTypes), optionalln(tsBrandedTypes))));
 
     sb.append("}").append(NEW_LINE);
 

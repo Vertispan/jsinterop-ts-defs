@@ -33,7 +33,8 @@ public class TypeScriptModule {
   private List<TsInterface> globalInterfaces = new ArrayList<>();
   private List<TsFunction> globalFunctions = new ArrayList<>();
   private List<TsClass> globalClasses = new ArrayList<>();
-  private List<TsEnum> globalEnums = new ArrayList<>();
+  private List<TsTypeDef> globalEnums = new ArrayList<>();
+  private List<TsBrandedType> globalBrnadedTypes = new ArrayList<>();
 
   private final HasProcessorEnv env;
 
@@ -60,9 +61,16 @@ public class TypeScriptModule {
 
     sb.append(
         globalEnums.stream()
-            .map(tsEnum -> tsEnum.emit(NONE, NONE))
+            .map(tsTypeDef -> tsTypeDef.emit(NONE, NONE))
             .collect(
                 Collectors.joining(NEW_LINE, optionalln(globalEnums), optionalln(globalEnums))));
+
+    sb.append(
+        globalBrnadedTypes.stream()
+            .map(tsTypeDef -> tsTypeDef.emit(NONE, NONE))
+            .collect(
+                Collectors.joining(
+                    NEW_LINE, optionalln(globalBrnadedTypes), optionalln(globalBrnadedTypes))));
 
     sb.append(
         globalClasses.stream()
@@ -132,15 +140,28 @@ public class TypeScriptModule {
       return this;
     }
 
-    public TsModuleBuilder addTsEnum(TsEnum tsEnum) {
-      if (tsEnum.isGlobal()) {
-        typeScriptModule.globalEnums.add(tsEnum);
+    public TsModuleBuilder addTsTypeDef(TsTypeDef tsTypeDef) {
+      if (tsTypeDef.isGlobal()) {
+        typeScriptModule.globalEnums.add(tsTypeDef);
       } else {
-        if (!typeScriptModule.namespaces.containsKey(tsEnum.getNamespace())) {
+        if (!typeScriptModule.namespaces.containsKey(tsTypeDef.getNamespace())) {
           typeScriptModule.namespaces.put(
-              tsEnum.getNamespace(), new TsNamespace(tsEnum.getNamespace()));
+              tsTypeDef.getNamespace(), new TsNamespace(tsTypeDef.getNamespace()));
         }
-        typeScriptModule.namespaces.get(tsEnum.getNamespace()).addTsEnum(tsEnum);
+        typeScriptModule.namespaces.get(tsTypeDef.getNamespace()).addTsTypeDef(tsTypeDef);
+      }
+      return this;
+    }
+
+    public TsModuleBuilder addBrandedType(TsBrandedType tsBrandedType) {
+      if (tsBrandedType.isGlobal()) {
+        typeScriptModule.globalBrnadedTypes.add(tsBrandedType);
+      } else {
+        if (!typeScriptModule.namespaces.containsKey(tsBrandedType.getNamespace())) {
+          typeScriptModule.namespaces.put(
+              tsBrandedType.getNamespace(), new TsNamespace(tsBrandedType.getNamespace()));
+        }
+        typeScriptModule.namespaces.get(tsBrandedType.getNamespace()).addBrandedType(tsBrandedType);
       }
       return this;
     }
