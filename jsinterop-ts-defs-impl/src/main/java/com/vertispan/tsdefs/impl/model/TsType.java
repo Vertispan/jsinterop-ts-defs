@@ -15,6 +15,8 @@
  */
 package com.vertispan.tsdefs.impl.model;
 
+import com.vertispan.tsdefs.impl.builders.HasNamespace;
+
 import static com.vertispan.tsdefs.impl.Formatting.resolveName;
 
 import java.util.ArrayList;
@@ -22,7 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class TsType {
+public class TsType implements HasNamespace {
   protected final String name;
   protected final String namespace;
   private List<TsType> bounds = new ArrayList<>();

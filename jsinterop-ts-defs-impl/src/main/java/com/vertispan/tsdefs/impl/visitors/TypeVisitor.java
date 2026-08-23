@@ -43,9 +43,13 @@ public class TypeVisitor extends TsElement {
 
   public void visit(TypeScriptModule.TsModuleBuilder module) {
     validate();
-    new ClassTypeVisitor(element, env).visit(module);
-    new InterfaceTypeVisitor(element, env).visit(module);
-    new TsEnumTypeVisitor(element, env).visit(module);
+    if(isExplicitUnionType()) {
+      new TsExplicitUnionTypeVisitor(element, env).visit(module);
+    }else {
+      new ClassTypeVisitor(element, env).visit(module);
+      new InterfaceTypeVisitor(element, env).visit(module);
+      new TsEnumTypeVisitor(element, env).visit(module);
+    }
   }
 
   private void validate() {

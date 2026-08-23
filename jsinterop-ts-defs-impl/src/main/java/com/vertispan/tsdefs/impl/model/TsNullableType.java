@@ -35,9 +35,9 @@ public class TsNullableType extends TsType implements IsNullableTsType {
   @Override
   public String emit(String parentNamespace) {
     if (undefined) {
-      return TsUnionType.of(type, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
+      return TsUnionType.of(true, type, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
     }
-    return TsUnionType.of(type, TsType.nullType()).emit(parentNamespace);
+    return TsUnionType.of(true, type, TsType.nullType()).emit(parentNamespace);
   }
 
   @Override
