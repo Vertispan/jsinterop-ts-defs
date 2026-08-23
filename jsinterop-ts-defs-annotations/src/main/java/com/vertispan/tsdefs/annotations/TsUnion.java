@@ -31,4 +31,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Documented
-public @interface TsUnion {}
+public @interface TsUnion {
+    boolean anonymous() default true;
+}

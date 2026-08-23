@@ -27,6 +27,7 @@ import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 import com.vertispan.tsdefs.annotations.TsInterface;
 import com.vertispan.tsdefs.annotations.TsModule;
+import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.LogWrapper;
@@ -69,7 +70,8 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
             JsConstructor.class,
             JsMethod.class,
             JsProperty.class,
-            TsModule.class));
+            TsModule.class,
+            TsUnion.class));
   }
 
   @Override
@@ -83,9 +85,20 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
       Set<Element> jsTypes =
           elementsByAnnotation.get(JsType.class).stream()
               .filter(
-                  element ->
-                      !element.getAnnotation(JsType.class).isNative()
-                          || (nonNull(element.getAnnotation(TsInterface.class))))
+                  element -> {
+                    JsType jsType = element.getAnnotation(JsType.class);
+                    return !jsType.isNative()
+                        || (nonNull(element.getAnnotation(TsInterface.class)));
+                  })
+              .collect(Collectors.toSet());
+
+      Set<Element> tsUnionTypes =
+          elementsByAnnotation.get(TsUnion.class).stream()
+              .filter(
+                  element -> {
+                    TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+                    return nonNull(tsUnion) && !tsUnion.anonymous();
+                  })
               .collect(Collectors.toSet());
 
       // We also list types that might not be annotated with JsType but have members annotated using
@@ -114,6 +127,7 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
               .collect(Collectors.toSet());
 
       Set<Element> eligibleElements = new HashSet<>();
+      eligibleElements.addAll(tsUnionTypes);
       eligibleElements.addAll(jsTypes);
       eligibleElements.addAll(jsFunctions);
       eligibleElements.addAll(constructorsParentElements);
@@ -122,10 +136,13 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
 
       eligibleElements.stream()
           .filter(
-              element ->
-                  isNull(element.getAnnotation(JsType.class))
-                      || !element.getAnnotation(JsType.class).isNative()
-                      || (nonNull(element.getAnnotation(TsInterface.class))))
+              element -> {
+                JsType jsType = element.getAnnotation(JsType.class);
+                return isNull(jsType)
+                    || !jsType.isNative()
+                    || isExplicitUnion(element)
+                    || (nonNull(element.getAnnotation(TsInterface.class)));
+              })
           .forEach(
               e -> {
                 try {
@@ -140,7 +157,9 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
 
       String moduleName =
           elementsByAnnotation.get(TsModule.class).stream()
-              .map(element -> element.getAnnotation(TsModule.class).value())
+              .map(element -> element.getAnnotation(TsModule.class))
+              .filter(java.util.Objects::nonNull)
+              .map(TsModule::value)
               .findFirst()
               .orElse("types");
 
@@ -160,6 +179,11 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
 
     return Sets.newHashSet();
   }
+
+    private boolean isExplicitUnion(Element element) {
+      TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+      return nonNull(tsUnion) && !tsUnion.anonymous();
+    }
 
   @Override
   public TsDoc getDocs(Element element) {

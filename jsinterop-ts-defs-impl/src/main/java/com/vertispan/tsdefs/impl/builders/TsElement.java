@@ -959,6 +959,11 @@ public class TsElement {
     return nonNull(getAnnotation(TsUnion.class));
   }
 
+  public boolean isExplicitUnionType() {
+    TsUnion tsUnion = getAnnotation(TsUnion.class);
+    return nonNull(tsUnion) && !tsUnion.anonymous();
+  }
+
   public boolean isJsOverlay() {
     return nonNull(getAnnotation(JsOverlay.class));
   }

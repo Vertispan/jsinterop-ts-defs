@@ -34,6 +34,7 @@ public class TypeScriptModule {
   private List<TsFunction> globalFunctions = new ArrayList<>();
   private List<TsClass> globalClasses = new ArrayList<>();
   private List<TsEnum> globalEnums = new ArrayList<>();
+  private List<TsCustomType> globalTypes = new ArrayList<>();
 
   private final HasProcessorEnv env;
 
@@ -43,6 +44,10 @@ public class TypeScriptModule {
 
   public String emit() {
     StringBuffer sb = new StringBuffer();
+
+    sb.append(globalTypes.stream()
+            .map(tsType -> tsType.emitType(NONE, NONE))
+            .collect(Collectors.joining(NEW_LINE)));
 
     sb.append(
         globalInterfaces.stream()
@@ -141,6 +146,25 @@ public class TypeScriptModule {
               tsEnum.getNamespace(), new TsNamespace(tsEnum.getNamespace()));
         }
         typeScriptModule.namespaces.get(tsEnum.getNamespace()).addTsEnum(tsEnum);
+      }
+      return this;
+    }
+
+    public TsModuleBuilder addTsType(TsType tsType) {
+      return addTsType(tsType, TsDoc.empty());
+    }
+
+    public TsModuleBuilder addTsType(TsType tsType, TsDoc tsDoc) {
+      TsCustomType customType =
+          TsCustomType.of(tsType.getName(), tsType.getNamespace(), tsType, tsDoc);
+      if (customType.isGlobal()) {
+        typeScriptModule.globalTypes.add(customType);
+      } else {
+        if (!typeScriptModule.namespaces.containsKey(customType.getNamespace())) {
+          typeScriptModule.namespaces.put(
+              customType.getNamespace(), new TsNamespace(customType.getNamespace()));
+        }
+        typeScriptModule.namespaces.get(customType.getNamespace()).addTsType(customType);
       }
       return this;
     }
