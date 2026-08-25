@@ -1092,3 +1092,52 @@ class ExtendsFromJsTypeWithPrivateAndIgnoredConstructors extends JsTypeWithPriva
         super();
     }
 }
+
+import LiteralAPIs = com.vertispan.tsdefs.tests.literals.ClassWithLiteralAPIs;
+
+LiteralAPIs.acceptsUnionWithLiterals("one");
+LiteralAPIs.acceptsUnionWithLiterals(["three"]);
+// @ts-expect-error
+LiteralAPIs.acceptsUnionWithLiterals("three");
+
+LiteralAPIs.acceptsDiscriminatedUnion({type:"foo"});
+LiteralAPIs.acceptsDiscriminatedUnion({type:"bar"});
+// @ts-expect-error
+LiteralAPIs.acceptsDiscriminatedUnion({type:"baz"});
+// @ts-expect-error
+LiteralAPIs.acceptsDiscriminatedUnion({});
+expectType<"ready">()(LiteralAPIs.returnsLiteral());
+LiteralAPIs.acceptsLiteral("literal");
+// @ts-expect-error
+LiteralAPIs.acceptsLiteral("wrong");
+
+expectType<42>()(LiteralAPIs.returnsNumericLiteral());
+LiteralAPIs.acceptsNumericLiteral(42);
+// @ts-expect-error
+LiteralAPIs.acceptsNumericLiteral(99);
+
+expectType<true>()(LiteralAPIs.returnsBooleanLiteral());
+LiteralAPIs.acceptsBooleanLiteral(false);
+// @ts-expect-error
+LiteralAPIs.acceptsBooleanLiteral(true);
+
+expectType<3.14>()(LiteralAPIs.returnsBoxedDoubleLiteral());
+LiteralAPIs.acceptsBoxedDoubleLiteral(2.718);
+// @ts-expect-error
+LiteralAPIs.acceptsBoxedDoubleLiteral(99.9);
+
+expectType<true>()(LiteralAPIs.returnsBoxedBooleanLiteral());
+LiteralAPIs.acceptsBoxedBooleanLiteral(false);
+// @ts-expect-error
+LiteralAPIs.acceptsBoxedBooleanLiteral(true);
+
+expectType<7>()(LiteralAPIs.returnsIntLiteral());
+LiteralAPIs.acceptsIntLiteral(7);
+// @ts-expect-error
+LiteralAPIs.acceptsIntLiteral(8);
+
+import ExtendsGenericWithLiteral = com.vertispan.tsdefs.tests.literals.ExtendsGenericWithLiteral;
+
+let literalGeneric = new ExtendsGenericWithLiteral();
+expectType<"hello">()(literalGeneric.propertyOfT);
+expectType<"hello">()(literalGeneric.takesNothingReturnT());

@@ -21,6 +21,7 @@ import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeParameterElement;
@@ -42,6 +43,10 @@ public class TypeArgumentsVisitor<T> extends TsElement {
       typeArguments.stream()
           .map(
               typeMirror -> {
+                Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeMirror, env);
+                if (literalType.isPresent()) {
+                  return literalType.get();
+                }
                 TsType type = TsElement.of(typeMirror, env).getType();
                 Element typeElement = env.types().asElement(typeMirror);
                 if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
