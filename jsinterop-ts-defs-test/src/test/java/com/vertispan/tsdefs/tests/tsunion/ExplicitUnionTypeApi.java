@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,12 @@ import jsinterop.annotations.JsType;
 @JsType
 public interface ExplicitUnionTypeApi {
   @JsNullable
-  ExplicitUnion<String> someFunction(ExplicitParamUnion param1, @JsNullable ExplicitParamUnion param2);
+  ExplicitUnion<String> someFunction(
+      ExplicitParamUnion param1, @JsNullable ExplicitParamUnion param2);
 
   @JsNullable
-  ExplicitUnion<ExplicitParamUnion[]> arraysFunction(ExplicitParamUnion[] param1, @JsNullable ExplicitParamUnion[] param2);
+  ExplicitUnion<ExplicitParamUnion[]> arraysFunction(
+      ExplicitParamUnion[] param1, @JsNullable ExplicitParamUnion[] param2);
 
   @JsNullable
   ExplicitUnion<ExplicitParamUnion[][]> arrays2dFunction(

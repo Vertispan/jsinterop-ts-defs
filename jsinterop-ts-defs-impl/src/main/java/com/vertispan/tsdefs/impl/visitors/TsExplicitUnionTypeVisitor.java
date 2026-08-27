@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TypeScriptModule;
-
 import javax.lang.model.element.Element;
 
 public class TsExplicitUnionTypeVisitor extends TsElement {
@@ -29,7 +28,7 @@ public class TsExplicitUnionTypeVisitor extends TsElement {
   }
 
   public void visit(TypeScriptModule.TsModuleBuilder moduleBuilder) {
-    if (isPublic() && isExplicitUnionType() ) {
+    if (isPublic() && isExplicitUnionType()) {
       JavaToTsTypeConverter converter = new JavaToTsTypeConverter(element, env);
       moduleBuilder.addTsType(converter.unionType(element), getDocs());
     }

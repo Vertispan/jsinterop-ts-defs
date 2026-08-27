@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -117,8 +117,7 @@ public class JavaToTsTypeConverter {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).arrayComponentType();
         if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
           return TsElement.of(arrayComponentType, env)
-              .typeOrNullable(
-                  ParameterizedTsType.of("Array", "", toTsType(arrayComponentType)));
+              .typeOrNullable(ParameterizedTsType.of("Array", "", toTsType(arrayComponentType)));
         } else {
           ArrayTsType arrayType = ArrayTsType.of(toTsType(arrayComponentType));
           arrayType.setTsReadOnly(

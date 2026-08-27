@@ -180,10 +180,10 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
     return Sets.newHashSet();
   }
 
-    private boolean isExplicitUnion(Element element) {
-      TsUnion tsUnion = element.getAnnotation(TsUnion.class);
-      return nonNull(tsUnion) && !tsUnion.anonymous();
-    }
+  private boolean isExplicitUnion(Element element) {
+    TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+    return nonNull(tsUnion) && !tsUnion.anonymous();
+  }
 
   @Override
   public TsDoc getDocs(Element element) {

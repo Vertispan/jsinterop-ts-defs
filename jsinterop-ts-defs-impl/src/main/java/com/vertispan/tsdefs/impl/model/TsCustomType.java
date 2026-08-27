@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,8 +42,7 @@ public class TsCustomType extends TsType {
     return new TsCustomType(name, namespace, referenceType);
   }
 
-  public static TsCustomType of(
-      String name, String namespace, TsType referenceType, TsDoc tsDoc) {
+  public static TsCustomType of(String name, String namespace, TsType referenceType, TsDoc tsDoc) {
     return new TsCustomType(name, namespace, referenceType, tsDoc);
   }
 

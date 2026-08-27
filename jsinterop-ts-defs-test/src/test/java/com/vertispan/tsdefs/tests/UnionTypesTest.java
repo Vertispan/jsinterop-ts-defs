@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,59 +28,60 @@ public class UnionTypesTest {
 
   @Test
   public void testMergeUnionTypes() {
-    TsType tsType1 = TsUnionType.of(true, TsType.of("string"), TsType.of("number"), TsType.of("string"));
+    TsType tsType1 =
+        TsUnionType.of(true, TsType.of("string"), TsType.of("number"), TsType.of("string"));
     TsType tsType2 = TsUnionType.of(true, tsType1, TsType.of("number"), TsType.of("string"));
-    TsType tsType3 = TsUnionType.of(true, tsType1, tsType2, TsType.of("number"), TsType.of("string"));
+    TsType tsType3 =
+        TsUnionType.of(true, tsType1, tsType2, TsType.of("number"), TsType.of("string"));
 
     assertThat(tsType3.emit("")).isEqualTo("string|number");
   }
 
   @Test
   public void testLiteralUnionTypesPreserveOrder() {
-    TsType tsType = TsUnionType.of(TsType.of("\"one\""), TsType.of("number"), TsType.of("\"two\""));
+    TsType tsType =
+        TsUnionType.of(true, TsType.of("\"one\""), TsType.of("number"), TsType.of("\"two\""));
 
     assertThat(tsType.emit("")).isEqualTo("\"one\"|number|\"two\"");
   }
 
-
-    @Test
-    public void testExplicitUnionDefinitionsAndReferences() throws IOException {
-        String definitions;
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("types/index.d.ts")) {
-            assertThat(stream).as("generated TypeScript definitions").isNotNull();
-            definitions = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-        }
-
-        assertThat(definitions)
-                .contains(
-                        "/**\n*A named explicit parameter union. \n*/\ntype ExplicitParamUnion = number|Array<number|undefined|null>;")
-                .contains(
-                        "/**\n*A generic explicit union. \n*/\ntype ExplicitUnion<T> = number|Array<T>;")
-                .contains("type ExplicitParamUnion = number|Array<number|undefined|null>;")
-                .contains("type ExplicitUnion<T> = number|Array<T>;")
-                .contains(
-                        "someFunction(param1:ExplicitParamUnion, param2:ExplicitParamUnion|undefined|null):ExplicitUnion<string>|undefined|null;")
-                .doesNotContain("type ExplicitParamUnion = ExplicitParamUnion;")
-                .doesNotContain("type ExplicitUnion = ExplicitUnion;");
+  @Test
+  public void testExplicitUnionDefinitionsAndReferences() throws IOException {
+    String definitions;
+    try (InputStream stream = getClass().getClassLoader().getResourceAsStream("types/index.d.ts")) {
+      assertThat(stream).as("generated TypeScript definitions").isNotNull();
+      definitions = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
     }
 
-    @Test
-    public void testExplicitUnionReferencesInReturnsAndNestedTypes() throws IOException {
-        String definitions;
-        try (InputStream stream = getClass().getClassLoader().getResourceAsStream("types/index.d.ts")) {
-            assertThat(stream).as("generated TypeScript definitions").isNotNull();
-            definitions = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-        }
+    assertThat(definitions)
+        .contains(
+            "/**\n*A named explicit parameter union. \n*/\ntype ExplicitParamUnion = number|Array<number|null|undefined>;")
+        .contains("/**\n*A generic explicit union. \n*/\ntype ExplicitUnion<T> = number|Array<T>;")
+        .contains("type ExplicitParamUnion = number|Array<number|null|undefined>;")
+        .contains("type ExplicitUnion<T> = number|Array<T>;")
+        .contains(
+            "someFunction(param1:ExplicitParamUnion, param2:ExplicitParamUnion|null|undefined):ExplicitUnion<string>|null|undefined;")
+        .doesNotContain("type ExplicitParamUnion = ExplicitParamUnion;")
+        .doesNotContain("type ExplicitUnion = ExplicitUnion;");
+  }
 
-        assertThat(definitions)
-                .contains("nonNullableUnionReturn():ExplicitParamUnion;")
-                .contains("nullableUnionReturn():ExplicitParamUnion|undefined|null;")
-                .contains(
-                        "genericUnionWithNamedArgument(value:ExplicitUnion<ExplicitParamUnion>):ExplicitUnion<ExplicitParamUnion>;")
-                .contains("unionArrayReturn():Array<ExplicitParamUnion>;")
-                .contains("nullableUnionArrayReturn():Array<ExplicitParamUnion>|undefined|null;")
-                .contains("union2dArrayReturn():Array<Array<ExplicitParamUnion>>;")
-                .contains(
-                        "nullableGenericUnionReturn(value:ExplicitUnion<Array<ExplicitParamUnion>>|undefined|null):ExplicitUnion<Array<ExplicitParamUnion>>|undefined|null;");
+  @Test
+  public void testExplicitUnionReferencesInReturnsAndNestedTypes() throws IOException {
+    String definitions;
+    try (InputStream stream = getClass().getClassLoader().getResourceAsStream("types/index.d.ts")) {
+      assertThat(stream).as("generated TypeScript definitions").isNotNull();
+      definitions = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
     }
+
+    assertThat(definitions)
+        .contains("nonNullableUnionReturn():ExplicitParamUnion;")
+        .contains("nullableUnionReturn():ExplicitParamUnion|null|undefined;")
+        .contains(
+            "genericUnionWithNamedArgument(value:ExplicitUnion<ExplicitParamUnion>):ExplicitUnion<ExplicitParamUnion>;")
+        .contains("unionArrayReturn():Array<ExplicitParamUnion>;")
+        .contains("nullableUnionArrayReturn():Array<ExplicitParamUnion>|null|undefined;")
+        .contains("union2dArrayReturn():Array<Array<ExplicitParamUnion>>;")
+        .contains(
+            "nullableGenericUnionReturn(value:ExplicitUnion<Array<ExplicitParamUnion>>|null|undefined):ExplicitUnion<Array<ExplicitParamUnion>>|null|undefined;");
+  }
 }

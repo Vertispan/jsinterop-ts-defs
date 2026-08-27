@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,8 @@ public class TypeScriptModule {
   public String emit() {
     StringBuffer sb = new StringBuffer();
 
-    sb.append(globalTypes.stream()
+    sb.append(
+        globalTypes.stream()
             .map(tsType -> tsType.emitType(NONE, NONE))
             .collect(Collectors.joining(NEW_LINE)));
 
