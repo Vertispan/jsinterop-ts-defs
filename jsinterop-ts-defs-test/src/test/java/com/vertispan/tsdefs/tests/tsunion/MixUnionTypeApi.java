@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,8 @@ public interface MixUnionTypeApi {
   ExplicitUnion<String> someFunction(ExplicitParamUnion param1, @JsNullable ParamUnion param2);
 
   @JsNullable
-  ResultUnion<ParamUnion[]> arraysFunction(ParamUnion[] param1, @JsNullable ExplicitParamUnion[] param2);
+  ResultUnion<ParamUnion[]> arraysFunction(
+      ParamUnion[] param1, @JsNullable ExplicitParamUnion[] param2);
 
   @JsNullable
   ResultUnion<ExplicitParamUnion[][]> arrays2dFunction(

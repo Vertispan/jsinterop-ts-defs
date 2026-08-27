@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package com.vertispan.tsdefs.impl.model;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -33,6 +33,7 @@ public class TsUnionType extends TsType {
   public TsUnionType(boolean anonymous, Collection<TsType> tsTypes) {
     this("", "", anonymous, Collections.emptyList(), tsTypes);
   }
+
   public TsUnionType(boolean anonymous, TsType... tsTypes) {
     this("", "", anonymous, Collections.emptyList(), new LinkedHashSet<>(Arrays.asList(tsTypes)));
   }
@@ -67,7 +68,8 @@ public class TsUnionType extends TsType {
     return new TsUnionType(name, namespace, anonymous, new LinkedHashSet<>(Arrays.asList(types)));
   }
 
-  public static TsUnionType of(String name, String namespace, boolean anonymous, Set<TsType> types) {
+  public static TsUnionType of(
+      String name, String namespace, boolean anonymous, Set<TsType> types) {
     return new TsUnionType(name, namespace, anonymous, types);
   }
 
@@ -94,7 +96,7 @@ public class TsUnionType extends TsType {
 
   @Override
   public String emit(String parentNamespace) {
-    if(!anonymous) {
+    if (!anonymous) {
       return super.emit(parentNamespace);
     }
     return tsTypes.stream()

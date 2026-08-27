@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,5 @@ public interface ExplicitUnionApi {
   ExplicitParamUnion getExplicitUnion();
 
   /** Uses a generic explicit union containing another named union. */
-  ExplicitUnion<ExplicitParamUnion> useExplicitUnion(
-      ExplicitUnion<ExplicitParamUnion> value);
+  ExplicitUnion<ExplicitParamUnion> useExplicitUnion(ExplicitUnion<ExplicitParamUnion> value);
 }

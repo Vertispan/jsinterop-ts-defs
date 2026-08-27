@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,9 @@
  */
 package com.vertispan.tsdefs.impl.model;
 
-import com.vertispan.tsdefs.impl.builders.HasNamespace;
-
 import static com.vertispan.tsdefs.impl.Formatting.resolveName;
 
+import com.vertispan.tsdefs.impl.builders.HasNamespace;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;

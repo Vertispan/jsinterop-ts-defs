@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,9 +43,9 @@ public class TypeVisitor extends TsElement {
 
   public void visit(TypeScriptModule.TsModuleBuilder module) {
     validate();
-    if(isExplicitUnionType()) {
+    if (isExplicitUnionType()) {
       new TsExplicitUnionTypeVisitor(element, env).visit(module);
-    }else {
+    } else {
       new ClassTypeVisitor(element, env).visit(module);
       new InterfaceTypeVisitor(element, env).visit(module);
       new TsEnumTypeVisitor(element, env).visit(module);
