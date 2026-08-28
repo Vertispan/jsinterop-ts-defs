@@ -56,9 +56,10 @@ public class UnionTypesTest {
     assertThat(definitions)
         .contains(
             "/**\n*A named explicit parameter union. \n*/\ntype ExplicitParamUnion = number|Array<number|null|undefined>;")
-        .contains("/**\n*A generic explicit union. \n*/\ntype ExplicitUnion<T> = number|Array<T>;")
+        .contains(
+            "/**\n*A generic explicit union. \n*/\ntype ExplicitUnion<T> = number|Array<T>|\"foo\";")
         .contains("type ExplicitParamUnion = number|Array<number|null|undefined>;")
-        .contains("type ExplicitUnion<T> = number|Array<T>;")
+        .contains("type ExplicitUnion<T> = number|Array<T>|\"foo\";")
         .contains(
             "someFunction(param1:ExplicitParamUnion, param2:ExplicitParamUnion|null|undefined):ExplicitUnion<string>|null|undefined;")
         .doesNotContain("type ExplicitParamUnion = ExplicitParamUnion;")

@@ -188,11 +188,15 @@ public class JavaToTsTypeConverter {
         .map(e -> TsElement.of(e, env))
         .filter(TsElement::isUnionMember)
         .map(
-            e ->
-                e.typeOrNullable(
+            e -> {
+              if (e.isMethod()) {
+                return e.typeOrNullable(
                     toTsType(
                         ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
-                            .getReturnType())))
+                            .getReturnType()));
+              }
+              return e.getType();
+            })
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 

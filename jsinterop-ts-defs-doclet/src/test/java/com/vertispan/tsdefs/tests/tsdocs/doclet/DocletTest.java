@@ -102,7 +102,7 @@ public class DocletTest {
         .contains(
             "/**\n* A named union containing a number or an array of nullable numbers.\n*/\ntype ExplicitParamUnion = number|Array<number|null|undefined>;")
         .contains(
-            "/**\n* A generic named union containing a number or an array of its type parameter.\n*/\ntype ExplicitUnion<T> = number|Array<T>;")
+            "/**\n* A generic named union containing a number or an array of its type parameter.\n*/\ntype ExplicitUnion<T> = number|Array<T>|\"foo\";")
         .contains(
             "\t/**\n\t* A named union emitted inside a TypeScript namespace.\n\t*/\n\ttype NamespacedExplicitUnion = string|boolean;")
         .contains("getExplicitUnion():ExplicitParamUnion|null|undefined;")

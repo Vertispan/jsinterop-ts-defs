@@ -15,6 +15,7 @@
  */
 package com.vertispan.tsdefs.tests.tsdocs.doclet.union;
 
+import com.vertispan.tsdefs.annotations.TsLiteral;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import elemental2.core.JsArray;
@@ -37,4 +38,6 @@ public interface ExplicitUnion<T> {
   default JsArray<T> asArray() {
     return null;
   }
+
+  @TsUnionMember @TsLiteral @JsOverlay String FOO = "foo";
 }

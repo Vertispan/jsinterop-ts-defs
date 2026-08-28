@@ -1027,7 +1027,7 @@ implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], undefin
 // ---------------- Explicit Union Types --------------------------
 
 type ExpectedExplicitParamUnion = number | Array<number | null | undefined>;
-type ExpectedExplicitUnion<T> = number | Array<T>;
+type ExpectedExplicitUnion<T> = number | Array<T> | "foo";
 
 const explicitUnionTypeApi = {} as ExplicitUnionTypeApi;
 expectType<ExpectedExplicitUnion<string> | null | undefined>()(
