@@ -130,6 +130,9 @@ import TsInterfaceWithJsNullableFields = com.vertispan.tsdefs.tests.jsnullable.T
 // ---------------- Union Types ----------------
 
 import UnionTypeApi = com.vertispan.tsdefs.tests.tsunion.UnionTypeApi;
+import ExplicitUnionTypeApi = com.vertispan.tsdefs.tests.tsunion.ExplicitUnionTypeApi;
+import ExplicitUnionReferenceApi = com.vertispan.tsdefs.tests.tsunion.ExplicitUnionReferenceApi;
+import MixUnionTypeApi = com.vertispan.tsdefs.tests.tsunion.MixUnionTypeApi;
 
 // ---------------- TsReadOnly ----------------
 import ArrayTypeTest = com.vertispan.tsdefs.tests.tsreadonly.ArrayTypeTest;
@@ -1020,6 +1023,41 @@ implementsUnionTypeApi.arraysFunction([1.0, [1.0, null, undefined]], undefined);
 implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], [[1.0, [1.0, null, undefined]]]);
 implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], null);
 implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], undefined);
+
+// ---------------- Explicit Union Types --------------------------
+
+type ExpectedExplicitParamUnion = number | Array<number | null | undefined>;
+type ExpectedExplicitUnion<T> = number | Array<T> | "foo";
+
+const explicitUnionTypeApi = {} as ExplicitUnionTypeApi;
+expectType<ExpectedExplicitUnion<string> | null | undefined>()(
+    explicitUnionTypeApi.someFunction(1.0, [1.0, null]));
+expectType<ExpectedExplicitUnion<Array<ExpectedExplicitParamUnion>> | null | undefined>()(
+    explicitUnionTypeApi.arraysFunction([1.0, [1.0, null]], [1.0, 2.0]));
+expectType<ExpectedExplicitUnion<Array<Array<ExpectedExplicitParamUnion>>> | null | undefined>()(
+    explicitUnionTypeApi.arrays2dFunction([[1.0, [1.0, null]]], undefined));
+
+const explicitUnionReferenceApi = {} as ExplicitUnionReferenceApi;
+expectType<ExpectedExplicitParamUnion>()(explicitUnionReferenceApi.nonNullableUnionReturn());
+expectType<ExpectedExplicitParamUnion | null | undefined>()(
+    explicitUnionReferenceApi.nullableUnionReturn());
+expectType<ExpectedExplicitUnion<ExpectedExplicitParamUnion>>()(
+    explicitUnionReferenceApi.genericUnionWithNamedArgument(1.0));
+expectType<Array<ExpectedExplicitParamUnion>>()(explicitUnionReferenceApi.unionArrayReturn());
+expectType<Array<ExpectedExplicitParamUnion> | null | undefined>()(
+    explicitUnionReferenceApi.nullableUnionArrayReturn());
+expectType<Array<Array<ExpectedExplicitParamUnion>>>()(
+    explicitUnionReferenceApi.union2dArrayReturn());
+expectType<ExpectedExplicitUnion<Array<ExpectedExplicitParamUnion>> | null | undefined>()(
+    explicitUnionReferenceApi.nullableGenericUnionReturn([[1.0, 2.0]]));
+
+const mixUnionTypeApi = {} as MixUnionTypeApi;
+expectType<ExpectedExplicitUnion<string> | null | undefined>()(
+    mixUnionTypeApi.someFunction(1.0, [1.0, null]));
+expectType<number | Array<Array<number | Array<number | null | undefined>>> | null | undefined>()(
+    mixUnionTypeApi.arraysFunction([1.0, [1.0, null]], [1.0, 2.0]));
+expectType<number | Array<Array<Array<ExpectedExplicitParamUnion>>> | null | undefined>()(
+    mixUnionTypeApi.arrays2dFunction([[1.0, [1.0, null]]], [[1.0, 2.0]]));
 
 class ImplementsUnionTypeApiNumber implements UnionTypeApi {
     someFunction(param1: number | Array<number | null>, param2: number | Array<number | null> | null | undefined): number | Array<string> | null | undefined {

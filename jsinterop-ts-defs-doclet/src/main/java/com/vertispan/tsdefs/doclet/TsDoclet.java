@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.util.TreePath;
 import com.vertispan.tsdefs.annotations.TsInterface;
 import com.vertispan.tsdefs.annotations.TsModule;
+import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.LogWrapper;
@@ -106,10 +107,21 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
       Set<Element> jsTypes =
           environment.getIncludedElements().stream()
               .filter(
-                  element ->
-                      nonNull(element.getAnnotation(JsType.class))
-                          && (!element.getAnnotation(JsType.class).isNative()
-                              || nonNull(element.getAnnotation(TsInterface.class))))
+                  element -> {
+                    JsType jsType = element.getAnnotation(JsType.class);
+                    return nonNull(jsType)
+                        && (!jsType.isNative()
+                            || nonNull(element.getAnnotation(TsInterface.class)));
+                  })
+              .collect(Collectors.toSet());
+
+      Set<Element> tsUnionTypes =
+          environment.getIncludedElements().stream()
+              .filter(
+                  element -> {
+                    TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+                    return nonNull(tsUnion) && !tsUnion.anonymous();
+                  })
               .collect(Collectors.toSet());
 
       Set<Element> jsFunctions =
@@ -154,6 +166,7 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
               .collect(Collectors.toSet());
 
       Set<Element> eligibleElements = new HashSet<>();
+      eligibleElements.addAll(tsUnionTypes);
       eligibleElements.addAll(jsTypes);
       eligibleElements.addAll(jsFunctions);
       eligibleElements.addAll(constructorsParentElements);
@@ -162,10 +175,13 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
 
       eligibleElements.stream()
           .filter(
-              element ->
-                  isNull(element.getAnnotation(JsType.class))
-                      || (!element.getAnnotation(JsType.class).isNative()
-                          || nonNull(element.getAnnotation(TsInterface.class))))
+              element -> {
+                JsType jsType = element.getAnnotation(JsType.class);
+                return isNull(jsType)
+                    || (!jsType.isNative()
+                        || isExplicitUnion(element)
+                        || nonNull(element.getAnnotation(TsInterface.class)));
+              })
           .forEach(
               e -> {
                 try {
@@ -179,9 +195,10 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
               });
       String moduleName =
           environment.getIncludedElements().stream()
-              .filter(element -> nonNull(element.getAnnotation(TsModule.class)))
+              .map(element -> element.getAnnotation(TsModule.class))
+              .filter(java.util.Objects::nonNull)
               .findFirst()
-              .map(element -> element.getAnnotation(TsModule.class).value())
+              .map(TsModule::value)
               .orElse("types");
 
       File outFile = Paths.get(outputDir, moduleName + ".d.ts").toFile();
@@ -203,6 +220,11 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
     }
 
     return true;
+  }
+
+  private boolean isExplicitUnion(Element element) {
+    TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+    return nonNull(tsUnion) && !tsUnion.anonymous();
   }
 
   @Override

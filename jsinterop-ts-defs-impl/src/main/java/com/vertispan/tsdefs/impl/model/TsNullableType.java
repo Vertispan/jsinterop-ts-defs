@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,9 +35,10 @@ public class TsNullableType extends TsType implements IsNullableTsType {
   @Override
   public String emit(String parentNamespace) {
     if (undefined) {
-      return TsUnionType.of(type, TsType.nullType(), TsType.undefinedType()).emit(parentNamespace);
+      return TsUnionType.of(true, type, TsType.nullType(), TsType.undefinedType())
+          .emit(parentNamespace);
     }
-    return TsUnionType.of(type, TsType.nullType()).emit(parentNamespace);
+    return TsUnionType.of(true, type, TsType.nullType()).emit(parentNamespace);
   }
 
   @Override

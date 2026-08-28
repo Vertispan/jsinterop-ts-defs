@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,11 @@
  */
 package com.vertispan.tsdefs.tests.tsdocs.doclet;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.vertispan.tsdefs.doclet.TsDoclet;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -86,5 +89,24 @@ public class DocletTest {
   @Test
   public void testIssue116() throws IOException {
     testDocs("links.issue116");
+  }
+
+  @Test
+  public void testExplicitUnions() throws IOException {
+    testDocs("union");
+
+    String definitions =
+        Files.readString(Paths.get("target/test-classes/union/types.d.ts"), StandardCharsets.UTF_8);
+
+    assertThat(definitions)
+        .contains(
+            "/**\n* A named union containing a number or an array of nullable numbers.\n*/\ntype ExplicitParamUnion = number|Array<number|null|undefined>;")
+        .contains(
+            "/**\n* A generic named union containing a number or an array of its type parameter.\n*/\ntype ExplicitUnion<T> = number|Array<T>|\"foo\";")
+        .contains(
+            "\t/**\n\t* A named union emitted inside a TypeScript namespace.\n\t*/\n\ttype NamespacedExplicitUnion = string|boolean;")
+        .contains("getExplicitUnion():ExplicitParamUnion|null|undefined;")
+        .contains(
+            "useExplicitUnion(value:ExplicitUnion<ExplicitParamUnion>):ExplicitUnion<ExplicitParamUnion>;");
   }
 }
