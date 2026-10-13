@@ -155,6 +155,25 @@ public class TsElement {
     return getDeclaredJsName().orElse(elementName());
   }
 
+  /**
+   * Returns the name of an explicit union declaration or reference. Explicit unions deliberately do
+   * not use the JsInterop name because {@code name = "?"} is the JsInterop convention for a
+   * suppressed/native type, not a TypeScript declaration name.
+   */
+  public String getExplicitUnionName() {
+    TsUnion tsUnion = getAnnotation(TsUnion.class);
+    if (nonNull(tsUnion) && isDeclaredValue(tsUnion.name())) {
+      return tsUnion.name();
+    }
+
+    TsName tsName = getAnnotation(TsName.class);
+    if (nonNull(tsName) && isDeclaredValue(tsName.name())) {
+      return tsName.name();
+    }
+
+    return elementName();
+  }
+
   public String getFqName() {
     if (ElementKind.PACKAGE == element.getEnclosingElement().getKind()) {
       return TsElement.of(element, env).getName();
@@ -231,6 +250,37 @@ public class TsElement {
    */
   public String getNamespace() {
     return getDeclaredNamespace().orElse(parentNamespace());
+  }
+
+  /**
+   * Returns the namespace of an explicit union declaration or reference. The Java package is the
+   * fallback so a JsInterop namespace used only to suppress native type emission cannot change the
+   * TypeScript union's namespace.
+   */
+  public String getExplicitUnionNamespace() {
+    TsUnion tsUnion = getAnnotation(TsUnion.class);
+    if (nonNull(tsUnion) && isDeclaredNamespace(tsUnion.namespace())) {
+      return normalizeNamespace(tsUnion.namespace());
+    }
+
+    TsName tsName = getAnnotation(TsName.class);
+    if (nonNull(tsName) && isDeclaredNamespace(tsName.namespace())) {
+      return normalizeNamespace(tsName.namespace());
+    }
+
+    return env.elements().getPackageOf(element).getQualifiedName().toString();
+  }
+
+  private boolean isDeclaredValue(String value) {
+    return nonNull(value) && !value.trim().isEmpty() && !"<auto>".equals(value);
+  }
+
+  private boolean isDeclaredNamespace(String namespace) {
+    return nonNull(namespace) && !"<auto>".equals(namespace);
+  }
+
+  private String normalizeNamespace(String namespace) {
+    return JsPackage.GLOBAL.equals(namespace) ? "" : namespace;
   }
 
   public Optional<String> getDeclaredNamespace() {

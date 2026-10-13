@@ -19,11 +19,9 @@ import com.vertispan.tsdefs.annotations.TsLiteral;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
-import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 import jsinterop.base.Js;
 
-@JsType(name = "?", namespace = JsPackage.GLOBAL, isNative = true)
 @TsUnion
 public interface UnionWithDiscriminator {
   @JsType

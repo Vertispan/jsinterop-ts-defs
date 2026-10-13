@@ -21,12 +21,10 @@ import com.vertispan.tsdefs.annotations.TsUnionMember;
 import elemental2.core.JsArray;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
-import jsinterop.annotations.JsType;
 import jsinterop.base.Js;
 
 /** A generic explicit union. */
-@JsType(isNative = true, namespace = JsPackage.GLOBAL)
-@TsUnion(anonymous = false)
+@TsUnion(anonymous = false, namespace = JsPackage.GLOBAL)
 public interface ExplicitUnion<T> {
   @JsOverlay
   static <T> ExplicitUnion<T> of(Object o) {
