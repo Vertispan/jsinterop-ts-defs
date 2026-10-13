@@ -20,10 +20,7 @@ import com.vertispan.tsdefs.annotations.TsUnionMember;
 import elemental2.core.JsArray;
 import jsinterop.annotations.JsNullable;
 import jsinterop.annotations.JsOverlay;
-import jsinterop.annotations.JsPackage;
-import jsinterop.annotations.JsType;
 
-@JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
 @TsUnion
 public interface ParamUnion {
   @JsOverlay

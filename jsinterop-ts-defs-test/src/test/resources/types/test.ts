@@ -133,6 +133,9 @@ import UnionTypeApi = com.vertispan.tsdefs.tests.tsunion.UnionTypeApi;
 import ExplicitUnionTypeApi = com.vertispan.tsdefs.tests.tsunion.ExplicitUnionTypeApi;
 import ExplicitUnionReferenceApi = com.vertispan.tsdefs.tests.tsunion.ExplicitUnionReferenceApi;
 import MixUnionTypeApi = com.vertispan.tsdefs.tests.tsunion.MixUnionTypeApi;
+import ConfiguredExplicitUnion = com.vertispan.tsdefs.tests.tsunion.ConfiguredExplicitUnion;
+import TsNamedUnion = com.vertispan.tsdefs.tests.tsunion.TsNamedUnion;
+import JavaNamedExplicitUnion = com.vertispan.tsdefs.tests.tsunion.JavaNamedExplicitUnion;
 
 // ---------------- TsReadOnly ----------------
 import ArrayTypeTest = com.vertispan.tsdefs.tests.tsreadonly.ArrayTypeTest;
@@ -1028,6 +1031,16 @@ implementsUnionTypeApi.arrays2dFunction([[1.0, [1.0, null, undefined]]], undefin
 
 type ExpectedExplicitParamUnion = number | Array<number | null | undefined>;
 type ExpectedExplicitUnion<T> = number | Array<T> | "foo";
+type ExpectedConfiguredExplicitUnion = string | number;
+
+const configuredExplicitUnion = "configured" as ConfiguredExplicitUnion;
+expectType<ExpectedConfiguredExplicitUnion>()(configuredExplicitUnion);
+
+const tsNamedUnion = true as TsNamedUnion;
+expectType<boolean>()(tsNamedUnion);
+
+const javaNamedExplicitUnion = "java-name" as JavaNamedExplicitUnion;
+expectType<string>()(javaNamedExplicitUnion);
 
 const explicitUnionTypeApi = {} as ExplicitUnionTypeApi;
 expectType<ExpectedExplicitUnion<string> | null | undefined>()(

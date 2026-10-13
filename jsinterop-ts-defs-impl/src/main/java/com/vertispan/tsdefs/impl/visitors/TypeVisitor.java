@@ -17,6 +17,7 @@ package com.vertispan.tsdefs.impl.visitors;
 
 import static java.util.Objects.nonNull;
 
+import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TypeScriptModule;
@@ -36,6 +37,10 @@ public class TypeVisitor extends TsElement {
       "Members with duplicate names are not allowed in JS exports.";
   public static final String PUBLIC_FIELD_WITH_PUBLIC_ACCESSOR_NOT_ALLOWED_IN_JS_EXPORTS =
       "Public field with public accessors not allowed in in JS exports";
+  public static final String UNION_NAME_ON_ANONYMOUS_UNION_NOT_ALLOWED =
+      "A name or namespace can only be specified for an explicit union";
+  public static final String INVALID_EXPLICIT_UNION_NAME =
+      "An explicit union name must not be the JsInterop suppression name \"?\"";
 
   public TypeVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
@@ -56,6 +61,24 @@ public class TypeVisitor extends TsElement {
     singleConstructorValidation();
     duplicateMembersValidation();
     publicMemberWithPublicAccessor();
+  }
+
+  public static void validateExplicitUnionNaming(Element element, HasProcessorEnv env) {
+    TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+    if (tsUnion == null) {
+      return;
+    }
+
+    boolean hasName = tsUnion.name() != null && !"<auto>".equals(tsUnion.name());
+    boolean hasNamespace = tsUnion.namespace() != null && !"<auto>".equals(tsUnion.namespace());
+    if (tsUnion.anonymous() && (hasName || hasNamespace)) {
+      env.messager()
+          .printMessage(Diagnostic.Kind.ERROR, UNION_NAME_ON_ANONYMOUS_UNION_NOT_ALLOWED, element);
+    }
+
+    if (!tsUnion.anonymous() && "?".equals(tsUnion.name())) {
+      env.messager().printMessage(Diagnostic.Kind.ERROR, INVALID_EXPLICIT_UNION_NAME, element);
+    }
   }
 
   private void publicMemberWithPublicAccessor() {

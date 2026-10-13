@@ -120,6 +120,9 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
               .filter(
                   element -> {
                     TsUnion tsUnion = element.getAnnotation(TsUnion.class);
+                    if (nonNull(tsUnion)) {
+                      TypeVisitor.validateExplicitUnionNaming(element, this);
+                    }
                     return nonNull(tsUnion) && !tsUnion.anonymous();
                   })
               .collect(Collectors.toSet());

@@ -21,11 +21,9 @@ import com.vertispan.tsdefs.annotations.TsUnionMember;
 import elemental2.core.JsArray;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
-import jsinterop.annotations.JsType;
 
 /** A generic named union containing a number or an array of its type parameter. */
-@JsType(isNative = true, namespace = JsPackage.GLOBAL)
-@TsUnion(anonymous = false)
+@TsUnion(anonymous = false, namespace = JsPackage.GLOBAL)
 public interface ExplicitUnion<T> {
   @JsOverlay
   @TsUnionMember

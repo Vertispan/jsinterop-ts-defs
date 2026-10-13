@@ -175,8 +175,8 @@ public class JavaToTsTypeConverter {
     DeclaredType declaredType = (DeclaredType) element.asType();
     TsElement tsElement = TsElement.of(element, env);
     return TsUnionType.of(
-        tsElement.getName(),
-        tsElement.getNamespace(),
+        tsElement.getExplicitUnionName(),
+        tsElement.getExplicitUnionNamespace(),
         true,
         asTypeWithArgument(declaredType),
         unionTypes(declaredType));
@@ -263,8 +263,12 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getDeclaredType(DeclaredType declaredType, TsElement typeElement) {
-    String name = typeElement.getName();
-    String nameSpace = typeElement.isJsFunction() ? "" : typeElement.getNamespace();
+    boolean explicitUnion = typeElement.isExplicitUnionType();
+    String name = explicitUnion ? typeElement.getExplicitUnionName() : typeElement.getName();
+    String nameSpace =
+        explicitUnion
+            ? typeElement.getExplicitUnionNamespace()
+            : typeElement.isJsFunction() ? "" : typeElement.getNamespace();
 
     if (!declaredType.getTypeArguments().isEmpty()) {
       return ParameterizedTsType.of(name, nameSpace, asTypeWithArgument(declaredType));

@@ -26,11 +26,32 @@ import java.lang.annotation.Target;
  * should define {@link TsUnionMember}s that will be used to generate the correct union type, When a
  * type element is annotated with this annotation is used as a type for class member or parameter
  * the tool will emit a union type of all {@link TsUnionMember}s included in the type element
- * instead of the type itself.
+ * instead of the type itself. This annotation is self-contained and does not require
+ * {@code @JsType}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Documented
 public @interface TsUnion {
+  /**
+   * Controls whether the union is emitted inline at each usage site. By default, the union is
+   * anonymous and the generated TypeScript type is the union of all {@link TsUnionMember} types.
+   * Set this to {@code false} to emit a named TypeScript type definition that can be referenced by
+   * name. A name or namespace must not be specified for an anonymous union.
+   */
   boolean anonymous() default true;
+
+  /**
+   * The TypeScript name to use when {@link #anonymous()} is {@code false}. The default derives the
+   * name from the Java type, ignoring {@code @JsType(name = ...)}. {@code @TsName} remains
+   * supported as a backwards-compatible override.
+   */
+  String name() default "<auto>";
+
+  /**
+   * The TypeScript namespace to use when {@link #anonymous()} is {@code false}. The default uses
+   * the Java package namespace, ignoring {@code @JsType(namespace = ...)}. Use {@code
+   * JsPackage.GLOBAL} for the global namespace.
+   */
+  String namespace() default "<auto>";
 }

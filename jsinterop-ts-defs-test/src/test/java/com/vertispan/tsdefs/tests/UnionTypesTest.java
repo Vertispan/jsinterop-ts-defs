@@ -58,6 +58,9 @@ public class UnionTypesTest {
             "/**\n*A named explicit parameter union. \n*/\ntype ExplicitParamUnion = number|Array<number|null|undefined>;")
         .contains(
             "/**\n*A generic explicit union. \n*/\ntype ExplicitUnion<T> = number|Array<T>|\"foo\";")
+        .contains("type ConfiguredExplicitUnion = string|number;")
+        .contains("type TsNamedUnion = boolean;")
+        .contains("type JavaNamedExplicitUnion = string;")
         .contains("type ExplicitParamUnion = number|Array<number|null|undefined>;")
         .contains("type ExplicitUnion<T> = number|Array<T>|\"foo\";")
         .contains(
