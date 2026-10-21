@@ -22,6 +22,7 @@ import com.vertispan.tsdefs.impl.model.TsDoc;
 import com.vertispan.tsdefs.impl.model.TsMethod;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 
 public class ClassMethodVisitor<T> extends TsElement {
   private final boolean copyDocs;
@@ -31,8 +32,10 @@ public class ClassMethodVisitor<T> extends TsElement {
     this.copyDocs = true;
   }
 
-  public ClassMethodVisitor(Element element, HasProcessorEnv env, boolean copyDocs) {
-    super(element, env);
+  /** Visits a method inherited by {@code inheritedBy}. */
+  public ClassMethodVisitor(
+      Element element, TypeElement inheritedBy, boolean copyDocs, HasProcessorEnv env) {
+    super(element, inheritedBy, env);
     this.copyDocs = copyDocs;
   }
 

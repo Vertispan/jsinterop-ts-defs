@@ -56,9 +56,14 @@ public class TsElement {
   private TypeMirror typeMirror;
 
   public TsElement(Element element, HasProcessorEnv env) {
+    this(element, null, env);
+  }
+
+  /** @param emittedIn the subtype this inherited element is being emitted into, or null */
+  public TsElement(Element element, TypeElement emittedIn, HasProcessorEnv env) {
     this.element = element;
     this.env = env;
-    this.typeConverter = new JavaToTsTypeConverter(element, env);
+    this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, env);
     this.typeMirror = nonNull(element) ? element.asType() : null;
   }
 
@@ -71,6 +76,11 @@ public class TsElement {
 
   public static TsElement of(Element element, HasProcessorEnv env) {
     return new TsElement(element, env);
+  }
+
+  /** @param emittedIn the subtype this inherited element is being emitted into */
+  public static TsElement of(Element element, TypeElement emittedIn, HasProcessorEnv env) {
+    return new TsElement(element, emittedIn, env);
   }
 
   public static TsElement of(TypeMirror typeMirror, HasProcessorEnv env) {

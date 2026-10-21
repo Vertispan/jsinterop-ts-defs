@@ -21,6 +21,7 @@ import com.vertispan.tsdefs.impl.builders.TsElement;
 import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 
 public class InheritedMethodsVisitor<T> extends TsElement {
 
@@ -32,7 +33,8 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     List<ExecutableElement> nonOverriddenMethods = allNotOverriddenInterfacesMethods();
     nonOverriddenMethods.forEach(
         executableElement -> {
-          new ClassMethodVisitor<T>(executableElement, env, false).visit(parent);
+          new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
+              .visit(parent);
         });
   }
 }

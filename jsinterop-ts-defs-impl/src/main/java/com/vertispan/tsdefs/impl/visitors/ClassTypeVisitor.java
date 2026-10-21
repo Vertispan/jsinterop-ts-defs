@@ -106,7 +106,17 @@ public class ClassTypeVisitor extends TsElement {
   private void mergeSuperClass(TsClass tsClass, TsElement superTsElement) {
     TsClass.TsClassBuilder superBuilder =
         TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
-    superTsElement.element().getEnclosedElements().forEach(e -> visit(superBuilder, e));
+    TypeElement inheritedBy = (TypeElement) element;
+    superTsElement
+        .element()
+        .getEnclosedElements()
+        .forEach(
+            e -> {
+              new ConstructorVisitor<TsClass.TsClassBuilder>(e, env).visit(superBuilder);
+              new FieldVisitor<TsClass.TsClassBuilder>(e, inheritedBy, env).visit(superBuilder);
+              new ClassMethodVisitor<TsClass.TsClassBuilder>(e, inheritedBy, true, env)
+                  .visit(superBuilder);
+            });
     TsClass superTsClass = superBuilder.build();
     tsClass.mergeFunctions(superTsClass);
     tsClass.mergeProperties(superTsClass);

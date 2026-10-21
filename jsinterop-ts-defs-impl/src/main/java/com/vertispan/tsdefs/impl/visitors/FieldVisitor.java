@@ -20,10 +20,16 @@ import com.vertispan.tsdefs.impl.builders.HasProperties;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsProperty;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 
 public class FieldVisitor<T> extends TsElement {
   public FieldVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
+  }
+
+  /** Visits a field inherited by {@code inheritedBy}. */
+  public FieldVisitor(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
+    super(element, inheritedBy, env);
   }
 
   public void visit(HasProperties<T> parent) {
