@@ -1148,6 +1148,7 @@ import Box = com.vertispan.tsdefs.tests.wildcards.Box;
 import BoundedBox = com.vertispan.tsdefs.tests.wildcards.BoundedBox;
 import BoundedGenericJsType = com.vertispan.tsdefs.tests.wildcards.BoundedGenericJsType;
 import Shelf = com.vertispan.tsdefs.tests.wildcards.Shelf;
+import SpecialItem = com.vertispan.tsdefs.tests.wildcards.SpecialItem;
 
 // A bounded type parameter forwarded to a super type is emitted as its bare name in the extends
 // clause, with the bound only on the declaration.
@@ -1176,3 +1177,8 @@ expectType<Promise<Box<WildcardItem>>>()(shelf.nested());
 shelf.take(boundedBox);
 // @ts-expect-error
 shelf.take("not a box");
+// @TsTypeRef and @JsNullable apply whether written on the wildcard or on its bound.
+expectType<Box<SpecialItem>>()(shelf.typeRefOnWildcard());
+expectType<Box<SpecialItem>>()(shelf.typeRefOnBound());
+expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableWildcard());
+expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableBound());

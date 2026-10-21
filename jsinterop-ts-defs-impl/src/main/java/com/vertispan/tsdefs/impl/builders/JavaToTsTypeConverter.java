@@ -63,7 +63,7 @@ public class JavaToTsTypeConverter {
 
   private TsType getTsType(TypeMirror type, boolean checkTypeDef) {
     if (TypeKind.WILDCARD.equals(type.getKind())) {
-      return wildcardType((WildcardType) type, checkTypeDef);
+      return wildcardType((WildcardType) type);
     }
     if (checkTypeDef && TsElement.of(type, env).isTsTypeDef()) {
       Optional<TsType> tsType = fromTsTypeDef(TsElement.of(type, env).element);
@@ -152,13 +152,15 @@ public class JavaToTsTypeConverter {
    * TypeScript has no wildcards and does not need them: generics are structurally variant there, so
    * a Java {@code ? extends X} or {@code ? super X} is rendered as the bound {@code X}, which is
    * the type a TypeScript author would have written by hand. An unbounded {@code ?} renders as
-   * {@code any}, consistent with how other unresolvable types are emitted.
+   * {@code any}, consistent with how other unresolvable types are emitted. The bound is treated
+   * like any other type argument, so {@code @TsTypeRef} and {@code @JsNullable} apply to it whether
+   * written on the wildcard or on the bound.
    */
-  private TsType wildcardType(WildcardType wildcard, boolean checkTypeDef) {
+  private TsType wildcardType(WildcardType wildcard) {
     TypeMirror bound =
         nonNull(wildcard.getExtendsBound()) ? wildcard.getExtendsBound() : wildcard.getSuperBound();
     if (nonNull(bound) && !isSameType(bound, Object.class)) {
-      return toTsType(bound, checkTypeDef);
+      return typeArgument(bound);
     }
     return TsType.of(Formatting.resolveName("?"));
   }

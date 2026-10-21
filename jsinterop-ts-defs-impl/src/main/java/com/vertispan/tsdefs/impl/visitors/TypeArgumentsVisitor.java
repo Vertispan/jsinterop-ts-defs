@@ -27,6 +27,10 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
+/**
+ * Adds a type's type parameters to a builder: with bounds for the type's own declaration ({@link
+ * #ofDeclaration}), without bounds where the type is used as a supertype or interface.
+ */
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
   private final boolean declaration;
