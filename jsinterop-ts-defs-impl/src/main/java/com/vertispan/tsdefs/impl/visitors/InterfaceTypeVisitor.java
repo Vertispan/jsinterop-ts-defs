@@ -57,7 +57,7 @@ public class InterfaceTypeVisitor extends TsElement {
                 }
               });
 
-      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(element.asType(), env)
+      TypeArgumentsVisitor.<TsInterface.TsInterfaceBuilder>ofDeclaration(element.asType(), env)
           .visit(builder);
       new InterfacesVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
 
