@@ -36,6 +36,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
 import javax.tools.Diagnostic;
 import jsinterop.base.JsPropertyMap;
 
@@ -61,6 +62,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getTsType(TypeMirror type, boolean checkTypeDef) {
+    if (TypeKind.WILDCARD.equals(type.getKind())) {
+      return wildcardType((WildcardType) type, checkTypeDef);
+    }
     if (checkTypeDef && TsElement.of(type, env).isTsTypeDef()) {
       Optional<TsType> tsType = fromTsTypeDef(TsElement.of(type, env).element);
       if (tsType.isPresent()) {
@@ -142,6 +146,21 @@ public class JavaToTsTypeConverter {
 
       return getReferenceType(type);
     }
+  }
+
+  /**
+   * TypeScript has no wildcards and does not need them: generics are structurally variant there, so
+   * a Java {@code ? extends X} or {@code ? super X} is rendered as the bound {@code X}, which is
+   * the type a TypeScript author would have written by hand. An unbounded {@code ?} renders as
+   * {@code any}, consistent with how other unresolvable types are emitted.
+   */
+  private TsType wildcardType(WildcardType wildcard, boolean checkTypeDef) {
+    TypeMirror bound =
+        nonNull(wildcard.getExtendsBound()) ? wildcard.getExtendsBound() : wildcard.getSuperBound();
+    if (nonNull(bound) && !isSameType(bound, Object.class)) {
+      return toTsType(bound, checkTypeDef);
+    }
+    return TsType.of(Formatting.resolveName("?"));
   }
 
   private TsType unionType(TypeMirror type) {
@@ -257,13 +276,18 @@ public class JavaToTsTypeConverter {
     return toTsType(typeRef.get());
   }
 
-  private List<TsType> asTypeWithArgument(DeclaredType type) {
-    List<? extends TypeMirror> typeArguments = type.getTypeArguments();
+  /** Converts the type arguments of a parameterized type as used in a type reference. */
+  public List<TsType> asTypeWithArgument(DeclaredType type) {
+    return type.getTypeArguments().stream().map(this::typeArgument).collect(Collectors.toList());
+  }
 
-    return typeArguments.stream()
-        .map(this::getTypeOrTypeRef)
-        .map(typeMirror -> TsElement.of(typeMirror, env).typeOrNullable(toTsType(typeMirror, true)))
-        .collect(Collectors.toList());
+  private TsType typeArgument(TypeMirror typeArgument) {
+    Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeArgument, env);
+    if (literalType.isPresent()) {
+      return literalType.get();
+    }
+    TypeMirror typeMirror = getTypeOrTypeRef(typeArgument);
+    return TsElement.of(typeMirror, env).typeOrNullable(toTsType(typeMirror, true));
   }
 
   public TypeMirror getTypeOrTypeRef(TypeMirror typeMirror) {

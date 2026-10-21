@@ -45,7 +45,8 @@ public class ClassTypeVisitor extends TsElement {
               .setDeprecated(isDeprecated())
               .addModifiers(TsModifier.EXPORT)
               .addModifiers(getJsModifiers());
-      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(element.asType(), env).visit(builder);
+      TypeArgumentsVisitor.<TsClass.TsClassBuilder>ofDeclaration(element.asType(), env)
+          .visit(builder);
       getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
 

@@ -21,7 +21,6 @@ import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
-import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeParameterElement;
@@ -30,40 +29,57 @@ import javax.lang.model.type.TypeMirror;
 
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
+  private final boolean declaration;
 
+  /**
+   * Visits the type arguments of a type in a usage position, such as a superclass or implemented
+   * interface. Bounds are never emitted here, only on the declaring type's own type parameters.
+   */
   public TypeArgumentsVisitor(TypeMirror typeMirror, HasProcessorEnv env) {
+    this(typeMirror, env, false);
+  }
+
+  private TypeArgumentsVisitor(TypeMirror typeMirror, HasProcessorEnv env, boolean declaration) {
     super(typeMirror, env);
     this.type = typeMirror;
+    this.declaration = declaration;
+  }
+
+  /**
+   * Visits the type parameters declared by a type, emitting each one along with its bounds, e.g.
+   * {@code <T extends Item>}.
+   */
+  public static <T> TypeArgumentsVisitor<T> ofDeclaration(
+      TypeMirror typeMirror, HasProcessorEnv env) {
+    return new TypeArgumentsVisitor<>(typeMirror, env, true);
   }
 
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
     List<? extends TypeMirror> typeArguments = classDeclaredType.getTypeArguments();
-    if (!typeArguments.isEmpty()) {
-      typeArguments.stream()
-          .map(
-              typeMirror -> {
-                Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeMirror, env);
-                if (literalType.isPresent()) {
-                  return literalType.get();
-                }
-                TsType type = TsElement.of(typeMirror, env).getType();
-                Element typeElement = env.types().asElement(typeMirror);
-                if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-
-                  List<? extends TypeMirror> bounds =
-                      ((TypeParameterElement) typeElement).getBounds();
-
-                  bounds.stream()
-                      .filter(
-                          boundType ->
-                              !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
-                      .map(boundType -> TsElement.of(boundType, env).getType())
-                      .forEach(type::addBounds);
-                }
-                return type;
-              })
+    if (typeArguments.isEmpty()) {
+      return;
+    }
+    if (declaration) {
+      typeArguments.stream().map(this::declaredTypeParameter).forEach(builder::addTypeArgument);
+    } else {
+      new JavaToTsTypeConverter(element, env)
+          .asTypeWithArgument(classDeclaredType)
           .forEach(builder::addTypeArgument);
     }
+  }
+
+  private TsType declaredTypeParameter(TypeMirror typeMirror) {
+    TsType type = TsElement.of(typeMirror, env).getType();
+    Element typeElement = env.types().asElement(typeMirror);
+    if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
+      List<? extends TypeMirror> bounds = ((TypeParameterElement) typeElement).getBounds();
+
+      bounds.stream()
+          .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
+          .map(boundType -> TsElement.of(boundType, env).getType())
+          .forEach(type::addBounds);
+    }
+    return type;
   }
 }
