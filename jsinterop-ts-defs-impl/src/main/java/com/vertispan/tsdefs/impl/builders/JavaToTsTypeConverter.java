@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.model.*;
 import com.vertispan.tsdefs.impl.visitors.ParameterVisitor;
+import com.vertispan.tsdefs.impl.visitors.TypeArgumentsVisitor;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -158,7 +159,7 @@ public class JavaToTsTypeConverter {
         tsElement.getExplicitUnionName(),
         tsElement.getExplicitUnionNamespace(),
         true,
-        asTypeWithArgument(declaredType),
+        TypeArgumentsVisitor.getTypeArguments(declaredType, env),
         unionTypes(declaredType));
   }
 

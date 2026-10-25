@@ -88,4 +88,23 @@ public class UnionTypesTest {
         .contains(
             "nullableGenericUnionReturn(value:ExplicitUnion<Array<ExplicitParamUnion>>|null|undefined):ExplicitUnion<Array<ExplicitParamUnion>>|null|undefined;");
   }
+
+  @Test
+  public void testBoundedGenericUnionDeclarationPreservesBound() throws IOException {
+    assertThat(generatedDefinitions())
+        .contains("type BoundedResultUnion<T extends Entity> = T|string;");
+  }
+
+  @Test
+  public void testBoundedGenericUnionReferenceKeepsConcreteArgument() throws IOException {
+    assertThat(generatedDefinitions())
+        .contains("identity(value:BoundedResultUnion<Entity>):BoundedResultUnion<Entity>;");
+  }
+
+  private String generatedDefinitions() throws IOException {
+    try (InputStream stream = getClass().getClassLoader().getResourceAsStream("types/index.d.ts")) {
+      assertThat(stream).as("generated TypeScript definitions").isNotNull();
+      return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+    }
+  }
 }
