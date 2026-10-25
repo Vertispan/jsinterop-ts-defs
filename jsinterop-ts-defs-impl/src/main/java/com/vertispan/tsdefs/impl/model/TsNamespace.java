@@ -65,7 +65,8 @@ public class TsNamespace {
     return tsInterfaces.isEmpty()
         && tsFunctions.isEmpty()
         && tsEnums.isEmpty()
-        && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty));
+        && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty))
+        && tsTypes.isEmpty();
   }
 
   public String emit(String indent, String parentNamespace) {

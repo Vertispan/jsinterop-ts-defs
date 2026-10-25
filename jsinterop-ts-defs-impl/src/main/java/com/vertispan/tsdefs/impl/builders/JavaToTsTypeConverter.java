@@ -148,27 +148,7 @@ public class JavaToTsTypeConverter {
   }
 
   public TsType unionType(TypeMirror type) {
-    Element element = env.types().asElement(type);
-    DeclaredType declaredType = (DeclaredType) type;
-
-    Set<TsType> unionTypes =
-        element.getEnclosedElements().stream()
-            .map(e -> TsElement.of(e, env))
-            .filter(TsElement::isUnionMember)
-            .map(
-                e -> {
-                  if (e.isMethod()) {
-                    return e.typeOrNullable(
-                        toTsType(
-                            ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
-                                .getReturnType()));
-                  } else {
-                    return e.getType();
-                  }
-                })
-            .collect(Collectors.toCollection(LinkedHashSet::new));
-
-    return TsUnionType.of(true, unionTypes);
+    return TsUnionType.of(true, unionTypes((DeclaredType) type));
   }
 
   public TsType unionType(Element element) {

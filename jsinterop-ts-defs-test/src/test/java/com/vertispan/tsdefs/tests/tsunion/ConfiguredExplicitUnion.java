@@ -18,7 +18,9 @@ package com.vertispan.tsdefs.tests.tsunion;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
+import jsinterop.annotations.JsType;
 
+@JsType(isNative = true)
 @TsUnion(
     anonymous = false,
     name = "ConfiguredExplicitUnion",
