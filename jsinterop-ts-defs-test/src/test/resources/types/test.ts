@@ -130,6 +130,8 @@ import TsInterfaceWithJsNullableFields = com.vertispan.tsdefs.tests.jsnullable.T
 // ---------------- Union Types ----------------
 
 import UnionTypeApi = com.vertispan.tsdefs.tests.tsunion.UnionTypeApi;
+import AnonymousBoundedUnionApi = com.vertispan.tsdefs.tests.tsunion.AnonymousBoundedUnionApi;
+import Entity = com.vertispan.tsdefs.tests.tsunion.Entity;
 import ExplicitUnionTypeApi = com.vertispan.tsdefs.tests.tsunion.ExplicitUnionTypeApi;
 import ExplicitUnionReferenceApi = com.vertispan.tsdefs.tests.tsunion.ExplicitUnionReferenceApi;
 import MixUnionTypeApi = com.vertispan.tsdefs.tests.tsunion.MixUnionTypeApi;
@@ -1049,6 +1051,13 @@ expectType<ExpectedExplicitUnion<Array<ExpectedExplicitParamUnion>> | null | und
     explicitUnionTypeApi.arraysFunction([1.0, [1.0, null]], [1.0, 2.0]));
 expectType<ExpectedExplicitUnion<Array<Array<ExpectedExplicitParamUnion>>> | null | undefined>()(
     explicitUnionTypeApi.arrays2dFunction([[1.0, [1.0, null]]], undefined));
+
+const anonymousBoundedUnionApi = {} as AnonymousBoundedUnionApi;
+declare const entity: Entity;
+expectType<Entity | string>()(anonymousBoundedUnionApi.roundTrip(entity));
+expectType<Entity | string>()(anonymousBoundedUnionApi.roundTrip("error"));
+// @ts-expect-error
+anonymousBoundedUnionApi.roundTrip(42);
 
 const explicitUnionReferenceApi = {} as ExplicitUnionReferenceApi;
 expectType<ExpectedExplicitParamUnion>()(explicitUnionReferenceApi.nonNullableUnionReturn());

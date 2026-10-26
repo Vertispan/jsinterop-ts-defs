@@ -18,8 +18,10 @@ package com.vertispan.tsdefs.tests.tsdocs.doclet.union;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
+import jsinterop.annotations.JsType;
 
 /** A named union emitted inside a TypeScript namespace. */
+@JsType(isNative = true)
 @TsUnion(anonymous = false, namespace = "com.vertispan.tsdefs.tests.tsdocs.doclet.union")
 public interface NamespacedExplicitUnion {
   @JsOverlay

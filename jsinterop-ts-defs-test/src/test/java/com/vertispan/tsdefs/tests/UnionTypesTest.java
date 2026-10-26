@@ -101,6 +101,13 @@ public class UnionTypesTest {
         .contains("identity(value:BoundedResultUnion<Entity>):BoundedResultUnion<Entity>;");
   }
 
+  @Test
+  public void testAnonymousBoundedGenericUnionIsInlined() throws IOException {
+    assertThat(generatedDefinitions())
+        .contains("roundTrip(value:Entity|string):Entity|string;")
+        .doesNotContain("type AnonymousBoundedUnion");
+  }
+
   private String generatedDefinitions() throws IOException {
     try (InputStream stream = getClass().getClassLoader().getResourceAsStream("types/index.d.ts")) {
       assertThat(stream).as("generated TypeScript definitions").isNotNull();

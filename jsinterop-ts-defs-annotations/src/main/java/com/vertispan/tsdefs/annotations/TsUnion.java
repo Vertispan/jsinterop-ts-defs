@@ -26,8 +26,7 @@ import java.lang.annotation.Target;
  * should define {@link TsUnionMember}s that will be used to generate the correct union type, When a
  * type element is annotated with this annotation is used as a type for class member or parameter
  * the tool will emit a union type of all {@link TsUnionMember}s included in the type element
- * instead of the type itself. This annotation is self-contained and does not require
- * {@code @JsType}.
+ * instead of the type itself.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

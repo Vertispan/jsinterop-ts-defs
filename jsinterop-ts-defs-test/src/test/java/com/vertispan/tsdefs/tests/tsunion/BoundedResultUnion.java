@@ -20,7 +20,7 @@ import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsType;
 
-@JsType(isNative = true)
+@JsType(isNative = true, name = "?")
 @TsUnion(anonymous = false, namespace = "com.vertispan.tsdefs.tests.tsunion")
 public interface BoundedResultUnion<T extends Entity> {
   @JsOverlay
