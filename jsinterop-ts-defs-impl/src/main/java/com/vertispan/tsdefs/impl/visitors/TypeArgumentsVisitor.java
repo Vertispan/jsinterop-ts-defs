@@ -21,6 +21,7 @@ import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeParameterElement;
@@ -60,12 +61,11 @@ public class TypeArgumentsVisitor<T> extends TsElement {
 
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
-    List<? extends TypeMirror> typeArguments = classDeclaredType.getTypeArguments();
-    if (typeArguments.isEmpty()) {
+    if (classDeclaredType.getTypeArguments().isEmpty()) {
       return;
     }
     if (declaration) {
-      typeArguments.stream().map(this::declaredTypeParameter).forEach(builder::addTypeArgument);
+      declaredTypeParameters(classDeclaredType, env).forEach(builder::addTypeArgument);
     } else {
       new JavaToTsTypeConverter(element, env)
           .asTypeWithArgument(classDeclaredType)
@@ -73,7 +73,14 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     }
   }
 
-  private TsType declaredTypeParameter(TypeMirror typeMirror) {
+  /** The type parameters a type declares, each with its bounds, e.g. {@code <T extends Item>}. */
+  public static List<TsType> declaredTypeParameters(DeclaredType type, HasProcessorEnv env) {
+    return type.getTypeArguments().stream()
+        .map(typeMirror -> declaredTypeParameter(typeMirror, env))
+        .collect(Collectors.toList());
+  }
+
+  private static TsType declaredTypeParameter(TypeMirror typeMirror, HasProcessorEnv env) {
     TsType type = TsElement.of(typeMirror, env).getType();
     Element typeElement = env.types().asElement(typeMirror);
     if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {

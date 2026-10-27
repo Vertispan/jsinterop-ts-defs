@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,4 +31,26 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Documented
-public @interface TsUnion {}
+public @interface TsUnion {
+  /**
+   * Controls whether the union is emitted inline at each usage site. By default, the union is
+   * anonymous and the generated TypeScript type is the union of all {@link TsUnionMember} types.
+   * Set this to {@code false} to emit a named TypeScript type definition that can be referenced by
+   * name. A name or namespace must not be specified for an anonymous union.
+   */
+  boolean anonymous() default true;
+
+  /**
+   * The TypeScript name to use when {@link #anonymous()} is {@code false}. The default derives the
+   * name from the Java type, ignoring {@code @JsType(name = ...)}. {@code @TsName} remains
+   * supported as a backwards-compatible override.
+   */
+  String name() default "<auto>";
+
+  /**
+   * The TypeScript namespace to use when {@link #anonymous()} is {@code false}. The default uses
+   * the Java package namespace, ignoring {@code @JsType(namespace = ...)}. Use {@code
+   * JsPackage.GLOBAL} for the global namespace.
+   */
+  String namespace() default "<auto>";
+}

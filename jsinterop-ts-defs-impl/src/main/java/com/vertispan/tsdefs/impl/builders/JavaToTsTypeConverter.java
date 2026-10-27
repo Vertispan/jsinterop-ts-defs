@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.model.*;
 import com.vertispan.tsdefs.impl.visitors.ParameterVisitor;
+import com.vertispan.tsdefs.impl.visitors.TypeArgumentsVisitor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -123,7 +124,7 @@ public class JavaToTsTypeConverter {
                   ParameterizedTsType.of(
                       "Array",
                       "",
-                      ParameterizedTsType.of("Array", "", unionType(arrayComponentType))));
+                      ParameterizedTsType.of("Array", "", toTsType(arrayComponentType))));
         } else {
           return TsElement.of(arrayComponentType, env)
               .typeOrNullable(Array2dTsType.of(toTsType(arrayComponentType)));
@@ -134,7 +135,7 @@ public class JavaToTsTypeConverter {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).arrayComponentType();
         if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
           return TsElement.of(arrayComponentType, env)
-              .typeOrNullable(ParameterizedTsType.of("Array", "", unionType(arrayComponentType)));
+              .typeOrNullable(ParameterizedTsType.of("Array", "", toTsType(arrayComponentType)));
         } else {
           ArrayTsType arrayType = ArrayTsType.of(toTsType(arrayComponentType));
           arrayType.setTsReadOnly(
@@ -156,6 +157,9 @@ public class JavaToTsTypeConverter {
       }
 
       if (ProcessorType.of(type, env).isUnionType()) {
+        if (TsElement.of(type, env).isExplicitUnionType()) {
+          return getDeclaredType((DeclaredType) type, TsElement.of(type, env));
+        }
         return unionType(type);
       }
 
@@ -180,28 +184,37 @@ public class JavaToTsTypeConverter {
     return TsType.of(Formatting.resolveName("?"));
   }
 
-  private TsType unionType(TypeMirror type) {
-    Element element = env.types().asElement(type);
-    DeclaredType declaredType = (DeclaredType) type;
+  public TsType unionType(TypeMirror type) {
+    return TsUnionType.of(true, unionTypes((DeclaredType) type));
+  }
 
-    Set<TsType> unionTypes =
-        element.getEnclosedElements().stream()
-            .map(e -> TsElement.of(e, env))
-            .filter(TsElement::isUnionMember)
-            .map(
-                e -> {
-                  if (e.isMethod()) {
-                    return e.typeOrNullable(
-                        toTsType(
-                            ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
-                                .getReturnType()));
-                  } else {
-                    return e.getType();
-                  }
-                })
-            .collect(Collectors.toCollection(LinkedHashSet::new));
+  public TsType unionType(Element element) {
+    DeclaredType declaredType = (DeclaredType) element.asType();
+    TsElement tsElement = TsElement.of(element, env);
+    return TsUnionType.of(
+        tsElement.getExplicitUnionName(),
+        tsElement.getExplicitUnionNamespace(),
+        true,
+        TypeArgumentsVisitor.declaredTypeParameters(declaredType, env),
+        unionTypes(declaredType));
+  }
 
-    return TsUnionType.of(unionTypes);
+  private Set<TsType> unionTypes(DeclaredType declaredType) {
+    Element element = declaredType.asElement();
+    return element.getEnclosedElements().stream()
+        .map(e -> TsElement.of(e, env))
+        .filter(TsElement::isUnionMember)
+        .map(
+            e -> {
+              if (e.isMethod()) {
+                return e.typeOrNullable(
+                    toTsType(
+                        ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
+                            .getReturnType()));
+              }
+              return e.getType();
+            })
+        .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
   private TsInlinedFunctionType inlineJsFunctionType(TypeMirror type) {
@@ -270,8 +283,12 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getDeclaredType(DeclaredType declaredType, TsElement typeElement) {
-    String name = typeElement.getName();
-    String nameSpace = typeElement.isJsFunction() ? "" : typeElement.getNamespace();
+    boolean explicitUnion = typeElement.isExplicitUnionType();
+    String name = explicitUnion ? typeElement.getExplicitUnionName() : typeElement.getName();
+    String nameSpace =
+        explicitUnion
+            ? typeElement.getExplicitUnionNamespace()
+            : typeElement.isJsFunction() ? "" : typeElement.getNamespace();
 
     if (!declaredType.getTypeArguments().isEmpty()) {
       return ParameterizedTsType.of(name, nameSpace, asTypeWithArgument(declaredType));
