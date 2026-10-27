@@ -1242,3 +1242,5 @@ expectType<Box<SpecialItem>>()(shelf.typeRefOnWildcard());
 expectType<Box<SpecialItem>>()(shelf.typeRefOnBound());
 expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableWildcard());
 expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableBound());
+// A JsFunction type argument honors @TsTypeRef on the wildcard like any other type argument.
+expectType<() => SpecialItem>()(shelf.typeRefOnFunctionWildcard());

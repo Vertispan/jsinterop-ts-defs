@@ -39,7 +39,7 @@ public class WildcardVarianceWarningTest {
               + ITEM
               + "\\] is emitted as \\["
               + ITEM
-              + "\\]( in \\w+ \\(inherited from \\w+\\))?, but (\\S+) produces its type parameter T, so TypeScript callers may receive a supertype of "
+              + "\\]( in .+?)?, but (\\S+) produces its type parameter T, so TypeScript callers may receive a supertype of "
               + ITEM
               + "\\. Annotate the wildcard with @TsTypeRef to choose the emitted type\\.$");
 
@@ -62,7 +62,9 @@ public class WildcardVarianceWarningTest {
                         "UsesClass",
                         "SubUsesClass",
                         "Hidden",
-                        "Shown")
+                        "Shown",
+                        "Base",
+                        "WildSuper")
                     .map(
                         name -> JavaFileObjects.forResource("warnings/wildcards/" + name + ".java"))
                     .collect(Collectors.toList()));
@@ -107,6 +109,14 @@ public class WildcardVarianceWarningTest {
             "Producer.get",
             "Producer.get in SubUsesClass (inherited from UsesClass)",
             // Hidden is @TsIgnore, so its member only appears merged into Shown.
-            "Producer.get in Shown (inherited from Hidden)");
+            "Producer.get in Shown (inherited from Hidden)",
+            // The wildcard sits in WildSuper's extends clause.
+            "Producer.get in the supertypes of WildSuper");
+
+    // That last warning belongs to WildSuper, whose source holds the wildcard, not to Base.
+    assertThat(result.warnings())
+        .filteredOn(d -> d.getMessage(null).contains("supertypes of WildSuper"))
+        .singleElement()
+        .satisfies(d -> assertThat(d.getSource().getName()).endsWith("WildSuper.java"));
   }
 }

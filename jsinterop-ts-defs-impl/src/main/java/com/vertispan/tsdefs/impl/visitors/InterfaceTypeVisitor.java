@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.impl.model.TsProperty;
 import com.vertispan.tsdefs.impl.model.TypeScriptModule;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
@@ -105,7 +106,8 @@ public class InterfaceTypeVisitor extends TsElement {
     if (!tsElement.isTsIgnored()) {
       TsInterface.TsInterfaceBuilder interfaceBuilder =
           TsInterface.builder(tsElement.getName(), tsElement.getNamespace());
-      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(interfaceElement, env)
+      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(
+              interfaceElement, (TypeElement) element, env)
           .visit(interfaceBuilder);
       builder.addInterface(interfaceBuilder.build());
     }

@@ -56,4 +56,7 @@ public interface Shelf {
 
   @JsMethod
   Promise<? extends @JsNullable Item> nullableBound();
+
+  @JsMethod
+  Supplier<@TsTypeRef(SpecialItem.class) ? super Item> typeRefOnFunctionWildcard();
 }

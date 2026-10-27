@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -34,20 +35,17 @@ import javax.lang.model.type.TypeMirror;
  */
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
-  private final boolean declaration;
+  private final TypeElement subtype;
 
   /**
    * Visits the type arguments of a type in a usage position, such as a superclass or implemented
-   * interface. Bounds are never emitted here, only on the declaring type's own type parameters.
+   * interface of {@code subtype}. Bounds are never emitted here, only on the declaring type's own
+   * type parameters.
    */
-  public TypeArgumentsVisitor(TypeMirror typeMirror, HasProcessorEnv env) {
-    this(typeMirror, env, false);
-  }
-
-  private TypeArgumentsVisitor(TypeMirror typeMirror, HasProcessorEnv env, boolean declaration) {
+  public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
-    this.declaration = declaration;
+    this.subtype = subtype;
   }
 
   /**
@@ -56,7 +54,7 @@ public class TypeArgumentsVisitor<T> extends TsElement {
    */
   public static <T> TypeArgumentsVisitor<T> ofDeclaration(
       TypeMirror typeMirror, HasProcessorEnv env) {
-    return new TypeArgumentsVisitor<>(typeMirror, env, true);
+    return new TypeArgumentsVisitor<>(typeMirror, null, env);
   }
 
   public void visit(HasTypeArguments<T> builder) {
@@ -64,10 +62,10 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     if (classDeclaredType.getTypeArguments().isEmpty()) {
       return;
     }
-    if (declaration) {
+    if (subtype == null) {
       declaredTypeParameters(classDeclaredType, env).forEach(builder::addTypeArgument);
     } else {
-      new JavaToTsTypeConverter(element, env)
+      JavaToTsTypeConverter.forSupertypesOf(subtype, env)
           .asTypeWithArgument(classDeclaredType)
           .forEach(builder::addTypeArgument);
     }

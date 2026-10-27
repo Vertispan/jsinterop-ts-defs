@@ -47,20 +47,46 @@ import jsinterop.base.JsPropertyMap;
 public class JavaToTsTypeConverter {
   private final HasProcessorEnv env;
   private final Element element;
-  private final TypeElement emittedIn;
+  private final String emissionContext;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
-    this(element, null, env);
+    this(element, "", env);
   }
 
   /**
-   * @param emittedIn the type whose TypeScript declaration {@code element} is being emitted into,
-   *     when that is not the type that declares it; inherited members are emitted once per subtype
+   * @param inheritedBy the subtype whose TypeScript declaration {@code element} is being emitted
+   *     into, when that is not the type that declares it; inherited members are emitted once per
+   *     subtype
    */
-  public JavaToTsTypeConverter(Element element, TypeElement emittedIn, HasProcessorEnv env) {
+  public JavaToTsTypeConverter(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
+    this(element, inheritedSuffix(element, inheritedBy), env);
+  }
+
+  /** Converts the type arguments in {@code subtype}'s extends and implements clauses. */
+  public static JavaToTsTypeConverter forSupertypesOf(TypeElement subtype, HasProcessorEnv env) {
+    return new JavaToTsTypeConverter(
+        subtype, " in the supertypes of " + subtype.getSimpleName(), env);
+  }
+
+  /**
+   * @param emissionContext appended to diagnostics about {@code element}'s types when they are
+   *     emitted somewhere other than its own declaration, or empty
+   */
+  private JavaToTsTypeConverter(Element element, String emissionContext, HasProcessorEnv env) {
     this.env = env;
     this.element = element;
-    this.emittedIn = emittedIn;
+    this.emissionContext = emissionContext;
+  }
+
+  private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
+    if (!nonNull(inheritedBy) || inheritedBy.equals(element.getEnclosingElement())) {
+      return "";
+    }
+    return " in "
+        + inheritedBy.getSimpleName()
+        + " (inherited from "
+        + element.getEnclosingElement().getSimpleName()
+        + ")";
   }
 
   public TsType toTsType(TypeMirror type) {
@@ -237,7 +263,7 @@ public class JavaToTsTypeConverter {
           // Only the function method is emitted, as the inlined signature.
           warnIfSuperWildcardIsProduced(
               (DeclaredType) type, index, member -> member.equals(executableElement));
-          typeMapping.put(typeMirror.toString(), toTsType(declaredArguments.get(index)));
+          typeMapping.put(typeMirror.toString(), typeArgument(declaredArguments.get(index)));
         });
     executableElement
         .getParameters()
@@ -372,7 +398,7 @@ public class JavaToTsTypeConverter {
                             + "] is emitted as ["
                             + bound
                             + "]"
-                            + emittedInSuffix()
+                            + emissionContext
                             + ", but "
                             + typeElement.getSimpleName()
                             + "."
@@ -383,17 +409,6 @@ public class JavaToTsTypeConverter {
                             + bound
                             + ". Annotate the wildcard with @TsTypeRef to choose the emitted type.",
                         element));
-  }
-
-  private String emittedInSuffix() {
-    if (!nonNull(emittedIn) || emittedIn.equals(element.getEnclosingElement())) {
-      return "";
-    }
-    return " in "
-        + emittedIn.getSimpleName()
-        + " (inherited from "
-        + element.getEnclosingElement().getSimpleName()
-        + ")";
   }
 
   /** The type a member hands to callers: a method's return type or a field's type, else null. */

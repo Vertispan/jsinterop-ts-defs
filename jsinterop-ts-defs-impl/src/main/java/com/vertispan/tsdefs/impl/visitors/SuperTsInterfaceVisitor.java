@@ -20,14 +20,21 @@ import com.vertispan.tsdefs.impl.builders.HasInterfaces;
 import com.vertispan.tsdefs.impl.builders.IsClassBuilder;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsInterface;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 
 public class SuperTsInterfaceVisitor<T> extends TsElement {
   private final TypeMirror type;
 
-  public SuperTsInterfaceVisitor(TypeMirror typeMirror, HasProcessorEnv env) {
+  private final TypeElement subtype;
+
+  /**
+   * Walks up from {@code typeMirror}, a superclass of {@code subtype}, to the first TsInterface.
+   */
+  public SuperTsInterfaceVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
+    this.subtype = subtype;
   }
 
   public void visit(IsClassBuilder<T> builder) {
@@ -37,7 +44,7 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
       getJavaSuperClass()
           .ifPresent(
               typeMirror -> {
-                new SuperTsInterfaceVisitor<T>(typeMirror, env).visit(builder);
+                new SuperTsInterfaceVisitor<T>(typeMirror, subtype, env).visit(builder);
               });
     }
   }
@@ -47,7 +54,7 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
     if (!tsElement.isTsIgnored()) {
       TsInterface.TsInterfaceBuilder interfaceBuilder =
           TsInterface.builder(tsElement.getName(), tsElement.getNamespace());
-      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(typeMirror, env)
+      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(typeMirror, subtype, env)
           .visit(interfaceBuilder);
       builder.addInterface(interfaceBuilder.build());
     }

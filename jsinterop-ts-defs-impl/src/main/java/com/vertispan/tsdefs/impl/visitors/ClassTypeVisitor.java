@@ -65,7 +65,9 @@ public class ClassTypeVisitor extends TsElement {
       getJavaSuperClass()
           .ifPresent(
               superclass -> {
-                new SuperTsInterfaceVisitor<TsClass.TsClassBuilder>(superclass, env).visit(builder);
+                new SuperTsInterfaceVisitor<TsClass.TsClassBuilder>(
+                        superclass, (TypeElement) element, env)
+                    .visit(builder);
               });
 
       TsClass tsClass = builder.build();
@@ -183,7 +185,8 @@ public class ClassTypeVisitor extends TsElement {
 
       TsClass.TsClassBuilder builder =
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
-      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(superclass, env).visit(builder);
+      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(superclass, (TypeElement) element, env)
+          .visit(builder);
       return Optional.of(builder.build());
     } else {
       return getSuperClass(superTsElement.element());
