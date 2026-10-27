@@ -67,6 +67,10 @@ public interface Uses {
   @JsMethod
   Producer<? super @TsTypeRef(Item.class) Item> typeRefOnBound();
 
+  // Silent: a bound constrains the caller, so the erased form is stricter, not wrong.
+  @JsMethod
+  <V extends Producer<? super Item>> V bounded();
+
   // Silent: the only member that reaches TypeScript consumes T.
   @JsMethod
   Mixed<? super Item> mixed();

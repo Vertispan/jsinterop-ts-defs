@@ -59,4 +59,7 @@ public interface Shelf {
 
   @JsMethod
   Supplier<@TsTypeRef(SpecialItem.class) ? super Item> typeRefOnFunctionWildcard();
+
+  @JsMethod
+  <V extends Box<? extends SpecialItem>> V boundedMethod();
 }

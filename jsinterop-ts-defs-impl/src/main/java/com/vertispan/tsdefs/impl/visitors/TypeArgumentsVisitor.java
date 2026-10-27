@@ -82,12 +82,14 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     TsType type = TsElement.of(typeMirror, env).getType();
     Element typeElement = env.types().asElement(typeMirror);
     if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-      List<? extends TypeMirror> bounds = ((TypeParameterElement) typeElement).getBounds();
-
-      bounds.stream()
-          .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
-          .map(boundType -> TsElement.of(boundType, env).getType())
-          .forEach(type::addBounds);
+      // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
+      // bound type's own declared parameter.
+      JavaToTsTypeConverter converter = new JavaToTsTypeConverter(typeElement, env);
+      ((TypeParameterElement) typeElement)
+          .getBounds().stream()
+              .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
+              .map(converter::toTsType)
+              .forEach(type::addBounds);
     }
     return type;
   }

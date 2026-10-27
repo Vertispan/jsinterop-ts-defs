@@ -355,8 +355,9 @@ public class JavaToTsTypeConverter {
    * parameter. When it also produces it, through a method return type or a field, TypeScript
    * callers are promised an {@code X} but may receive any supertype of it, so warn and point at
    * {@code @TsTypeRef} as the way to choose the emitted type. Only the member being emitted is
-   * considered: a wildcard in a parameter position makes the TypeScript signature stricter, not
-   * wrong, so it is left alone, and variance of nested type arguments is not tracked.
+   * considered: a wildcard in a parameter position or in a type parameter's bound makes the
+   * TypeScript signature stricter, not wrong, so it is left alone, and variance of nested type
+   * arguments is not tracked.
    */
   private void warnIfSuperWildcardIsProduced(DeclaredType type, int index) {
     warnIfSuperWildcardIsProduced(type, index, member -> TsElement.of(member, env).isExportable());
@@ -372,6 +373,7 @@ public class JavaToTsTypeConverter {
     TypeMirror argument = type.getTypeArguments().get(index);
     if (!TypeKind.WILDCARD.equals(argument.getKind())
         || ElementKind.PARAMETER.equals(element.getKind())
+        || ElementKind.TYPE_PARAMETER.equals(element.getKind())
         || getTypeOrTypeRef(argument) != argument) {
       return;
     }

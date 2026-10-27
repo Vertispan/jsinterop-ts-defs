@@ -1244,3 +1244,13 @@ expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableWildcard())
 expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableBound());
 // A JsFunction type argument honors @TsTypeRef on the wildcard like any other type argument.
 expectType<() => SpecialItem>()(shelf.typeRefOnFunctionWildcard());
+
+// A parameterized bound keeps its own type arguments, on types and on methods.
+import NestedBound = com.vertispan.tsdefs.tests.wildcards.NestedBound;
+declare const nestedBound: NestedBound<Box<SpecialItem>>;
+expectType<Box<SpecialItem>>()(nestedBound.get());
+// @ts-expect-error
+declare const wrongNestedBound: NestedBound<Box<WildcardItem>>;
+expectType<Box<SpecialItem>>()(shelf.boundedMethod<Box<SpecialItem>>());
+// @ts-expect-error
+shelf.boundedMethod<Box<WildcardItem>>();
