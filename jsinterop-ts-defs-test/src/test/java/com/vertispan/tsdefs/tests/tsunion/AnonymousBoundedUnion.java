@@ -18,9 +18,10 @@ package com.vertispan.tsdefs.tests.tsunion;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
+import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 
-@JsType(isNative = true)
+@JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
 @TsUnion(anonymous = true)
 public interface AnonymousBoundedUnion<T extends Entity> {
   @JsOverlay

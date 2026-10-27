@@ -24,7 +24,7 @@ import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 
 /** A named explicit parameter union. */
-@JsType(isNative = true)
+@JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
 @TsUnion(anonymous = false, namespace = JsPackage.GLOBAL)
 public interface ExplicitParamUnion {
   @JsOverlay

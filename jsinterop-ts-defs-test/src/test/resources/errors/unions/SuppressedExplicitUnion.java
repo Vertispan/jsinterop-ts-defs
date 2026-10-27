@@ -6,7 +6,7 @@ import jsinterop.annotations.JsOverlay;
 import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 
-@JsType(isNative = true, namespace = JsPackage.GLOBAL)
+@JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
 @TsUnion(anonymous = false, name = "?")
 public interface SuppressedExplicitUnion {
   @JsOverlay

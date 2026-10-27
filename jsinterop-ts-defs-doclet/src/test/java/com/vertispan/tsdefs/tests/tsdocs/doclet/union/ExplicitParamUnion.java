@@ -24,7 +24,7 @@ import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 
 /** A named union containing a number or an array of nullable numbers. */
-@JsType(isNative = true, namespace = JsPackage.GLOBAL)
+@JsType(isNative = true, name = "?", namespace = JsPackage.GLOBAL)
 @TsUnion(anonymous = false, namespace = JsPackage.GLOBAL)
 public interface ExplicitParamUnion {
   @JsOverlay
