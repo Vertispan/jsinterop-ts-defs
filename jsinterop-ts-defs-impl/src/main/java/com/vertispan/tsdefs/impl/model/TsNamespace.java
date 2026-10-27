@@ -1,5 +1,5 @@
 /*
- * Copyright © 2023 Vertispan
+ * Copyright © 2026 Vertispan
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class TsNamespace {
   private List<TsFunction> tsFunctions = new ArrayList<>();
   private List<TsClass> tsClasses = new ArrayList<>();
   private List<TsEnum> tsEnums = new ArrayList<>();
+  private List<TsCustomType> tsTypes = new ArrayList<>();
 
   public TsNamespace(String namespace) {
     this.namespace = namespace;
@@ -56,11 +57,16 @@ public class TsNamespace {
     this.tsEnums.add(tsEnum);
   }
 
+  public void addTsType(TsCustomType tsType) {
+    this.tsTypes.add(tsType);
+  }
+
   public boolean isEmpty() {
     return tsInterfaces.isEmpty()
         && tsFunctions.isEmpty()
         && tsEnums.isEmpty()
-        && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty));
+        && (tsClasses.isEmpty() || tsClasses.stream().allMatch(TsClass::isEmpty))
+        && tsTypes.isEmpty();
   }
 
   public String emit(String indent, String parentNamespace) {
@@ -78,6 +84,11 @@ public class TsNamespace {
     sb.append(namespace);
     sb.append(" {");
     sb.append(NEW_LINE);
+
+    sb.append(
+        tsTypes.stream()
+            .map(tsType -> tsType.emitType(indent + INDENT, namespace))
+            .collect(Collectors.joining(NEW_LINE, optionalln(tsTypes), optionalln(tsTypes))));
 
     sb.append(
         tsFunctions.stream()
