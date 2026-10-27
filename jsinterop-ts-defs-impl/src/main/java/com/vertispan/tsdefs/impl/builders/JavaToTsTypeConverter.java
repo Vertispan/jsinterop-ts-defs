@@ -380,7 +380,7 @@ public class JavaToTsTypeConverter {
     TypeMirror bound = ((WildcardType) argument).getSuperBound();
     TypeElement typeElement = (TypeElement) type.asElement();
     List<? extends TypeParameterElement> parameters = typeElement.getTypeParameters();
-    if (!nonNull(bound) || getTypeOrTypeRef(bound) != bound || index >= parameters.size()) {
+    if (!nonNull(bound) || getTypeOrTypeRef(bound) != bound) {
       return;
     }
     TypeMirror parameter = parameters.get(index).asType();
@@ -407,9 +407,10 @@ public class JavaToTsTypeConverter {
                             + member.getSimpleName()
                             + " produces its type parameter "
                             + parameter
-                            + ", so TypeScript callers may receive a supertype of "
+                            + ", so TypeScript is shown "
                             + bound
-                            + ". Annotate the wildcard with @TsTypeRef to choose the emitted type.",
+                            + " where Java only promises a supertype of it."
+                            + " Annotate the wildcard with @TsTypeRef to choose the emitted type.",
                         element));
   }
 

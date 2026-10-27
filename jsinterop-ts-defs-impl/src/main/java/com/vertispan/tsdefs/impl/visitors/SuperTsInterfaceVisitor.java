@@ -25,7 +25,6 @@ import javax.lang.model.type.TypeMirror;
 
 public class SuperTsInterfaceVisitor<T> extends TsElement {
   private final TypeMirror type;
-
   private final TypeElement subtype;
 
   /**

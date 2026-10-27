@@ -39,9 +39,9 @@ public class WildcardVarianceWarningTest {
               + ITEM
               + "\\] is emitted as \\["
               + ITEM
-              + "\\]( in .+?)?, but (\\S+) produces its type parameter T, so TypeScript callers may receive a supertype of "
+              + "\\]( in .+?)?, but (\\S+) produces its type parameter T, so TypeScript is shown "
               + ITEM
-              + "\\. Annotate the wildcard with @TsTypeRef to choose the emitted type\\.$");
+              + " where Java only promises a supertype of it\\. Annotate the wildcard with @TsTypeRef to choose the emitted type\\.$");
 
   @Test
   public void superWildcardOnProducingTypeWarns() {
