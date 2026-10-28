@@ -74,4 +74,18 @@ public interface Uses {
   // Silent: the only member that reaches TypeScript consumes T.
   @JsMethod
   Mixed<? super Item> mixed();
+
+  // Silent: @TsTypeRef on the producing member replaced T, on the method, field or nested argument.
+  @JsMethod
+  RefMethod<? super Item> refMethod();
+
+  @JsMethod
+  RefField<? super Item> refField();
+
+  @JsMethod
+  RefNested<? super Item> refNested();
+
+  // Warns, naming get: the other producer's T is replaced by @TsTypeRef.
+  @JsMethod
+  RefPartial<? super Item> refPartial();
 }

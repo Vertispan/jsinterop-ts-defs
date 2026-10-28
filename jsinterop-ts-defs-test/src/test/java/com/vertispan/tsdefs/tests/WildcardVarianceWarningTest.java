@@ -64,7 +64,11 @@ public class WildcardVarianceWarningTest {
                         "Hidden",
                         "Shown",
                         "Base",
-                        "WildSuper")
+                        "WildSuper",
+                        "RefMethod",
+                        "RefField",
+                        "RefNested",
+                        "RefPartial")
                     .map(
                         name -> JavaFileObjects.forResource("warnings/wildcards/" + name + ".java"))
                     .collect(Collectors.toList()));
@@ -90,20 +94,22 @@ public class WildcardVarianceWarningTest {
     assertThat(actual)
         .containsExactlyInAnyOrder(
             // Declared in Uses: direct method, field, inherited member, JsFunction, JsPropertyMap,
-            // property getter.
+            // property getter, the one member not replaced by @TsTypeRef.
             "Holder.value",
             "JsPropertyMap.get",
             "Producer.get",
             "Producer.get",
             "SubProducer.get",
             "Supplier.get",
-            // The same six, re-emitted into SubUses.
+            "RefPartial.get",
+            // The same seven, re-emitted into SubUses.
             "Holder.value in SubUses (inherited from Uses)",
             "JsPropertyMap.get in SubUses (inherited from Uses)",
             "Producer.get in SubUses (inherited from Uses)",
             "Producer.get in SubUses (inherited from Uses)",
             "SubProducer.get in SubUses (inherited from Uses)",
             "Supplier.get in SubUses (inherited from Uses)",
+            "RefPartial.get in SubUses (inherited from Uses)",
             // UsesClass: field and getter; the getter again in SubUsesClass.
             "Producer.get",
             "Producer.get",
