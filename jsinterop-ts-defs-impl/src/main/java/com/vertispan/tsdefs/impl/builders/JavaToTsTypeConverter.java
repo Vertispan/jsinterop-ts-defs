@@ -357,7 +357,8 @@ public class JavaToTsTypeConverter {
    * {@code @TsTypeRef} as the way to choose the emitted type. Only the member being emitted is
    * considered: a wildcard in a parameter position or in a type parameter's bound makes the
    * TypeScript signature stricter, not wrong, so it is left alone, and variance of nested type
-   * arguments is not tracked.
+   * arguments is not tracked. A member whose type, or the part of it naming the parameter, is
+   * replaced by {@code @TsTypeRef} does not produce the parameter in TypeScript.
    */
   private void warnIfSuperWildcardIsProduced(DeclaredType type, int index) {
     warnIfSuperWildcardIsProduced(type, index, member -> TsElement.of(member, env).isExportable());
@@ -388,7 +389,10 @@ public class JavaToTsTypeConverter {
     env.elements().getAllMembers(typeElement).stream()
         .filter(member -> !member.getModifiers().contains(Modifier.STATIC))
         .filter(emitted)
-        .filter(member -> mentions(producedType(generic, member), parameter))
+        .filter(member -> !TsElement.of(member, env).isTsTypeRef())
+        .filter(
+            member ->
+                mentions(declaredProducedType(member), producedType(generic, member), parameter))
         .findFirst()
         .ifPresent(
             member ->
@@ -426,22 +430,62 @@ public class JavaToTsTypeConverter {
     }
   }
 
-  private boolean mentions(TypeMirror type, TypeMirror typeVariable) {
-    if (!nonNull(type)) {
+  /** As {@link #producedType}, but as written on the member, keeping its type-use annotations. */
+  private TypeMirror declaredProducedType(Element member) {
+    switch (member.getKind()) {
+      case METHOD:
+        return ((ExecutableElement) member).getReturnType();
+      case FIELD:
+        return member.asType();
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Whether {@code type} names {@code typeVariable} anywhere TypeScript will see it. {@code
+   * declared} is the same type as written, walked alongside because substitution drops annotations:
+   * a part replaced by {@code @TsTypeRef} there is skipped. Null where the two stop matching, below
+   * a substituted type variable.
+   */
+  private boolean mentions(TypeMirror declared, TypeMirror type, TypeMirror typeVariable) {
+    if (!nonNull(type) || (nonNull(declared) && getTypeOrTypeRef(declared) != declared)) {
       return false;
     }
+    boolean parallel = nonNull(declared) && declared.getKind().equals(type.getKind());
     switch (type.getKind()) {
       case TYPEVAR:
         return env.types().isSameType(type, typeVariable);
       case DECLARED:
-        return ((DeclaredType) type)
-            .getTypeArguments().stream().anyMatch(argument -> mentions(argument, typeVariable));
+        List<? extends TypeMirror> arguments = ((DeclaredType) type).getTypeArguments();
+        List<? extends TypeMirror> declaredArguments =
+            parallel ? ((DeclaredType) declared).getTypeArguments() : null;
+        for (int i = 0; i < arguments.size(); i++) {
+          TypeMirror declaredArgument =
+              nonNull(declaredArguments) && declaredArguments.size() == arguments.size()
+                  ? declaredArguments.get(i)
+                  : null;
+          if (mentions(declaredArgument, arguments.get(i), typeVariable)) {
+            return true;
+          }
+        }
+        return false;
       case ARRAY:
-        return mentions(((ArrayType) type).getComponentType(), typeVariable);
+        return mentions(
+            parallel ? ((ArrayType) declared).getComponentType() : null,
+            ((ArrayType) type).getComponentType(),
+            typeVariable);
       case WILDCARD:
         WildcardType wildcard = (WildcardType) type;
-        return mentions(wildcard.getExtendsBound(), typeVariable)
-            || mentions(wildcard.getSuperBound(), typeVariable);
+        WildcardType declaredWildcard = parallel ? (WildcardType) declared : null;
+        return mentions(
+                parallel ? declaredWildcard.getExtendsBound() : null,
+                wildcard.getExtendsBound(),
+                typeVariable)
+            || mentions(
+                parallel ? declaredWildcard.getSuperBound() : null,
+                wildcard.getSuperBound(),
+                typeVariable);
       default:
         return false;
     }
