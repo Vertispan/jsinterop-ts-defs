@@ -1254,3 +1254,42 @@ declare const wrongNestedBound: NestedBound<Box<WildcardItem>>;
 expectType<Box<SpecialItem>>()(shelf.boundedMethod<Box<SpecialItem>>());
 // @ts-expect-error
 shelf.boundedMethod<Box<WildcardItem>>();
+
+// --- Default type arguments ------------------------------------------------
+import DefaultedBox = com.vertispan.tsdefs.tests.defaults.DefaultedBox;
+import DefaultedPair = com.vertispan.tsdefs.tests.defaults.DefaultedPair;
+import DefaultedClass = com.vertispan.tsdefs.tests.defaults.DefaultedClass;
+import SubDefaultedBox = com.vertispan.tsdefs.tests.defaults.SubDefaultedBox;
+import Lookup = com.vertispan.tsdefs.tests.defaults.Lookup;
+
+// An omitted argument takes the default; an explicit one still works.
+declare const defaultedBox: DefaultedBox;
+expectType<WildcardItem>()(defaultedBox.get());
+declare const explicitDefaultedBox: DefaultedBox<SpecialItem>;
+expectType<SpecialItem>()(explicitDefaultedBox.get());
+
+// Only trailing parameters can be omitted.
+declare const defaultedPair: DefaultedPair<string>;
+expectType<string>()(defaultedPair.key());
+expectType<WildcardItem>()(defaultedPair.value());
+// @ts-expect-error
+declare const missingKeyPair: DefaultedPair;
+
+// The default, not the bound, is used on a class.
+declare const defaultedClass: DefaultedClass;
+expectType<SpecialItem>()(defaultedClass.value);
+
+// A forwarded parameter keeps its own default, and the extends clause carries none.
+declare const subDefaultedBox: SubDefaultedBox;
+expectType<SpecialItem>()(subDefaultedBox.get());
+
+// Method defaults apply when nothing can be inferred: any instead of unknown, the default
+// instead of the bound. Each result is bound first, since inside expectType() the expected
+// type would be inferred instead.
+declare const lookup: Lookup;
+const readResult = lookup.read("name");
+expectType<any>()(readResult);
+const readItemResult = lookup.readItem("name");
+expectType<SpecialItem>()(readItemResult);
+const explicitReadItemResult = lookup.readItem<WildcardItem>("name");
+expectType<WildcardItem>()(explicitReadItemResult);
