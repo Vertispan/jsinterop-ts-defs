@@ -1201,3 +1201,56 @@ import ExtendsGenericWithLiteral = com.vertispan.tsdefs.tests.literals.ExtendsGe
 let literalGeneric = new ExtendsGenericWithLiteral();
 expectType<"hello">()(literalGeneric.propertyOfT);
 expectType<"hello">()(literalGeneric.takesNothingReturnT());
+
+// --- Bounded type parameters and wildcards ---------------------------------
+import WildcardItem = com.vertispan.tsdefs.tests.wildcards.Item;
+import Box = com.vertispan.tsdefs.tests.wildcards.Box;
+import BoundedBox = com.vertispan.tsdefs.tests.wildcards.BoundedBox;
+import BoundedGenericJsType = com.vertispan.tsdefs.tests.wildcards.BoundedGenericJsType;
+import Shelf = com.vertispan.tsdefs.tests.wildcards.Shelf;
+import SpecialItem = com.vertispan.tsdefs.tests.wildcards.SpecialItem;
+
+// A bounded type parameter forwarded to a super type is emitted as its bare name in the extends
+// clause, with the bound only on the declaration.
+declare const boundedBox: BoundedBox<WildcardItem>;
+expectType<WildcardItem>()(boundedBox.get());
+expectType<WildcardItem>()(boundedBox.peek());
+// @ts-expect-error
+declare const boundedBoxOfString: BoundedBox<string>;
+
+const boundedGeneric = new BoundedGenericJsType<WildcardItem>();
+expectType<WildcardItem>()(boundedGeneric.propertyOfT);
+expectType<WildcardItem>()(boundedGeneric.takesNothingReturnT());
+expectType<WildcardItem>()(boundedGeneric.genericInterfaceOneMethod());
+expectType<WildcardItem>()(boundedGeneric.genericPropertyOne);
+// @ts-expect-error
+new BoundedGenericJsType<string>();
+
+// Wildcards are erased to their bound; an unbounded wildcard is any.
+declare const shelf: Shelf;
+expectType<Box<WildcardItem>>()(shelf.first());
+expectType<Promise<WildcardItem>>()(shelf.firstItem());
+expectType<Box<WildcardItem>>()(shelf.sink());
+expectType<Box<any>>()(shelf.unbounded());
+expectType<Box<WildcardItem>>()(shelf.typed<WildcardItem>());
+expectType<Promise<Box<WildcardItem>>>()(shelf.nested());
+shelf.take(boundedBox);
+// @ts-expect-error
+shelf.take("not a box");
+// @TsTypeRef and @JsNullable apply whether written on the wildcard or on its bound.
+expectType<Box<SpecialItem>>()(shelf.typeRefOnWildcard());
+expectType<Box<SpecialItem>>()(shelf.typeRefOnBound());
+expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableWildcard());
+expectType<Promise<WildcardItem | null | undefined>>()(shelf.nullableBound());
+// A JsFunction type argument honors @TsTypeRef on the wildcard like any other type argument.
+expectType<() => SpecialItem>()(shelf.typeRefOnFunctionWildcard());
+
+// A parameterized bound keeps its own type arguments, on types and on methods.
+import NestedBound = com.vertispan.tsdefs.tests.wildcards.NestedBound;
+declare const nestedBound: NestedBound<Box<SpecialItem>>;
+expectType<Box<SpecialItem>>()(nestedBound.get());
+// @ts-expect-error
+declare const wrongNestedBound: NestedBound<Box<WildcardItem>>;
+expectType<Box<SpecialItem>>()(shelf.boundedMethod<Box<SpecialItem>>());
+// @ts-expect-error
+shelf.boundedMethod<Box<WildcardItem>>();

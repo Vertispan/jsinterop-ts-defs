@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 
 public class SetterGetterMethodsVisitor<T> extends TsElement {
@@ -55,7 +56,7 @@ public class SetterGetterMethodsVisitor<T> extends TsElement {
     Map<String, TsElement> getters = new HashMap<>();
 
     nonOverriddenMethods.stream()
-        .map(e -> TsElement.of(e, env))
+        .map(e -> TsElement.of(e, (TypeElement) element, env))
         .filter(TsElement::isGetter)
         .filter(TsElement::isExportable)
         .forEach(tsElement -> getters.put(tsElement.nonGetSetName(), tsElement));
@@ -69,7 +70,7 @@ public class SetterGetterMethodsVisitor<T> extends TsElement {
     Map<String, TsElement> setters = new HashMap<>();
 
     nonOverriddenMethods.stream()
-        .map(e -> TsElement.of(e, env))
+        .map(e -> TsElement.of(e, (TypeElement) element, env))
         .filter(TsElement::isSetter)
         .filter(TsElement::isExportable)
         .forEach(tsElement -> setters.put(tsElement.nonGetSetName(), tsElement));

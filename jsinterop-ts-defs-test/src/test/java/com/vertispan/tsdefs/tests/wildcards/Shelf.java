@@ -1,0 +1,65 @@
+/*
+ * Copyright © 2026 Vertispan
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.vertispan.tsdefs.tests.wildcards;
+
+import com.vertispan.tsdefs.annotations.TsInterface;
+import com.vertispan.tsdefs.annotations.TsTypeRef;
+import elemental2.promise.Promise;
+import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsNullable;
+
+/** Wildcards in type arguments are erased to their bound. */
+@TsInterface
+public interface Shelf {
+  @JsMethod
+  Box<? extends Item> first();
+
+  @JsMethod
+  Promise<? extends Item> firstItem();
+
+  @JsMethod
+  Box<? super Item> sink();
+
+  @JsMethod
+  Box<?> unbounded();
+
+  @JsMethod
+  <V extends Item> Box<? extends V> typed();
+
+  @JsMethod
+  Promise<? extends Box<? extends Item>> nested();
+
+  @JsMethod
+  void take(Box<? extends Item> box);
+
+  @JsMethod
+  Box<@TsTypeRef(SpecialItem.class) ? extends Item> typeRefOnWildcard();
+
+  @JsMethod
+  Box<? extends @TsTypeRef(SpecialItem.class) Item> typeRefOnBound();
+
+  @JsMethod
+  Promise<@JsNullable ? extends Item> nullableWildcard();
+
+  @JsMethod
+  Promise<? extends @JsNullable Item> nullableBound();
+
+  @JsMethod
+  Supplier<@TsTypeRef(SpecialItem.class) ? super Item> typeRefOnFunctionWildcard();
+
+  @JsMethod
+  <V extends Box<? extends SpecialItem>> V boundedMethod();
+}

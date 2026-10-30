@@ -25,28 +25,68 @@ import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.model.*;
 import com.vertispan.tsdefs.impl.visitors.ParameterVisitor;
 import com.vertispan.tsdefs.impl.visitors.TypeArgumentsVisitor;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.lang.model.element.*;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
 import javax.tools.Diagnostic;
 import jsinterop.base.JsPropertyMap;
 
 public class JavaToTsTypeConverter {
   private final HasProcessorEnv env;
   private final Element element;
+  private final String emissionContext;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
+    this(element, "", env);
+  }
+
+  /**
+   * @param inheritedBy the subtype whose TypeScript declaration {@code element} is being emitted
+   *     into, when that is not the type that declares it; inherited members are emitted once per
+   *     subtype
+   */
+  public JavaToTsTypeConverter(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
+    this(element, inheritedSuffix(element, inheritedBy), env);
+  }
+
+  /** Converts the type arguments in {@code subtype}'s extends and implements clauses. */
+  public static JavaToTsTypeConverter forSupertypesOf(TypeElement subtype, HasProcessorEnv env) {
+    return new JavaToTsTypeConverter(
+        subtype, " in the supertypes of " + subtype.getSimpleName(), env);
+  }
+
+  /**
+   * @param emissionContext appended to diagnostics about {@code element}'s types when they are
+   *     emitted somewhere other than its own declaration, or empty
+   */
+  private JavaToTsTypeConverter(Element element, String emissionContext, HasProcessorEnv env) {
     this.env = env;
     this.element = element;
+    this.emissionContext = emissionContext;
+  }
+
+  private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
+    if (!nonNull(inheritedBy) || inheritedBy.equals(element.getEnclosingElement())) {
+      return "";
+    }
+    return " in "
+        + inheritedBy.getSimpleName()
+        + " (inherited from "
+        + element.getEnclosingElement().getSimpleName()
+        + ")";
   }
 
   public TsType toTsType(TypeMirror type) {
@@ -62,6 +102,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getTsType(TypeMirror type, boolean checkTypeDef) {
+    if (TypeKind.WILDCARD.equals(type.getKind())) {
+      return wildcardType((WildcardType) type);
+    }
     if (checkTypeDef && TsElement.of(type, env).isTsTypeDef()) {
       Optional<TsType> tsType = fromTsTypeDef(TsElement.of(type, env).element);
       if (tsType.isPresent()) {
@@ -129,6 +172,8 @@ public class JavaToTsTypeConverter {
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
         DeclaredType declaredType = (DeclaredType) type;
+        // The index signature reads and writes, so every member counts as emitted.
+        warnIfSuperWildcardIsProduced(declaredType, 0, member -> true);
         return TsTemplatedInlinedType.of(
             "{ [key: string]: $T; }", asTypeWithArgument(declaredType).get(0));
       }
@@ -148,6 +193,23 @@ public class JavaToTsTypeConverter {
     }
   }
 
+  /**
+   * TypeScript has no wildcards and does not need them: generics are structurally variant there, so
+   * a Java {@code ? extends X} or {@code ? super X} is rendered as the bound {@code X}, which is
+   * the type a TypeScript author would have written by hand. An unbounded {@code ?} renders as
+   * {@code any}, consistent with how other unresolvable types are emitted. The bound is treated
+   * like any other type argument, so {@code @TsTypeRef} and {@code @JsNullable} apply to it whether
+   * written on the wildcard or on the bound.
+   */
+  private TsType wildcardType(WildcardType wildcard) {
+    TypeMirror bound =
+        nonNull(wildcard.getExtendsBound()) ? wildcard.getExtendsBound() : wildcard.getSuperBound();
+    if (nonNull(bound) && !isSameType(bound, Object.class)) {
+      return typeArgument(bound);
+    }
+    return TsType.of(Formatting.resolveName("?"));
+  }
+
   public TsType unionType(TypeMirror type) {
     return TsUnionType.of(true, unionTypes((DeclaredType) type));
   }
@@ -159,7 +221,7 @@ public class JavaToTsTypeConverter {
         tsElement.getExplicitUnionName(),
         tsElement.getExplicitUnionNamespace(),
         true,
-        TypeArgumentsVisitor.getTypeArguments(declaredType, env),
+        TypeArgumentsVisitor.declaredTypeParameters(declaredType, env),
         unionTypes(declaredType));
   }
 
@@ -196,10 +258,13 @@ public class JavaToTsTypeConverter {
         ((DeclaredType) executableElement.getEnclosingElement().asType()).getTypeArguments();
     Map<String, TsType> typeMapping = new HashMap<>();
     argumentVars.forEach(
-        typeMirror ->
-            typeMapping.put(
-                typeMirror.toString(),
-                toTsType(declaredArguments.get(argumentVars.indexOf(typeMirror)))));
+        typeMirror -> {
+          int index = argumentVars.indexOf(typeMirror);
+          // Only the function method is emitted, as the inlined signature.
+          warnIfSuperWildcardIsProduced(
+              (DeclaredType) type, index, member -> member.equals(executableElement));
+          typeMapping.put(typeMirror.toString(), typeArgument(declaredArguments.get(index)));
+        });
     executableElement
         .getParameters()
         .forEach(
@@ -274,13 +339,165 @@ public class JavaToTsTypeConverter {
     return toTsType(typeRef.get());
   }
 
-  private List<TsType> asTypeWithArgument(DeclaredType type) {
-    List<? extends TypeMirror> typeArguments = type.getTypeArguments();
+  /** Converts the type arguments of a parameterized type as used in a type reference. */
+  public List<TsType> asTypeWithArgument(DeclaredType type) {
+    List<? extends TypeMirror> arguments = type.getTypeArguments();
+    List<TsType> result = new ArrayList<>(arguments.size());
+    for (int i = 0; i < arguments.size(); i++) {
+      warnIfSuperWildcardIsProduced(type, i);
+      result.add(typeArgument(arguments.get(i)));
+    }
+    return result;
+  }
 
-    return typeArguments.stream()
-        .map(this::getTypeOrTypeRef)
-        .map(typeMirror -> TsElement.of(typeMirror, env).typeOrNullable(toTsType(typeMirror, true)))
-        .collect(Collectors.toList());
+  /**
+   * Erasing {@code ? super X} to {@code X} is exact when the parameterized type only consumes its
+   * parameter. When it also produces it, through a method return type or a field, TypeScript
+   * callers are promised an {@code X} but may receive any supertype of it, so warn and point at
+   * {@code @TsTypeRef} as the way to choose the emitted type. Only the member being emitted is
+   * considered: a wildcard in a parameter position or in a type parameter's bound makes the
+   * TypeScript signature stricter, not wrong, so it is left alone, and variance of nested type
+   * arguments is not tracked. A member whose type, or the part of it naming the parameter, is
+   * replaced by {@code @TsTypeRef} does not produce the parameter in TypeScript.
+   */
+  private void warnIfSuperWildcardIsProduced(DeclaredType type, int index) {
+    warnIfSuperWildcardIsProduced(type, index, member -> TsElement.of(member, env).isExportable());
+  }
+
+  /**
+   * @param emitted which members of the parameterized type reach TypeScript; the default is {@link
+   *     TsElement#isExportable()}, but inlined types such as JsFunctions and JsPropertyMap emit
+   *     members that are not exportable on their own
+   */
+  private void warnIfSuperWildcardIsProduced(
+      DeclaredType type, int index, Predicate<Element> emitted) {
+    TypeMirror argument = type.getTypeArguments().get(index);
+    if (!TypeKind.WILDCARD.equals(argument.getKind())
+        || ElementKind.PARAMETER.equals(element.getKind())
+        || ElementKind.TYPE_PARAMETER.equals(element.getKind())
+        || getTypeOrTypeRef(argument) != argument) {
+      return;
+    }
+    TypeMirror bound = ((WildcardType) argument).getSuperBound();
+    TypeElement typeElement = (TypeElement) type.asElement();
+    List<? extends TypeParameterElement> parameters = typeElement.getTypeParameters();
+    if (!nonNull(bound) || getTypeOrTypeRef(bound) != bound) {
+      return;
+    }
+    TypeMirror parameter = parameters.get(index).asType();
+    DeclaredType generic = (DeclaredType) typeElement.asType();
+    env.elements().getAllMembers(typeElement).stream()
+        .filter(member -> !member.getModifiers().contains(Modifier.STATIC))
+        .filter(emitted)
+        .filter(member -> !TsElement.of(member, env).isTsTypeRef())
+        .filter(
+            member ->
+                mentions(declaredProducedType(member), producedType(generic, member), parameter))
+        .findFirst()
+        .ifPresent(
+            member ->
+                env.messager()
+                    .printMessage(
+                        Diagnostic.Kind.WARNING,
+                        "Wildcard ["
+                            + argument
+                            + "] is emitted as ["
+                            + bound
+                            + "]"
+                            + emissionContext
+                            + ", but "
+                            + typeElement.getSimpleName()
+                            + "."
+                            + member.getSimpleName()
+                            + " produces its type parameter "
+                            + parameter
+                            + ", so TypeScript is shown "
+                            + bound
+                            + " where Java only promises a supertype of it."
+                            + " Annotate the wildcard with @TsTypeRef to choose the emitted type.",
+                        element));
+  }
+
+  /** The type a member hands to callers: a method's return type or a field's type, else null. */
+  private TypeMirror producedType(DeclaredType containing, Element member) {
+    switch (member.getKind()) {
+      case METHOD:
+        return ((ExecutableType) env.types().asMemberOf(containing, member)).getReturnType();
+      case FIELD:
+        return env.types().asMemberOf(containing, member);
+      default:
+        return null;
+    }
+  }
+
+  /** As {@link #producedType}, but as written on the member, keeping its type-use annotations. */
+  private TypeMirror declaredProducedType(Element member) {
+    switch (member.getKind()) {
+      case METHOD:
+        return ((ExecutableElement) member).getReturnType();
+      case FIELD:
+        return member.asType();
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Whether {@code type} names {@code typeVariable} anywhere TypeScript will see it. {@code
+   * declared} is the same type as written, walked alongside because substitution drops annotations:
+   * a part replaced by {@code @TsTypeRef} there is skipped. Null where the two stop matching, below
+   * a substituted type variable.
+   */
+  private boolean mentions(TypeMirror declared, TypeMirror type, TypeMirror typeVariable) {
+    if (!nonNull(type) || (nonNull(declared) && getTypeOrTypeRef(declared) != declared)) {
+      return false;
+    }
+    boolean parallel = nonNull(declared) && declared.getKind().equals(type.getKind());
+    switch (type.getKind()) {
+      case TYPEVAR:
+        return env.types().isSameType(type, typeVariable);
+      case DECLARED:
+        List<? extends TypeMirror> arguments = ((DeclaredType) type).getTypeArguments();
+        List<? extends TypeMirror> declaredArguments =
+            parallel ? ((DeclaredType) declared).getTypeArguments() : null;
+        for (int i = 0; i < arguments.size(); i++) {
+          TypeMirror declaredArgument =
+              nonNull(declaredArguments) && declaredArguments.size() == arguments.size()
+                  ? declaredArguments.get(i)
+                  : null;
+          if (mentions(declaredArgument, arguments.get(i), typeVariable)) {
+            return true;
+          }
+        }
+        return false;
+      case ARRAY:
+        return mentions(
+            parallel ? ((ArrayType) declared).getComponentType() : null,
+            ((ArrayType) type).getComponentType(),
+            typeVariable);
+      case WILDCARD:
+        WildcardType wildcard = (WildcardType) type;
+        WildcardType declaredWildcard = parallel ? (WildcardType) declared : null;
+        return mentions(
+                parallel ? declaredWildcard.getExtendsBound() : null,
+                wildcard.getExtendsBound(),
+                typeVariable)
+            || mentions(
+                parallel ? declaredWildcard.getSuperBound() : null,
+                wildcard.getSuperBound(),
+                typeVariable);
+      default:
+        return false;
+    }
+  }
+
+  private TsType typeArgument(TypeMirror typeArgument) {
+    Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeArgument, env);
+    if (literalType.isPresent()) {
+      return literalType.get();
+    }
+    TypeMirror typeMirror = getTypeOrTypeRef(typeArgument);
+    return TsElement.of(typeMirror, env).typeOrNullable(toTsType(typeMirror, true));
   }
 
   public TypeMirror getTypeOrTypeRef(TypeMirror typeMirror) {

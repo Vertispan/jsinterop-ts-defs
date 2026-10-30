@@ -42,7 +42,8 @@ public class InterfacesVisitor<T> extends TsElement {
     if (!tsElement.isTsIgnored()) {
       TsInterface.TsInterfaceBuilder interfaceBuilder =
           TsInterface.builder(tsElement.getName(), tsElement.getNamespace());
-      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(interfaceElement, env)
+      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(
+              interfaceElement, (TypeElement) element, env)
           .visit(interfaceBuilder);
       builder.addInterface(interfaceBuilder.build());
     }

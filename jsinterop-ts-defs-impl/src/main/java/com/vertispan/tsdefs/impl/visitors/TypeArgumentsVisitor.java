@@ -21,49 +21,76 @@ import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 
+/**
+ * Adds a type's type parameters to a builder: with bounds for the type's own declaration ({@link
+ * #ofDeclaration}), without bounds where the type is used as a supertype or interface.
+ */
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
+  private final TypeElement subtype;
 
-  public TypeArgumentsVisitor(TypeMirror typeMirror, HasProcessorEnv env) {
+  /**
+   * Visits the type arguments of a type in a usage position, such as a superclass or implemented
+   * interface of {@code subtype}. Bounds are never emitted here, only on the declaring type's own
+   * type parameters.
+   */
+  public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
+    this.subtype = subtype;
+  }
+
+  /**
+   * Visits the type parameters declared by a type, emitting each one along with its bounds, e.g.
+   * {@code <T extends Item>}.
+   */
+  public static <T> TypeArgumentsVisitor<T> ofDeclaration(
+      TypeMirror typeMirror, HasProcessorEnv env) {
+    return new TypeArgumentsVisitor<>(typeMirror, null, env);
   }
 
   public void visit(HasTypeArguments<T> builder) {
-    getTypeArguments(type, env).forEach(builder::addTypeArgument);
+    DeclaredType classDeclaredType = (DeclaredType) type;
+    if (classDeclaredType.getTypeArguments().isEmpty()) {
+      return;
+    }
+    if (subtype == null) {
+      declaredTypeParameters(classDeclaredType, env).forEach(builder::addTypeArgument);
+    } else {
+      JavaToTsTypeConverter.forSupertypesOf(subtype, env)
+          .asTypeWithArgument(classDeclaredType)
+          .forEach(builder::addTypeArgument);
+    }
   }
 
-  public static List<TsType> getTypeArguments(TypeMirror type, HasProcessorEnv env) {
-    DeclaredType declaredType = (DeclaredType) type;
-    return declaredType.getTypeArguments().stream()
-        .map(
-            typeMirror -> {
-              Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeMirror, env);
-              if (literalType.isPresent()) {
-                return literalType.get();
-              }
-              TsType tsType = TsElement.of(typeMirror, env).getType();
-              Element typeElement = env.types().asElement(typeMirror);
-              if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-                List<? extends TypeMirror> bounds =
-                    ((TypeParameterElement) typeElement).getBounds();
-                bounds.stream()
-                    .filter(
-                        boundType ->
-                            !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
-                    .map(boundType -> TsElement.of(boundType, env).getType())
-                    .forEach(tsType::addBounds);
-              }
-              return tsType;
-            })
+  /** The type parameters a type declares, each with its bounds, e.g. {@code <T extends Item>}. */
+  public static List<TsType> declaredTypeParameters(DeclaredType type, HasProcessorEnv env) {
+    return type.getTypeArguments().stream()
+        .map(typeMirror -> declaredTypeParameter(typeMirror, env))
         .collect(Collectors.toList());
+  }
+
+  private static TsType declaredTypeParameter(TypeMirror typeMirror, HasProcessorEnv env) {
+    TsType type = TsElement.of(typeMirror, env).getType();
+    Element typeElement = env.types().asElement(typeMirror);
+    if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
+      // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
+      // bound type's own declared parameter.
+      JavaToTsTypeConverter converter = new JavaToTsTypeConverter(typeElement, env);
+      ((TypeParameterElement) typeElement)
+          .getBounds().stream()
+              .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
+              .map(converter::toTsType)
+              .forEach(type::addBounds);
+    }
+    return type;
   }
 }
