@@ -276,7 +276,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType reportRawType(DeclaredType type) {
-    env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), element);
+    if (env.firstReport(element, type.asElement())) {
+      env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), element);
+    }
     return TsType.of("any");
   }
 
@@ -359,8 +361,10 @@ public class JavaToTsTypeConverter {
             param ->
                 new ParameterVisitor<TsInlinedFunctionType>(param, typeMapping, env).visit(tsType));
 
+    // Against the function's own method, like its parameters, so diagnostics point where the
+    // return type is written.
     tsType.setReturnType(
-        new JavaToTsTypeConverter(element, emissionContext, typeMapping, env)
+        new JavaToTsTypeConverter(executableElement, typeMapping, env)
             .toTsType(executableElement.getReturnType()));
     return tsType;
   }

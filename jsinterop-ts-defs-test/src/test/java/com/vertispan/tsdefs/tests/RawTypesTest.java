@@ -21,7 +21,10 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import com.vertispan.tsdefs.processor.JsTypesProcessor;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import javax.tools.JavaFileObject;
 import org.junit.Test;
 
 public class RawTypesTest {
@@ -66,19 +69,52 @@ public class RawTypesTest {
         "Raw type Bounded is not supported; give its type arguments.");
   }
 
-  private static void assertSingleError(String resource, String message) {
-    Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                JavaFileObjects.forResource("errors/raw/Container.java"),
-                JavaFileObjects.forResource("errors/raw/GenericBase.java"),
-                JavaFileObjects.forResource("errors/raw/Bounded.java"),
-                JavaFileObjects.forResource(resource));
+  // Each raw use is reported once, in the file that writes it, however often it is emitted.
+  @Test
+  public void rawMemberInheritedIntoSeveralSubtypesIsReportedOnce() {
+    assertErrorsOnlyIn(
+        1, "RawInherited.java", "errors/raw/InheritsRaw1.java", "errors/raw/InheritsRaw2.java");
+  }
 
-    assertThat(result.errors())
+  @Test
+  public void rawTypesInJsFunctionAreReportedOnceOnTheJsFunction() {
+    // The parameter and the return type are two raw uses.
+    assertErrorsOnlyIn(2, "RawFn.java", "errors/raw/RawFn.java", "errors/raw/RawFnUser.java");
+  }
+
+  @Test
+  public void rawSuperclassOfSkippedClassIsReportedOnce() {
+    assertErrorsOnlyIn(
+        1,
+        "RawMid.java",
+        "errors/raw/RawMid.java",
+        "errors/raw/ExtendsMid1.java",
+        "errors/raw/ExtendsMid2.java");
+  }
+
+  private static void assertSingleError(String resource, String message) {
+    assertThat(compile(resource).errors())
         .extracting(e -> e.getMessage(Locale.getDefault()))
         .as("errors in %s", resource)
         .containsExactly(message);
+  }
+
+  private static void assertErrorsOnlyIn(int count, String file, String... resources) {
+    assertThat(compile(resources).errors())
+        .extracting(e -> e.getSource().getName() + ": " + e.getMessage(Locale.getDefault()))
+        .as("errors expected only in %s", file)
+        .hasSize(count)
+        .allMatch(error -> error.contains("/" + file + ": "));
+  }
+
+  private static Compilation compile(String... resources) {
+    List<JavaFileObject> files = new ArrayList<>();
+    files.add(JavaFileObjects.forResource("errors/raw/Container.java"));
+    files.add(JavaFileObjects.forResource("errors/raw/GenericBase.java"));
+    files.add(JavaFileObjects.forResource("errors/raw/Bounded.java"));
+    for (String resource : resources) {
+      files.add(JavaFileObjects.forResource(resource));
+    }
+    return Compiler.javac().withProcessors(new JsTypesProcessor()).compile(files);
   }
 }

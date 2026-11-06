@@ -29,4 +29,11 @@ public interface HasProcessorEnv {
   LogWrapper messager();
 
   TsDoc getDocs(Element element);
+
+  /**
+   * Whether a diagnostic about {@code subject} on {@code element} is reported for the first time;
+   * false for every later call with the same pair. For diagnostics that would otherwise repeat once
+   * per place an element is emitted.
+   */
+  boolean firstReport(Element element, Element subject);
 }
