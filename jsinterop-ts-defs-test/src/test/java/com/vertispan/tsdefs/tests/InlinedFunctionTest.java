@@ -40,15 +40,29 @@ public class InlinedFunctionTest {
   // Reported once, on the function's method, however often the function is used.
   @Test
   public void jsFunctionMethodTypeParametersShouldFail() {
+    assertSingleTypeParametersError("UsesGenericMethodFunction", 15);
+  }
+
+  // Reported even when no JsType uses the function.
+  @Test
+  public void unusedJsFunctionMethodTypeParametersShouldFail() {
+    assertSingleTypeParametersError("UnusedGenericMethodFn", 8);
+  }
+
+  private static void assertSingleTypeParametersError(String name, long methodLine) {
     Compilation result =
         Compiler.javac()
             .withProcessors(new JsTypesProcessor())
-            .compile(
-                JavaFileObjects.forResource("errors/functions/UsesGenericMethodFunction.java"));
+            .compile(JavaFileObjects.forResource("errors/functions/" + name + ".java"));
 
     assertThat(result.errors())
-        .extracting(e -> e.getMessage(Locale.getDefault()))
-        .containsExactly(
-            "JsFunction method apply declares type parameters, which are not supported.");
+        .singleElement()
+        .satisfies(
+            e -> {
+              assertThat(e.getMessage(Locale.getDefault()))
+                  .isEqualTo(
+                      "JsFunction method apply declares type parameters, which are not supported.");
+              assertThat(e.getLineNumber()).isEqualTo(methodLine);
+            });
   }
 }

@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
 import javax.tools.Diagnostic;
 import jsinterop.annotations.JsConstructor;
 
@@ -61,6 +63,28 @@ public class TypeVisitor extends TsElement {
     singleConstructorValidation();
     duplicateMembersValidation();
     publicMemberWithPublicAccessor();
+    jsFunctionTypeParametersValidation();
+  }
+
+  /** The inlined signature has no way to declare the method's own type parameters. */
+  private void jsFunctionTypeParametersValidation() {
+    if (!isJsFunction()) {
+      return;
+    }
+    element.getEnclosedElements().stream()
+        .filter(e -> ElementKind.METHOD.equals(e.getKind()))
+        .filter(e -> !((ExecutableElement) e).getTypeParameters().isEmpty())
+        .map(e -> TsElement.of(e, env))
+        .filter(e -> !e.isOverlay() && !e.isIgnored())
+        .forEach(
+            e ->
+                env.messager()
+                    .printMessage(
+                        Diagnostic.Kind.ERROR,
+                        "JsFunction method "
+                            + e.element().getSimpleName()
+                            + " declares type parameters, which are not supported.",
+                        e.element()));
   }
 
   public static void validateExplicitUnionNaming(Element element, HasProcessorEnv env) {

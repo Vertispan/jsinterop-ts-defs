@@ -6,12 +6,12 @@ import jsinterop.annotations.JsType;
 @JsType
 public abstract class UsesGenericMethodFunction {
 
-  public abstract void take(GenericMethodFn<String> fn);
+  public abstract void take(GenericMethodFn fn);
 
-  public abstract void takeAgain(GenericMethodFn<String> fn);
+  public abstract void takeAgain(GenericMethodFn fn);
 
   @JsFunction
-  public interface GenericMethodFn<T> {
+  public interface GenericMethodFn {
     <U> U apply(U u);
   }
 }

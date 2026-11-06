@@ -290,15 +290,7 @@ public class JavaToTsTypeConverter {
 
     ExecutableElement executableElement = (ExecutableElement) first.get().element();
     if (!executableElement.getTypeParameters().isEmpty()) {
-      if (env.firstReport(executableElement, executableElement)) {
-        env.messager()
-            .printMessage(
-                Diagnostic.Kind.ERROR,
-                "JsFunction method "
-                    + executableElement.getSimpleName()
-                    + " declares type parameters, which are not supported.",
-                executableElement);
-      }
+      // Unsupported; TypeVisitor reports it on the JsFunction's declaration.
       return TsType.of("any");
     }
     TsInlinedFunctionType tsType = new TsInlinedFunctionType();

@@ -38,7 +38,6 @@ import java.io.PrintWriter;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -56,7 +55,6 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
 
   private final ProcessingEnvironment processingEnv;
   private final ProcessorLogWrapper logWrapper;
-  private final Set<List<Element>> reported = new HashSet<>();
 
   public JsTypesProcessingStep(ProcessingEnvironment processingEnv) {
     this.processingEnv = processingEnv;
@@ -209,10 +207,5 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
   @Override
   public LogWrapper messager() {
     return logWrapper;
-  }
-
-  @Override
-  public boolean firstReport(Element element, Element subject) {
-    return reported.add(Arrays.asList(element, subject));
   }
 }
