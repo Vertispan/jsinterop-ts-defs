@@ -141,6 +141,12 @@ public class WildcardVarianceWarningTest {
     assertThat(result.warnings())
         .filteredOn(d -> d.getMessage(null).startsWith("Wildcard ["))
         .as("only give() returns the function to TypeScript")
-        .hasSize(1);
+        .singleElement()
+        .satisfies(
+            d -> {
+              // give(), not take(), which is in the same file.
+              assertThat(d.getSource().getName()).endsWith("UsesSuperFn.java");
+              assertThat(d.getLineNumber()).isEqualTo(26);
+            });
   }
 }
