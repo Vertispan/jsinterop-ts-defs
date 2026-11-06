@@ -21,6 +21,7 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import com.vertispan.tsdefs.processor.JsTypesProcessor;
+import java.util.Locale;
 import org.junit.Test;
 
 public class InlinedFunctionTest {
@@ -34,5 +35,20 @@ public class InlinedFunctionTest {
             .compile(JavaFileObjects.forResource("errors/functions/UsesIFunction.java"));
 
     assertThat(result.errors()).isEmpty();
+  }
+
+  // Reported once, on the function's method, however often the function is used.
+  @Test
+  public void jsFunctionMethodTypeParametersShouldFail() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                JavaFileObjects.forResource("errors/functions/UsesGenericMethodFunction.java"));
+
+    assertThat(result.errors())
+        .extracting(e -> e.getMessage(Locale.getDefault()))
+        .containsExactly(
+            "JsFunction method apply declares type parameters, which are not supported.");
   }
 }

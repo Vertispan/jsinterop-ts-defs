@@ -23,7 +23,6 @@ import com.vertispan.tsdefs.annotations.TsTypeRef;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.model.*;
-import com.vertispan.tsdefs.impl.visitors.MethodTypeArgumentsVisitor;
 import com.vertispan.tsdefs.impl.visitors.ParameterVisitor;
 import com.vertispan.tsdefs.impl.visitors.TypeArgumentsVisitor;
 import java.util.ArrayList;
@@ -332,7 +331,7 @@ public class JavaToTsTypeConverter {
         .collect(Collectors.toCollection(LinkedHashSet::new));
   }
 
-  private TsInlinedFunctionType inlineJsFunctionType(TypeMirror type) {
+  private TsType inlineJsFunctionType(TypeMirror type) {
     Optional<TsElement> first =
         TsElement.of(type, env).element().getEnclosedElements().stream()
             .filter(element -> ElementKind.METHOD.equals(element.getKind()))
@@ -340,8 +339,20 @@ public class JavaToTsTypeConverter {
             .filter(tsElement -> !tsElement.isOverlay() && !tsElement.isIgnored())
             .findFirst();
 
-    TsInlinedFunctionType tsType = new TsInlinedFunctionType();
     ExecutableElement executableElement = (ExecutableElement) first.get().element();
+    if (!executableElement.getTypeParameters().isEmpty()) {
+      if (env.firstReport(executableElement, executableElement)) {
+        env.messager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                "JsFunction method "
+                    + executableElement.getSimpleName()
+                    + " declares type parameters, which are not supported.",
+                executableElement);
+      }
+      return TsType.of("any");
+    }
+    TsInlinedFunctionType tsType = new TsInlinedFunctionType();
     List<? extends TypeMirror> declaredArguments = ((DeclaredType) type).getTypeArguments();
     List<? extends TypeMirror> argumentVars =
         ((DeclaredType) executableElement.getEnclosingElement().asType()).getTypeArguments();
@@ -354,7 +365,6 @@ public class JavaToTsTypeConverter {
           ((TypeVariable) argumentVars.get(index)).asElement(),
           typeArgument(declaredArguments.get(index)));
     }
-    new MethodTypeArgumentsVisitor<TsInlinedFunctionType>(executableElement, env).visit(tsType);
     executableElement
         .getParameters()
         .forEach(

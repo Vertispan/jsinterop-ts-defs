@@ -27,6 +27,4 @@ public abstract class MappedArgsUser {
   public abstract void arrUnion(ArrFn<ParamUnion> fn);
 
   public abstract void share(ShareFn<String[]> fn);
-
-  public abstract void gen(GenFn<String> fn);
 }

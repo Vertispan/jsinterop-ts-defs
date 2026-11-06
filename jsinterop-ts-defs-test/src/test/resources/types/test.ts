@@ -1282,5 +1282,3 @@ expectType<(fn: (xs: Array<string | null | undefined>) => void) => void>()(mappe
 expectType<(fn: (xs: Array<number | Array<number | null | undefined>>) => void) => void>()(mappedArgsUser.arrUnion);
 // @TsReadOnly on one parameter doesn't reach another parameter of the same type variable.
 expectType<(fn: (a: readonly string[], b: string[]) => void) => void>()(mappedArgsUser.share);
-// A method's own type parameter hides the JsFunction's.
-expectType<(fn: <T>(t: T) => T) => void>()(mappedArgsUser.gen);
