@@ -305,7 +305,7 @@ public class JavaToTsTypeConverter {
     List<? extends TypeMirror> declaredArguments = ((DeclaredType) type).getTypeArguments();
     List<? extends TypeMirror> argumentVars =
         ((DeclaredType) executableElement.getEnclosingElement().asType()).getTypeArguments();
-    Map<Element, TsType> typeMapping = new HashMap<>(typeArguments);
+    Map<Element, TsType> typeMapping = new HashMap<>();
     for (int index = 0; index < argumentVars.size(); index++) {
       // Only the function method is emitted, as the inlined signature.
       warnIfSuperWildcardIsProduced(

@@ -12,6 +12,6 @@ public abstract class UsesGenericMethodFunction {
 
   @JsFunction
   public interface GenericMethodFn<T> {
-    <T> T apply(T t);
+    <U> U apply(U u);
   }
 }
