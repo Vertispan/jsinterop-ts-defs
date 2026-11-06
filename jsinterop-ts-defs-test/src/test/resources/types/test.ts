@@ -1260,6 +1260,7 @@ import FnHolder = com.vertispan.tsdefs.tests.typerendering.FnHolder;
 import Src = com.vertispan.tsdefs.tests.typerendering.Src;
 import PFnUser = com.vertispan.tsdefs.tests.typerendering.PFnUser;
 import ReadOnlyElements = com.vertispan.tsdefs.tests.typerendering.ReadOnlyElements;
+import MappedArgsUser = com.vertispan.tsdefs.tests.typerendering.MappedArgsUser;
 declare const fnHolder: FnHolder;
 // An array of functions, not a function returning an array.
 expectType<() => Array<(arg0: string) => string>>()(fnHolder.fns);
@@ -1277,7 +1278,6 @@ expectType<(fn: (x: string, xs: string[]) => void) => void>()(pFnUser.take);
 declare const readOnlyElements: ReadOnlyElements;
 expectType<() => ReadonlyArray<string[]>>()(readOnlyElements.roOuter);
 expectType<() => Array<ReadonlyArray<string>>>()(readOnlyElements.roElements);
-import MappedArgsUser = com.vertispan.tsdefs.tests.typerendering.MappedArgsUser;
 declare const mappedArgsUser: MappedArgsUser;
 // A nullable or union type argument is an array element as a whole.
 expectType<(fn: (xs: Array<string | null | undefined>) => void) => void>()(mappedArgsUser.arrNullable);
