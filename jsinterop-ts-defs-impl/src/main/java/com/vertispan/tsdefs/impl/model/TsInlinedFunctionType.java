@@ -16,17 +16,26 @@
 package com.vertispan.tsdefs.impl.model;
 
 import com.vertispan.tsdefs.impl.builders.HasParameters;
+import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class TsInlinedFunctionType extends TsType implements HasParameters<TsInlinedFunctionType> {
+public class TsInlinedFunctionType extends TsType
+    implements HasParameters<TsInlinedFunctionType>, HasTypeArguments<TsInlinedFunctionType> {
+  private List<TsType> typeArguments = new ArrayList<>();
   private List<TsParameter> parameters = new ArrayList<>();
   private TsType returnType;
 
   public TsInlinedFunctionType() {
     super("", "");
+  }
+
+  @Override
+  public TsInlinedFunctionType addTypeArgument(TsType typeArgument) {
+    typeArguments.add(typeArgument);
+    return this;
   }
 
   @Override
@@ -46,7 +55,16 @@ public class TsInlinedFunctionType extends TsType implements HasParameters<TsInl
 
   @Override
   public String emit(String parentNamespace) {
-    return "(" + emitParameters() + ")=>" + returnType.emit("");
+    return emitTypeArguments() + "(" + emitParameters() + ")=>" + returnType.emit("");
+  }
+
+  private String emitTypeArguments() {
+    if (typeArguments.isEmpty()) {
+      return "";
+    }
+    return typeArguments.stream()
+        .map(typeArgument -> typeArgument.emit(""))
+        .collect(Collectors.joining(", ", "<", ">"));
   }
 
   private String emitParameters() {
@@ -61,12 +79,13 @@ public class TsInlinedFunctionType extends TsType implements HasParameters<TsInl
     if (!(o instanceof TsInlinedFunctionType)) return false;
     if (!super.equals(o)) return false;
     TsInlinedFunctionType that = (TsInlinedFunctionType) o;
-    return Objects.equals(parameters, that.parameters)
+    return Objects.equals(typeArguments, that.typeArguments)
+        && Objects.equals(parameters, that.parameters)
         && Objects.equals(getReturnType(), that.getReturnType());
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), parameters, getReturnType());
+    return Objects.hash(super.hashCode(), typeArguments, parameters, getReturnType());
   }
 }

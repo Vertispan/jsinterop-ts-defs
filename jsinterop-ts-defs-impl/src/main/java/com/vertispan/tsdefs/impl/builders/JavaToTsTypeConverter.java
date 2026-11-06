@@ -23,6 +23,7 @@ import com.vertispan.tsdefs.annotations.TsTypeRef;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.model.*;
+import com.vertispan.tsdefs.impl.visitors.MethodTypeArgumentsVisitor;
 import com.vertispan.tsdefs.impl.visitors.ParameterVisitor;
 import com.vertispan.tsdefs.impl.visitors.TypeArgumentsVisitor;
 import java.util.ArrayList;
@@ -121,7 +122,8 @@ public class JavaToTsTypeConverter {
   private TsType getTsType(TypeMirror type, boolean checkTypeDef) {
     if (TypeKind.TYPEVAR.equals(type.getKind())
         && typeArguments.containsKey(((TypeVariable) type).asElement())) {
-      return typeArguments.get(((TypeVariable) type).asElement());
+      // A copy: callers set flags such as read-only on the result, per use.
+      return typeArguments.get(((TypeVariable) type).asElement()).copy();
     }
     if (TypeKind.WILDCARD.equals(type.getKind())) {
       return wildcardType((WildcardType) type);
@@ -224,10 +226,13 @@ public class JavaToTsTypeConverter {
 
   /**
    * Whether the element must be written {@code Array<...>}: a bare {@code []} would bind to part of
-   * it, e.g. to a function's return type or to the inner array of {@code readonly string[]}.
+   * it, e.g. to a function's return type or to the inner array of {@code readonly string[]}. A type
+   * variable can be mapped to a union or nullable, so the converted element is checked too.
    */
   private boolean needsArrayOf(TypeMirror component, TsType componentTsType) {
     return ProcessorType.of(component, env).isUnionType()
+        || componentTsType instanceof TsUnionType
+        || componentTsType instanceof TsNullableType
         || componentTsType instanceof TsInlinedFunctionType
         || (componentTsType instanceof ArrayTsType && componentTsType.isTsReadOnly());
   }
@@ -331,6 +336,7 @@ public class JavaToTsTypeConverter {
           ((TypeVariable) argumentVars.get(index)).asElement(),
           typeArgument(declaredArguments.get(index)));
     }
+    new MethodTypeArgumentsVisitor<TsInlinedFunctionType>(executableElement, env).visit(tsType);
     executableElement
         .getParameters()
         .forEach(

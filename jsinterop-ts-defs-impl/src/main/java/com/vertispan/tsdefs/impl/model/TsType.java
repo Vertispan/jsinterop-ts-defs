@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class TsType implements HasNamespace {
+public class TsType implements HasNamespace, Cloneable {
   protected final String name;
   protected final String namespace;
   private List<TsType> bounds = new ArrayList<>();
@@ -48,6 +48,15 @@ public class TsType implements HasNamespace {
   public TsType(String name, String namespace) {
     this.name = name;
     this.namespace = namespace;
+  }
+
+  /** A shallow copy: its own flags, sharing nested types. */
+  public TsType copy() {
+    try {
+      return (TsType) clone();
+    } catch (CloneNotSupportedException e) {
+      throw new AssertionError(e);
+    }
   }
 
   public String getName() {

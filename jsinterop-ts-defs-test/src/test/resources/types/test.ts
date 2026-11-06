@@ -1274,3 +1274,12 @@ expectType<(fn: (x: string, xs: string[]) => void) => void>()(pFnUser.take);
 declare const readOnlyElements: ReadOnlyElements;
 expectType<() => ReadonlyArray<string[]>>()(readOnlyElements.roOuter);
 expectType<() => Array<ReadonlyArray<string>>>()(readOnlyElements.roElements);
+import MappedArgsUser = com.vertispan.tsdefs.tests.typerendering.MappedArgsUser;
+declare const mappedArgsUser: MappedArgsUser;
+// A nullable or union type argument is an array element as a whole.
+expectType<(fn: (xs: Array<string | null | undefined>) => void) => void>()(mappedArgsUser.arrNullable);
+expectType<(fn: (xs: Array<number | Array<number | null | undefined>>) => void) => void>()(mappedArgsUser.arrUnion);
+// @TsReadOnly on one parameter doesn't reach another parameter of the same type variable.
+expectType<(fn: (a: readonly string[], b: string[]) => void) => void>()(mappedArgsUser.share);
+// A method's own type parameter hides the JsFunction's.
+expectType<(fn: <T>(t: T) => T) => void>()(mappedArgsUser.gen);
