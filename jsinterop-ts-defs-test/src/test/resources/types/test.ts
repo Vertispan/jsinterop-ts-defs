@@ -1254,3 +1254,23 @@ declare const wrongNestedBound: NestedBound<Box<WildcardItem>>;
 expectType<Box<SpecialItem>>()(shelf.boundedMethod<Box<SpecialItem>>());
 // @ts-expect-error
 shelf.boundedMethod<Box<WildcardItem>>();
+
+// ---------------- Type rendering (#137) ----------------
+import FnHolder = com.vertispan.tsdefs.tests.typerendering.FnHolder;
+import Src = com.vertispan.tsdefs.tests.typerendering.Src;
+import PFnUser = com.vertispan.tsdefs.tests.typerendering.PFnUser;
+import ReadOnlyElements = com.vertispan.tsdefs.tests.typerendering.ReadOnlyElements;
+declare const fnHolder: FnHolder;
+// An array of functions, not a function returning an array.
+expectType<() => Array<(arg0: string) => string>>()(fnHolder.fns);
+// A nullable function, not a function returning a nullable.
+expectType<() => ((arg0: string) => string) | null | undefined>()(fnHolder.maybeFn);
+declare const src: Src<string>;
+expectType<() => string | null | undefined>()(src.maybe);
+expectType<() => ReadonlyArray<string>>()(src.roArr);
+declare const pFnUser: PFnUser;
+// The JsFunction's type argument is substituted inside X[] as well as for a bare X.
+expectType<(fn: (x: string, xs: string[]) => void) => void>()(pFnUser.take);
+declare const readOnlyElements: ReadOnlyElements;
+expectType<() => ReadonlyArray<string[]>>()(readOnlyElements.roOuter);
+expectType<() => Array<ReadonlyArray<string>>>()(readOnlyElements.roElements);
