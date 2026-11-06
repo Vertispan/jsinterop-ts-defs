@@ -1266,6 +1266,8 @@ expectType<() => Array<(arg0: string) => string>>()(fnHolder.fns);
 expectType<() => Array<Array<(arg0: string) => string>>>()(fnHolder.fns2d);
 // A nullable function, not a function returning a nullable.
 expectType<() => ((arg0: string) => string) | null | undefined>()(fnHolder.maybeFn);
+// The same for a field (#109); it is optional, which adds the undefined.
+expectType<((arg0: string) => string) | null | undefined>()(fnHolder.nullableFn);
 declare const src: Src<string>;
 expectType<() => string | null | undefined>()(src.maybe);
 expectType<() => ReadonlyArray<string>>()(src.roArr);
