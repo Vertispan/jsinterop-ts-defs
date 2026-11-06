@@ -26,40 +26,59 @@ import org.junit.Test;
 
 public class RawTypesTest {
 
+  // A wildcard can't be a supertype's type argument in Java, so clauses suggest only Any.
   @Test
   public void rawImplementsClauseShouldFail() {
-    assertSingleRawTypeError("errors/raw/RawImplements.java", "Container");
+    assertSingleError(
+        "errors/raw/RawImplements.java",
+        "Raw type Container is not supported; give its type arguments,"
+            + " e.g. Container<Any> (jsinterop.base.Any).");
   }
 
   @Test
   public void rawExtendsClauseShouldFail() {
-    assertSingleRawTypeError("errors/raw/RawExtends.java", "GenericBase");
+    assertSingleError(
+        "errors/raw/RawExtends.java",
+        "Raw type GenericBase is not supported; give its type arguments,"
+            + " e.g. GenericBase<Any> (jsinterop.base.Any).");
   }
 
   @Test
   public void rawMemberTypeShouldFail() {
-    assertSingleRawTypeError("errors/raw/RawMember.java", "Container");
+    assertSingleError(
+        "errors/raw/RawMember.java",
+        "Raw type Container is not supported; give its type arguments,"
+            + " e.g. Container<Any> (jsinterop.base.Any) or Container<?>.");
   }
 
-  private static void assertSingleRawTypeError(String resource, String rawType) {
+  // Any is outside a bound, so a bounded type suggests only the wildcard, where Java allows one.
+  @Test
+  public void rawBoundedMemberTypeShouldFail() {
+    assertSingleError(
+        "errors/raw/RawBoundedMember.java",
+        "Raw type Bounded is not supported; give its type arguments, e.g. Bounded<?>.");
+  }
+
+  @Test
+  public void rawBoundedImplementsClauseShouldFail() {
+    assertSingleError(
+        "errors/raw/RawBoundedImplements.java",
+        "Raw type Bounded is not supported; give its type arguments.");
+  }
+
+  private static void assertSingleError(String resource, String message) {
     Compilation result =
         Compiler.javac()
             .withProcessors(new JsTypesProcessor())
             .compile(
                 JavaFileObjects.forResource("errors/raw/Container.java"),
                 JavaFileObjects.forResource("errors/raw/GenericBase.java"),
+                JavaFileObjects.forResource("errors/raw/Bounded.java"),
                 JavaFileObjects.forResource(resource));
 
     assertThat(result.errors())
         .extracting(e -> e.getMessage(Locale.getDefault()))
-        .as("errors for raw %s in %s", rawType, resource)
-        .containsExactly(
-            "Raw type "
-                + rawType
-                + " is not supported; give its type arguments, e.g. "
-                + rawType
-                + "<Any> (jsinterop.base.Any) or "
-                + rawType
-                + "<?>.");
+        .as("errors in %s", resource)
+        .containsExactly(message);
   }
 }

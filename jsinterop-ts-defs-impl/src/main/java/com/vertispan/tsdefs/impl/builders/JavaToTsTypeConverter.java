@@ -243,24 +243,40 @@ public class JavaToTsTypeConverter {
         && !((TypeElement) type.asElement()).getTypeParameters().isEmpty();
   }
 
-  public static String rawTypeMessage(DeclaredType type) {
+  /**
+   * Suggests only arguments Java accepts in that position: {@code Any} when no type parameter is
+   * bounded, a wildcard when not in an extends or implements clause.
+   */
+  public static String rawTypeMessage(
+      DeclaredType type, boolean inSupertypeClause, HasProcessorEnv env) {
     String name = type.asElement().getSimpleName().toString();
-    int count = ((TypeElement) type.asElement()).getTypeParameters().size();
+    List<? extends TypeParameterElement> parameters =
+        ((TypeElement) type.asElement()).getTypeParameters();
+    List<String> examples = new ArrayList<>();
+    boolean bounded =
+        parameters.stream()
+            .flatMap(parameter -> parameter.getBounds().stream())
+            .anyMatch(bound -> !isSameType(bound, Object.class, env));
+    if (!bounded) {
+      examples.add(
+          name
+              + "<"
+              + String.join(", ", Collections.nCopies(parameters.size(), "Any"))
+              + "> (jsinterop.base.Any)");
+    }
+    if (!inSupertypeClause) {
+      examples.add(
+          name + "<" + String.join(", ", Collections.nCopies(parameters.size(), "?")) + ">");
+    }
     return "Raw type "
         + name
-        + " is not supported; give its type arguments, e.g. "
-        + name
-        + "<"
-        + String.join(", ", Collections.nCopies(count, "Any"))
-        + "> (jsinterop.base.Any) or "
-        + name
-        + "<"
-        + String.join(", ", Collections.nCopies(count, "?"))
-        + ">.";
+        + " is not supported; give its type arguments"
+        + (examples.isEmpty() ? "" : ", e.g. " + String.join(" or ", examples))
+        + ".";
   }
 
   private TsType reportRawType(DeclaredType type) {
-    env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type), element);
+    env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), element);
     return TsType.of("any");
   }
 

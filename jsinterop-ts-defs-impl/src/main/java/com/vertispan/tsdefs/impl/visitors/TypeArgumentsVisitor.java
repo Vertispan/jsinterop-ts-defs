@@ -64,7 +64,7 @@ public class TypeArgumentsVisitor<T> extends TsElement {
       env.messager()
           .printMessage(
               Diagnostic.Kind.ERROR,
-              JavaToTsTypeConverter.rawTypeMessage(classDeclaredType),
+              JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, true, env),
               subtype);
       return;
     }
