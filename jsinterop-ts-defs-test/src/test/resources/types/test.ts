@@ -1263,6 +1263,7 @@ import ReadOnlyElements = com.vertispan.tsdefs.tests.typerendering.ReadOnlyEleme
 declare const fnHolder: FnHolder;
 // An array of functions, not a function returning an array.
 expectType<() => Array<(arg0: string) => string>>()(fnHolder.fns);
+expectType<() => Array<Array<(arg0: string) => string>>>()(fnHolder.fns2d);
 // A nullable function, not a function returning a nullable.
 expectType<() => ((arg0: string) => string) | null | undefined>()(fnHolder.maybeFn);
 declare const src: Src<string>;

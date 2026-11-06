@@ -23,6 +23,8 @@ import jsinterop.annotations.JsType;
 public abstract class FnHolder {
   public abstract SampleFn[] fns();
 
+  public abstract SampleFn[][] fns2d();
+
   @JsNullable
   public abstract SampleFn maybeFn();
 }

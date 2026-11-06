@@ -69,6 +69,51 @@ public class RawTypesTest {
         "Raw type Bounded is not supported; give its type arguments.");
   }
 
+  // Inlined types: without the check, both crash looking up the missing type argument.
+  @Test
+  public void rawJsFunctionShouldFail() {
+    assertSingleError(
+        "errors/raw/RawGenericFnMember.java",
+        "Raw type GenericFn is not supported; give its type arguments,"
+            + " e.g. GenericFn<Any> (jsinterop.base.Any) or GenericFn<?>.");
+  }
+
+  @Test
+  public void rawJsPropertyMapShouldFail() {
+    assertSingleError(
+        "errors/raw/RawPropertyMapMember.java",
+        "Raw type JsPropertyMap is not supported; give its type arguments,"
+            + " e.g. JsPropertyMap<Any> (jsinterop.base.Any) or JsPropertyMap<?>.");
+  }
+
+  @Test
+  public void rawTypeWithSeveralParametersShouldFail() {
+    assertSingleError(
+        "errors/raw/RawPairMember.java",
+        "Raw type Pair is not supported; give its type arguments,"
+            + " e.g. Pair<Any, Any> (jsinterop.base.Any) or Pair<?, ?>.");
+  }
+
+  // One bounded parameter is enough to rule out Any.
+  @Test
+  public void rawTypeWithOneBoundedParameterShouldFail() {
+    assertSingleError(
+        "errors/raw/RawBoundedPairMember.java",
+        "Raw type BoundedPair is not supported; give its type arguments,"
+            + " e.g. BoundedPair<?, ?>.");
+  }
+
+  @Test
+  public void differentRawTypesInOneMemberAreEachReported() {
+    assertThat(compile("errors/raw/TwoRawTypesMember.java").errors())
+        .extracting(e -> e.getMessage(Locale.getDefault()))
+        .containsExactlyInAnyOrder(
+            "Raw type Container is not supported; give its type arguments,"
+                + " e.g. Container<Any> (jsinterop.base.Any) or Container<?>.",
+            "Raw type GenericBase is not supported; give its type arguments,"
+                + " e.g. GenericBase<Any> (jsinterop.base.Any) or GenericBase<?>.");
+  }
+
   // Each raw use is reported once, in the file that writes it, however often it is emitted.
   @Test
   public void rawMemberInheritedIntoSeveralSubtypesIsReportedOnce() {
@@ -112,6 +157,9 @@ public class RawTypesTest {
     files.add(JavaFileObjects.forResource("errors/raw/Container.java"));
     files.add(JavaFileObjects.forResource("errors/raw/GenericBase.java"));
     files.add(JavaFileObjects.forResource("errors/raw/Bounded.java"));
+    files.add(JavaFileObjects.forResource("errors/raw/Pair.java"));
+    files.add(JavaFileObjects.forResource("errors/raw/BoundedPair.java"));
+    files.add(JavaFileObjects.forResource("errors/raw/GenericFn.java"));
     for (String resource : resources) {
       files.add(JavaFileObjects.forResource(resource));
     }
