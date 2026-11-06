@@ -20,27 +20,22 @@ import com.vertispan.tsdefs.impl.builders.HasParameters;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsParameter;
 import com.vertispan.tsdefs.impl.model.TsType;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
 import jsinterop.annotations.JsProperty;
 
 public class ParameterVisitor<T> extends TsElement {
-  private final Map<String, TsType> typeArgsMapping;
 
   public ParameterVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
-    this.typeArgsMapping = new HashMap<>();
   }
 
+  /** @param typeArguments what each type parameter is emitted as, keyed by its element */
   public ParameterVisitor(
-      Element element, Map<String, TsType> typeArgsMapping, HasProcessorEnv env) {
-    super(element, env);
-    this.typeArgsMapping = typeArgsMapping;
+      Element element, Map<Element, TsType> typeArguments, HasProcessorEnv env) {
+    super(element, typeArguments, env);
   }
 
   @Override
@@ -65,14 +60,7 @@ public class ParameterVisitor<T> extends TsElement {
   }
 
   public void visit(HasParameters<T> parent) {
-    TsType type;
-    TypeMirror typeMirror = element.asType();
-    if (TypeKind.TYPEVAR.equals(typeMirror.getKind())
-        && typeArgsMapping.containsKey(element.asType().toString())) {
-      type = typeArgsMapping.get(element.asType().toString());
-    } else {
-      type = getType();
-    }
+    TsType type = getType();
     ExecutableElement parentElement = (ExecutableElement) element.getEnclosingElement();
 
     parent.addParameter(

@@ -28,6 +28,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 
 /**
  * Adds a type's type parameters to a builder: with bounds for the type's own declaration ({@link
@@ -59,6 +60,14 @@ public class TypeArgumentsVisitor<T> extends TsElement {
 
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
+    if (subtype != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              JavaToTsTypeConverter.rawTypeMessage(classDeclaredType),
+              subtype);
+      return;
+    }
     if (classDeclaredType.getTypeArguments().isEmpty()) {
       return;
     }

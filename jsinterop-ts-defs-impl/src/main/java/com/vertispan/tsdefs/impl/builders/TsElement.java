@@ -56,7 +56,7 @@ public class TsElement {
   private TypeMirror typeMirror;
 
   public TsElement(Element element, HasProcessorEnv env) {
-    this(element, null, env);
+    this(element, (TypeElement) null, env);
   }
 
   /** @param emittedIn the subtype this inherited element is being emitted into, or null */
@@ -65,6 +65,14 @@ public class TsElement {
     this.env = env;
     this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, env);
     this.typeMirror = nonNull(element) ? element.asType() : null;
+  }
+
+  /** @param typeArguments what each type parameter in scope is emitted as */
+  protected TsElement(Element element, Map<Element, TsType> typeArguments, HasProcessorEnv env) {
+    this.element = element;
+    this.env = env;
+    this.typeConverter = new JavaToTsTypeConverter(element, typeArguments, env);
+    this.typeMirror = element.asType();
   }
 
   public TsElement(TypeMirror typeMirror, HasProcessorEnv env) {

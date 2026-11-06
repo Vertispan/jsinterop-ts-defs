@@ -26,6 +26,7 @@ import com.vertispan.tsdefs.impl.model.*;
 import com.vertispan.tsdefs.impl.visitors.ParameterVisitor;
 import com.vertispan.tsdefs.impl.visitors.TypeArgumentsVisitor;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,6 +41,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
 import javax.tools.Diagnostic;
 import jsinterop.base.JsPropertyMap;
@@ -48,9 +50,19 @@ public class JavaToTsTypeConverter {
   private final HasProcessorEnv env;
   private final Element element;
   private final String emissionContext;
+  private final Map<Element, TsType> typeArguments;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
-    this(element, "", env);
+    this(element, "", Collections.emptyMap(), env);
+  }
+
+  /**
+   * @param typeArguments what each type parameter is emitted as, keyed by its {@link
+   *     TypeParameterElement}; type variables not in it are emitted by name
+   */
+  public JavaToTsTypeConverter(
+      Element element, Map<Element, TsType> typeArguments, HasProcessorEnv env) {
+    this(element, "", typeArguments, env);
   }
 
   /**
@@ -59,23 +71,28 @@ public class JavaToTsTypeConverter {
    *     subtype
    */
   public JavaToTsTypeConverter(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
-    this(element, inheritedSuffix(element, inheritedBy), env);
+    this(element, inheritedSuffix(element, inheritedBy), Collections.emptyMap(), env);
   }
 
   /** Converts the type arguments in {@code subtype}'s extends and implements clauses. */
   public static JavaToTsTypeConverter forSupertypesOf(TypeElement subtype, HasProcessorEnv env) {
     return new JavaToTsTypeConverter(
-        subtype, " in the supertypes of " + subtype.getSimpleName(), env);
+        subtype, " in the supertypes of " + subtype.getSimpleName(), Collections.emptyMap(), env);
   }
 
   /**
    * @param emissionContext appended to diagnostics about {@code element}'s types when they are
    *     emitted somewhere other than its own declaration, or empty
    */
-  private JavaToTsTypeConverter(Element element, String emissionContext, HasProcessorEnv env) {
+  private JavaToTsTypeConverter(
+      Element element,
+      String emissionContext,
+      Map<Element, TsType> typeArguments,
+      HasProcessorEnv env) {
     this.env = env;
     this.element = element;
     this.emissionContext = emissionContext;
+    this.typeArguments = typeArguments;
   }
 
   private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
@@ -102,6 +119,10 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getTsType(TypeMirror type, boolean checkTypeDef) {
+    if (TypeKind.TYPEVAR.equals(type.getKind())
+        && typeArguments.containsKey(((TypeVariable) type).asElement())) {
+      return typeArguments.get(((TypeVariable) type).asElement());
+    }
     if (TypeKind.WILDCARD.equals(type.getKind())) {
       return wildcardType((WildcardType) type);
     }
@@ -142,28 +163,30 @@ public class JavaToTsTypeConverter {
         return TsType.of("object");
       }
 
-      if (ProcessorType.of(type, env).is2dArray()) {
+      // A read-only inner array is converted as an element of the outer one.
+      if (ProcessorType.of(type, env).is2dArray()
+          && !isTsReadOnlyType(ProcessorType.of(type, env).arrayComponentType())) {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).deepArrayComponentType();
-        if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
+        TsType componentTsType = toTsType(arrayComponentType);
+        if (needsArrayOf(arrayComponentType, componentTsType)) {
           return TsElement.of(arrayComponentType, env)
               .typeOrNullable(
                   ParameterizedTsType.of(
-                      "Array",
-                      "",
-                      ParameterizedTsType.of("Array", "", toTsType(arrayComponentType))));
+                      "Array", "", ParameterizedTsType.of("Array", "", componentTsType)));
         } else {
           return TsElement.of(arrayComponentType, env)
-              .typeOrNullable(Array2dTsType.of(toTsType(arrayComponentType)));
+              .typeOrNullable(Array2dTsType.of(componentTsType));
         }
       }
 
       if (ProcessorType.of(type, env).isArray()) {
         TypeMirror arrayComponentType = ProcessorType.of(type, env).arrayComponentType();
-        if (ProcessorType.of(arrayComponentType, env).isUnionType()) {
+        TsType componentTsType = toTsType(arrayComponentType);
+        if (needsArrayOf(arrayComponentType, componentTsType)) {
           return TsElement.of(arrayComponentType, env)
-              .typeOrNullable(ParameterizedTsType.of("Array", "", toTsType(arrayComponentType)));
+              .typeOrNullable(ParameterizedTsType.of("Array", "", componentTsType));
         } else {
-          ArrayTsType arrayType = ArrayTsType.of(toTsType(arrayComponentType));
+          ArrayTsType arrayType = ArrayTsType.of(componentTsType);
           arrayType.setTsReadOnly(
               TsElement.of(element, env).isTsReadOnly() || isTsReadOnlyType(element.asType()));
           return TsElement.of(arrayComponentType, env).typeOrNullable(arrayType);
@@ -172,6 +195,9 @@ public class JavaToTsTypeConverter {
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
         DeclaredType declaredType = (DeclaredType) type;
+        if (isRaw(declaredType)) {
+          return reportRawType(declaredType);
+        }
         // The index signature reads and writes, so every member counts as emitted.
         warnIfSuperWildcardIsProduced(declaredType, 0, member -> true);
         return TsTemplatedInlinedType.of(
@@ -179,6 +205,9 @@ public class JavaToTsTypeConverter {
       }
 
       if (ProcessorType.of(type, env).isJsFunction()) {
+        if (isRaw((DeclaredType) type)) {
+          return reportRawType((DeclaredType) type);
+        }
         return inlineJsFunctionType(type);
       }
 
@@ -191,6 +220,43 @@ public class JavaToTsTypeConverter {
 
       return getReferenceType(type);
     }
+  }
+
+  /**
+   * Whether the element must be written {@code Array<...>}: a bare {@code []} would bind to part of
+   * it, e.g. to a function's return type or to the inner array of {@code readonly string[]}.
+   */
+  private boolean needsArrayOf(TypeMirror component, TsType componentTsType) {
+    return ProcessorType.of(component, env).isUnionType()
+        || componentTsType instanceof TsInlinedFunctionType
+        || (componentTsType instanceof ArrayTsType && componentTsType.isTsReadOnly());
+  }
+
+  /** Whether {@code type} omits the type arguments its declaration requires. */
+  public static boolean isRaw(DeclaredType type) {
+    return type.getTypeArguments().isEmpty()
+        && !((TypeElement) type.asElement()).getTypeParameters().isEmpty();
+  }
+
+  public static String rawTypeMessage(DeclaredType type) {
+    String name = type.asElement().getSimpleName().toString();
+    int count = ((TypeElement) type.asElement()).getTypeParameters().size();
+    return "Raw type "
+        + name
+        + " is not supported; give its type arguments, e.g. "
+        + name
+        + "<"
+        + String.join(", ", Collections.nCopies(count, "Any"))
+        + "> (jsinterop.base.Any) or "
+        + name
+        + "<"
+        + String.join(", ", Collections.nCopies(count, "?"))
+        + ">.";
+  }
+
+  private TsType reportRawType(DeclaredType type) {
+    env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type), element);
+    return TsType.of("any");
   }
 
   /**
@@ -256,34 +322,31 @@ public class JavaToTsTypeConverter {
     List<? extends TypeMirror> declaredArguments = ((DeclaredType) type).getTypeArguments();
     List<? extends TypeMirror> argumentVars =
         ((DeclaredType) executableElement.getEnclosingElement().asType()).getTypeArguments();
-    Map<String, TsType> typeMapping = new HashMap<>();
-    argumentVars.forEach(
-        typeMirror -> {
-          int index = argumentVars.indexOf(typeMirror);
-          // Only the function method is emitted, as the inlined signature.
-          warnIfSuperWildcardIsProduced(
-              (DeclaredType) type, index, member -> member.equals(executableElement));
-          typeMapping.put(typeMirror.toString(), typeArgument(declaredArguments.get(index)));
-        });
+    Map<Element, TsType> typeMapping = new HashMap<>(typeArguments);
+    for (int index = 0; index < argumentVars.size(); index++) {
+      // Only the function method is emitted, as the inlined signature.
+      warnIfSuperWildcardIsProduced(
+          (DeclaredType) type, index, member -> member.equals(executableElement));
+      typeMapping.put(
+          ((TypeVariable) argumentVars.get(index)).asElement(),
+          typeArgument(declaredArguments.get(index)));
+    }
     executableElement
         .getParameters()
         .forEach(
             param ->
                 new ParameterVisitor<TsInlinedFunctionType>(param, typeMapping, env).visit(tsType));
 
-    TypeMirror returnType = executableElement.getReturnType();
-    if (TypeKind.TYPEVAR.equals(returnType.getKind())
-        && typeMapping.containsKey(returnType.toString())) {
-      tsType.setReturnType(typeMapping.get(returnType.toString()));
-    } else {
-      tsType.setReturnType(toTsType(executableElement.getReturnType()));
-    }
+    tsType.setReturnType(
+        new JavaToTsTypeConverter(element, emissionContext, typeMapping, env)
+            .toTsType(executableElement.getReturnType()));
     return tsType;
   }
 
   private TsType getReferenceType(TypeMirror type) {
     if (TypeKind.TYPEVAR.equals(type.getKind())) {
-      return TsType.of(type.toString(), "");
+      // By name: toString() includes type-use annotations.
+      return TsType.of(((TypeVariable) type).asElement().getSimpleName().toString(), "");
     } else if (TypeKind.TYPEVAR.equals(type.getKind())) {
       return TsType.of("any");
     } else if (TypeKind.DECLARED.equals(type.getKind())) {
@@ -309,6 +372,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getDeclaredType(DeclaredType declaredType, TsElement typeElement) {
+    if (isRaw(declaredType)) {
+      return reportRawType(declaredType);
+    }
     boolean explicitUnion = typeElement.isExplicitUnionType();
     String name = explicitUnion ? typeElement.getExplicitUnionName() : typeElement.getName();
     String nameSpace =
