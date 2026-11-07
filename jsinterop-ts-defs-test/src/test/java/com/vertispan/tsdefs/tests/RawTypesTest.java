@@ -180,6 +180,17 @@ public class RawTypesTest {
         "RawFn.java:9");
   }
 
+  // A union member is written in the union, like a JsFunction's signature in the function.
+  @Test
+  public void rawTypeInUnionMemberIsReportedOnceOnTheMember() {
+    assertErrorLines(
+        Arrays.asList(
+            "errors/raw/RawInUnion.java",
+            "errors/raw/RawInUnionUser1.java",
+            "errors/raw/RawInUnionUser2.java"),
+        "RawInUnion.java:21");
+  }
+
   // The same raw type in two members of one type is two uses.
   @Test
   public void sameRawTypeInTwoMembersIsReportedForEach() {

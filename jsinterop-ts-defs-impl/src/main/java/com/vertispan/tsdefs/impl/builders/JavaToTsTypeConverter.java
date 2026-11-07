@@ -341,10 +341,13 @@ public class JavaToTsTypeConverter {
         .map(
             e -> {
               if (e.isMethod()) {
+                // A raw type in the member is reported on the member, where it is written.
                 return e.typeOrNullable(
-                    toTsType(
-                        ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
-                            .getReturnType()));
+                    new JavaToTsTypeConverter(
+                            this.element, emissionContext, typeArguments, e.element(), env)
+                        .toTsType(
+                            ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
+                                .getReturnType()));
               }
               return e.getType();
             })
