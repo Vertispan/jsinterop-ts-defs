@@ -137,6 +137,18 @@ public class RawTypesTest {
         "errors/raw/ExtendsMid2.java");
   }
 
+  // The same through the walk up to a @TsInterface superclass, which becomes an implements clause.
+  @Test
+  public void rawTsInterfaceSuperclassOfSkippedClassIsReportedOnce() {
+    assertErrorsOnlyIn(
+        1,
+        "RawTsInterfaceMid.java",
+        "errors/raw/GenericTsInterfaceBase.java",
+        "errors/raw/RawTsInterfaceMid.java",
+        "errors/raw/ExtendsTsInterfaceMid1.java",
+        "errors/raw/ExtendsTsInterfaceMid2.java");
+  }
+
   private static void assertSingleError(String resource, String message) {
     assertThat(compile(resource).errors())
         .extracting(e -> e.getMessage(Locale.getDefault()))

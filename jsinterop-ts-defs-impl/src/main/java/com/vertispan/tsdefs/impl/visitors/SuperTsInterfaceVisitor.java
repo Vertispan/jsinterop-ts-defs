@@ -43,7 +43,9 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
       getJavaSuperClass()
           .ifPresent(
               typeMirror -> {
-                new SuperTsInterfaceVisitor<T>(typeMirror, subtype, env).visit(builder);
+                // The skipped class's own extends clause holds typeMirror and its arguments.
+                new SuperTsInterfaceVisitor<T>(typeMirror, (TypeElement) element, env)
+                    .visit(builder);
               });
     }
   }
