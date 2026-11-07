@@ -51,7 +51,7 @@ public class JavaToTsTypeConverter {
   private final Element element;
   private final String emissionContext;
   private final Map<Element, TsType> typeArguments;
-  private final boolean consumedByJava;
+  private final Element rawTypeElement;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
     this(element, "", Collections.emptyMap(), env);
@@ -90,28 +90,24 @@ public class JavaToTsTypeConverter {
       String emissionContext,
       Map<Element, TsType> typeArguments,
       HasProcessorEnv env) {
-    this(element, emissionContext, typeArguments, false, env);
+    this(element, emissionContext, typeArguments, element, env);
   }
 
   /**
-   * @param consumedByJava the converted types only flow from TypeScript into Java, as the return
-   *     type of a function TypeScript passes in does
+   * @param rawTypeElement where a raw type is reported: where it is written, which for a
+   *     JsFunction's return type is the function's method rather than {@code element}
    */
   private JavaToTsTypeConverter(
       Element element,
       String emissionContext,
       Map<Element, TsType> typeArguments,
-      boolean consumedByJava,
+      Element rawTypeElement,
       HasProcessorEnv env) {
     this.env = env;
     this.element = element;
     this.emissionContext = emissionContext;
     this.typeArguments = typeArguments;
-    this.consumedByJava = consumedByJava;
-  }
-
-  private boolean consumedByJava() {
-    return consumedByJava || ElementKind.PARAMETER.equals(element.getKind());
+    this.rawTypeElement = rawTypeElement;
   }
 
   private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
@@ -294,8 +290,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType reportRawType(DeclaredType type) {
-    if (env.firstReport(element, type.asElement())) {
-      env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), element);
+    if (env.firstReport(rawTypeElement, type.asElement())) {
+      env.messager()
+          .printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), rawTypeElement);
     }
     return TsType.of("any");
   }
@@ -382,10 +379,8 @@ public class JavaToTsTypeConverter {
             param ->
                 new ParameterVisitor<TsInlinedFunctionType>(param, typeMapping, env).visit(tsType));
 
-    // Against the function's own method, like its parameters, so diagnostics point where the
-    // return type is written; whether it reaches TypeScript still depends on this use.
     tsType.setReturnType(
-        new JavaToTsTypeConverter(executableElement, "", typeMapping, consumedByJava(), env)
+        new JavaToTsTypeConverter(element, emissionContext, typeMapping, executableElement, env)
             .toTsType(executableElement.getReturnType()));
     return tsType;
   }
@@ -486,7 +481,7 @@ public class JavaToTsTypeConverter {
       DeclaredType type, int index, Predicate<Element> emitted) {
     TypeMirror argument = type.getTypeArguments().get(index);
     if (!TypeKind.WILDCARD.equals(argument.getKind())
-        || consumedByJava()
+        || ElementKind.PARAMETER.equals(element.getKind())
         || ElementKind.TYPE_PARAMETER.equals(element.getKind())
         || getTypeOrTypeRef(argument) != argument) {
       return;
