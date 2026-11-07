@@ -35,7 +35,8 @@ public class RawTypesTest {
   public void rawImplementsClauseShouldFail() {
     assertSingleError(
         "errors/raw/RawImplements.java",
-        "Raw type Container is not supported; give its type arguments,"
+        "Raw type Container in the supertypes of RawImplements is not supported;"
+            + " give its type arguments,"
             + " e.g. Container<Any> (jsinterop.base.Any).");
   }
 
@@ -43,8 +44,8 @@ public class RawTypesTest {
   public void rawExtendsClauseShouldFail() {
     assertSingleError(
         "errors/raw/RawExtends.java",
-        "Raw type GenericBase is not supported; give its type arguments,"
-            + " e.g. GenericBase<Any> (jsinterop.base.Any).");
+        "Raw type GenericBase in the supertypes of RawExtends is not supported;"
+            + " give its type arguments, e.g. GenericBase<Any> (jsinterop.base.Any).");
   }
 
   // Named with its enclosing types, so the suggestion can be pasted.
@@ -53,7 +54,8 @@ public class RawTypesTest {
     assertThat(compile("errors/raw/Holder.java", "errors/raw/RawNestedMember.java").errors())
         .extracting(e -> e.getMessage(Locale.getDefault()))
         .containsExactly(
-            "Raw type Holder.Inner is not supported; give its type arguments,"
+            "Raw type Holder.Inner in RawNestedMember.raw is not supported;"
+                + " give its type arguments,"
                 + " e.g. Holder.Inner<Any> (jsinterop.base.Any) or Holder.Inner<?>.");
   }
 
@@ -62,7 +64,7 @@ public class RawTypesTest {
   public void rawImplicitUnionShouldFail() {
     assertSingleError(
         "errors/raw/RawUnionMember.java",
-        "Raw type GenericUnion is not supported; give its type arguments,"
+        "Raw type GenericUnion in RawUnionMember.raw is not supported; give its type arguments,"
             + " e.g. GenericUnion<Any> (jsinterop.base.Any) or GenericUnion<?>.");
   }
 
@@ -70,7 +72,7 @@ public class RawTypesTest {
   public void rawMemberTypeShouldFail() {
     assertSingleError(
         "errors/raw/RawMember.java",
-        "Raw type Container is not supported; give its type arguments,"
+        "Raw type Container in RawMember.raw is not supported; give its type arguments,"
             + " e.g. Container<Any> (jsinterop.base.Any) or Container<?>.");
   }
 
@@ -79,14 +81,16 @@ public class RawTypesTest {
   public void rawBoundedMemberTypeShouldFail() {
     assertSingleError(
         "errors/raw/RawBoundedMember.java",
-        "Raw type Bounded is not supported; give its type arguments, e.g. Bounded<?>.");
+        "Raw type Bounded in RawBoundedMember.raw is not supported; give its type arguments,"
+            + " e.g. Bounded<?>.");
   }
 
   @Test
   public void rawBoundedImplementsClauseShouldFail() {
     assertSingleError(
         "errors/raw/RawBoundedImplements.java",
-        "Raw type Bounded is not supported; give its type arguments.");
+        "Raw type Bounded in the supertypes of RawBoundedImplements is not supported;"
+            + " give its type arguments.");
   }
 
   // This and the next test: inlined types, which without the check crash looking up the missing
@@ -95,7 +99,8 @@ public class RawTypesTest {
   public void rawJsFunctionShouldFail() {
     assertSingleError(
         "errors/raw/RawGenericFnMember.java",
-        "Raw type GenericFn is not supported; give its type arguments,"
+        "Raw type GenericFn in parameter fn of RawGenericFnMember.take is not supported;"
+            + " give its type arguments,"
             + " e.g. GenericFn<Any> (jsinterop.base.Any) or GenericFn<?>.");
   }
 
@@ -103,7 +108,8 @@ public class RawTypesTest {
   public void rawJsPropertyMapShouldFail() {
     assertSingleError(
         "errors/raw/RawPropertyMapMember.java",
-        "Raw type JsPropertyMap is not supported; give its type arguments,"
+        "Raw type JsPropertyMap in RawPropertyMapMember.raw is not supported;"
+            + " give its type arguments,"
             + " e.g. JsPropertyMap<Any> (jsinterop.base.Any) or JsPropertyMap<?>.");
   }
 
@@ -111,7 +117,7 @@ public class RawTypesTest {
   public void rawTypeWithSeveralParametersShouldFail() {
     assertSingleError(
         "errors/raw/RawPairMember.java",
-        "Raw type Pair is not supported; give its type arguments,"
+        "Raw type Pair in RawPairMember.raw is not supported; give its type arguments,"
             + " e.g. Pair<Any, Any> (jsinterop.base.Any) or Pair<?, ?>.");
   }
 
@@ -120,7 +126,8 @@ public class RawTypesTest {
   public void rawTypeWithOneBoundedParameterShouldFail() {
     assertSingleError(
         "errors/raw/RawBoundedPairMember.java",
-        "Raw type BoundedPair is not supported; give its type arguments,"
+        "Raw type BoundedPair in RawBoundedPairMember.raw is not supported;"
+            + " give its type arguments,"
             + " e.g. BoundedPair<?, ?>.");
   }
 
@@ -129,10 +136,43 @@ public class RawTypesTest {
     assertThat(compile("errors/raw/TwoRawTypesMember.java").errors())
         .extracting(e -> e.getMessage(Locale.getDefault()))
         .containsExactlyInAnyOrder(
-            "Raw type Container is not supported; give its type arguments,"
+            "Raw type Container in TwoRawTypesMember.both is not supported;"
+                + " give its type arguments,"
                 + " e.g. Container<Any> (jsinterop.base.Any) or Container<?>.",
-            "Raw type GenericBase is not supported; give its type arguments,"
+            "Raw type GenericBase in TwoRawTypesMember.both is not supported;"
+                + " give its type arguments,"
                 + " e.g. GenericBase<Any> (jsinterop.base.Any) or GenericBase<?>.");
+  }
+
+  // The message says where the raw type is written, for when the diagnostic has no position.
+  @Test
+  public void rawErrorsNameWhereTheyAreWritten() {
+    assertRawContainerLocations(
+        Arrays.asList("errors/raw/RawPositions.java"),
+        "in RawPositions.field",
+        "in parameter ctorParam of the RawPositions constructor",
+        "in the bound of type parameter T of RawPositions");
+    assertRawContainerLocations(
+        Arrays.asList("errors/raw/RawFn.java", "errors/raw/RawFnUser.java"),
+        "in RawFn.apply",
+        "in parameter c of RawFn.apply");
+    assertRawContainerLocations(
+        Arrays.asList("errors/raw/RawInUnion.java", "errors/raw/RawInUnionUser1.java"),
+        "in RawInUnion.asContainer");
+  }
+
+  private static void assertRawContainerLocations(List<String> resources, String... locations) {
+    assertThat(compile(resources.toArray(new String[0])).errors())
+        .extracting(e -> e.getMessage(Locale.getDefault()))
+        .containsExactlyInAnyOrder(
+            Arrays.stream(locations)
+                .map(
+                    location ->
+                        "Raw type Container "
+                            + location
+                            + " is not supported; give its type arguments,"
+                            + " e.g. Container<Any> (jsinterop.base.Any) or Container<?>.")
+                .toArray(String[]::new));
   }
 
   // Each raw use is reported once, in the file that writes it, however often it is emitted.
@@ -174,7 +214,8 @@ public class RawTypesTest {
   public void rawInterfaceExtendsClauseShouldFail() {
     assertSingleError(
         "errors/raw/RawSubInterface.java",
-        "Raw type Container is not supported; give its type arguments,"
+        "Raw type Container in the supertypes of RawSubInterface is not supported;"
+            + " give its type arguments,"
             + " e.g. Container<Any> (jsinterop.base.Any).");
   }
 

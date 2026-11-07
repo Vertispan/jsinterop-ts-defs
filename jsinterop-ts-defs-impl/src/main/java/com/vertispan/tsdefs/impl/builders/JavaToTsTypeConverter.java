@@ -262,18 +262,14 @@ public class JavaToTsTypeConverter {
   }
 
   /**
-   * Suggests only arguments Java accepts in that position: {@code Any} when no type parameter is
-   * bounded, a wildcard when not in an extends or implements clause.
+   * Names where the raw type is written, {@code where} being the element it is reported on, since
+   * the diagnostic's position can be missing (javadoc on parameters, library classes). Suggests
+   * only arguments Java accepts in that position: {@code Any} when no type parameter is bounded, a
+   * wildcard when not in an extends or implements clause.
    */
   public static String rawTypeMessage(
-      DeclaredType type, boolean inSupertypeClause, HasProcessorEnv env) {
-    // With enclosing types, as written in Java: Outer.Inner.
-    String name = type.asElement().getSimpleName().toString();
-    for (Element enclosing = type.asElement().getEnclosingElement();
-        enclosing instanceof TypeElement;
-        enclosing = enclosing.getEnclosingElement()) {
-      name = enclosing.getSimpleName() + "." + name;
-    }
+      DeclaredType type, Element where, boolean inSupertypeClause, HasProcessorEnv env) {
+    String name = typeName((TypeElement) type.asElement());
     List<? extends TypeParameterElement> parameters =
         ((TypeElement) type.asElement()).getTypeParameters();
     List<String> examples = new ArrayList<>();
@@ -294,15 +290,61 @@ public class JavaToTsTypeConverter {
     }
     return "Raw type "
         + name
+        + " "
+        + location(where)
         + " is not supported; give its type arguments"
         + (examples.isEmpty() ? "" : ", e.g. " + String.join(" or ", examples))
         + ".";
   }
 
+  private static String location(Element where) {
+    if (where instanceof TypeElement) {
+      return "in the supertypes of " + typeName((TypeElement) where);
+    }
+    switch (where.getKind()) {
+      case PARAMETER:
+        return "in parameter "
+            + where.getSimpleName()
+            + " of "
+            + memberName(where.getEnclosingElement());
+      case TYPE_PARAMETER:
+        return "in the bound of type parameter "
+            + where.getSimpleName()
+            + " of "
+            + memberName(((TypeParameterElement) where).getGenericElement());
+      default:
+        return "in " + memberName(where);
+    }
+  }
+
+  private static String memberName(Element member) {
+    if (member instanceof TypeElement) {
+      return typeName((TypeElement) member);
+    }
+    String type = typeName((TypeElement) member.getEnclosingElement());
+    return ElementKind.CONSTRUCTOR.equals(member.getKind())
+        ? "the " + type + " constructor"
+        : type + "." + member.getSimpleName();
+  }
+
+  /** With enclosing types, as written in Java: Outer.Inner. */
+  private static String typeName(TypeElement type) {
+    String name = type.getSimpleName().toString();
+    for (Element enclosing = type.getEnclosingElement();
+        enclosing instanceof TypeElement;
+        enclosing = enclosing.getEnclosingElement()) {
+      name = enclosing.getSimpleName() + "." + name;
+    }
+    return name;
+  }
+
   private TsType reportRawType(DeclaredType type) {
     if (env.firstReport(rawTypeElement, type.asElement())) {
       env.messager()
-          .printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), rawTypeElement);
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              rawTypeMessage(type, rawTypeElement, false, env),
+              rawTypeElement);
     }
     return TsType.of("any");
   }
