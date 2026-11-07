@@ -64,6 +64,15 @@ public class RawTypesTest {
                             + " e.g. IgnoredGenericBase<Any> (jsinterop.base.Any)."));
   }
 
+  // Reported as the union itself, not as a member type erased by the raw use.
+  @Test
+  public void rawImplicitUnionShouldFail() {
+    assertSingleError(
+        "errors/raw/RawUnionMember.java",
+        "Raw type GenericUnion is not supported; give its type arguments,"
+            + " e.g. GenericUnion<Any> (jsinterop.base.Any) or GenericUnion<?>.");
+  }
+
   @Test
   public void rawMemberTypeShouldFail() {
     assertSingleError(
@@ -190,6 +199,7 @@ public class RawTypesTest {
     files.add(JavaFileObjects.forResource("errors/raw/Pair.java"));
     files.add(JavaFileObjects.forResource("errors/raw/BoundedPair.java"));
     files.add(JavaFileObjects.forResource("errors/raw/GenericFn.java"));
+    files.add(JavaFileObjects.forResource("errors/raw/GenericUnion.java"));
     for (String resource : resources) {
       files.add(JavaFileObjects.forResource(resource));
     }

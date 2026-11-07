@@ -231,6 +231,10 @@ public class JavaToTsTypeConverter {
         if (TsElement.of(type, env).isExplicitUnionType()) {
           return getDeclaredType((DeclaredType) type, TsElement.of(type, env));
         }
+        // Before expanding it: a raw union's member types are erased, and would be reported.
+        if (isRaw((DeclaredType) type)) {
+          return reportRawType((DeclaredType) type);
+        }
         return unionType(type);
       }
 
