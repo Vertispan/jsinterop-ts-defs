@@ -267,7 +267,13 @@ public class JavaToTsTypeConverter {
    */
   public static String rawTypeMessage(
       DeclaredType type, boolean inSupertypeClause, HasProcessorEnv env) {
+    // With enclosing types, as written in Java: Outer.Inner.
     String name = type.asElement().getSimpleName().toString();
+    for (Element enclosing = type.asElement().getEnclosingElement();
+        enclosing instanceof TypeElement;
+        enclosing = enclosing.getEnclosingElement()) {
+      name = enclosing.getSimpleName() + "." + name;
+    }
     List<? extends TypeParameterElement> parameters =
         ((TypeElement) type.asElement()).getTypeParameters();
     List<String> examples = new ArrayList<>();

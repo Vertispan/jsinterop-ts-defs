@@ -47,6 +47,16 @@ public class RawTypesTest {
             + " e.g. GenericBase<Any> (jsinterop.base.Any).");
   }
 
+  // Named with its enclosing types, so the suggestion can be pasted.
+  @Test
+  public void rawNestedTypeShouldFail() {
+    assertThat(compile("errors/raw/Holder.java", "errors/raw/RawNestedMember.java").errors())
+        .extracting(e -> e.getMessage(Locale.getDefault()))
+        .containsExactly(
+            "Raw type Holder.Inner is not supported; give its type arguments,"
+                + " e.g. Holder.Inner<Any> (jsinterop.base.Any) or Holder.Inner<?>.");
+  }
+
   // Reported as the union itself, not as a member type erased by the raw use.
   @Test
   public void rawImplicitUnionShouldFail() {
