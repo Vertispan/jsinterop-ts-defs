@@ -63,6 +63,16 @@ public class TypeArgumentsVisitor<T> extends TsElement {
 
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
+    if (subtype != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
+      if (env.firstReport(subtype, classDeclaredType.asElement())) {
+        env.messager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, true, env),
+                subtype);
+      }
+      return;
+    }
     if (classDeclaredType.getTypeArguments().isEmpty()) {
       return;
     }

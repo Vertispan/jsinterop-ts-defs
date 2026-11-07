@@ -51,6 +51,7 @@ public class JavaToTsTypeConverter {
   private final Element element;
   private final String emissionContext;
   private final Map<Element, TsType> typeArguments;
+  private final boolean consumedByJava;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
     this(element, "", Collections.emptyMap(), env);
@@ -89,10 +90,28 @@ public class JavaToTsTypeConverter {
       String emissionContext,
       Map<Element, TsType> typeArguments,
       HasProcessorEnv env) {
+    this(element, emissionContext, typeArguments, false, env);
+  }
+
+  /**
+   * @param consumedByJava the converted types only flow from TypeScript into Java, as the return
+   *     type of a function TypeScript passes in does
+   */
+  private JavaToTsTypeConverter(
+      Element element,
+      String emissionContext,
+      Map<Element, TsType> typeArguments,
+      boolean consumedByJava,
+      HasProcessorEnv env) {
     this.env = env;
     this.element = element;
     this.emissionContext = emissionContext;
     this.typeArguments = typeArguments;
+    this.consumedByJava = consumedByJava;
+  }
+
+  private boolean consumedByJava() {
+    return consumedByJava || ElementKind.PARAMETER.equals(element.getKind());
   }
 
   private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
@@ -196,6 +215,9 @@ public class JavaToTsTypeConverter {
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
         DeclaredType declaredType = (DeclaredType) type;
+        if (isRaw(declaredType)) {
+          return reportRawType(declaredType);
+        }
         // The index signature reads and writes, so every member counts as emitted.
         warnIfSuperWildcardIsProduced(declaredType, 0, member -> true);
         return TsTemplatedInlinedType.of(
@@ -203,6 +225,9 @@ public class JavaToTsTypeConverter {
       }
 
       if (ProcessorType.of(type, env).isJsFunction()) {
+        if (isRaw((DeclaredType) type)) {
+          return reportRawType((DeclaredType) type);
+        }
         return inlineJsFunctionType(type);
       }
 
@@ -228,6 +253,51 @@ public class JavaToTsTypeConverter {
         || componentTsType instanceof TsNullableType
         || componentTsType instanceof TsInlinedFunctionType
         || (componentTsType instanceof ArrayTsType && componentTsType.isTsReadOnly());
+  }
+
+  /** Whether {@code type} omits the type arguments its declaration requires. */
+  public static boolean isRaw(DeclaredType type) {
+    return type.getTypeArguments().isEmpty()
+        && !((TypeElement) type.asElement()).getTypeParameters().isEmpty();
+  }
+
+  /**
+   * Suggests only arguments Java accepts in that position: {@code Any} when no type parameter is
+   * bounded, a wildcard when not in an extends or implements clause.
+   */
+  public static String rawTypeMessage(
+      DeclaredType type, boolean inSupertypeClause, HasProcessorEnv env) {
+    String name = type.asElement().getSimpleName().toString();
+    List<? extends TypeParameterElement> parameters =
+        ((TypeElement) type.asElement()).getTypeParameters();
+    List<String> examples = new ArrayList<>();
+    boolean bounded =
+        parameters.stream()
+            .flatMap(parameter -> parameter.getBounds().stream())
+            .anyMatch(bound -> !isSameType(bound, Object.class, env));
+    if (!bounded) {
+      examples.add(
+          name
+              + "<"
+              + String.join(", ", Collections.nCopies(parameters.size(), "Any"))
+              + "> (jsinterop.base.Any)");
+    }
+    if (!inSupertypeClause) {
+      examples.add(
+          name + "<" + String.join(", ", Collections.nCopies(parameters.size(), "?")) + ">");
+    }
+    return "Raw type "
+        + name
+        + " is not supported; give its type arguments"
+        + (examples.isEmpty() ? "" : ", e.g. " + String.join(" or ", examples))
+        + ".";
+  }
+
+  private TsType reportRawType(DeclaredType type) {
+    if (env.firstReport(element, type.asElement())) {
+      env.messager().printMessage(Diagnostic.Kind.ERROR, rawTypeMessage(type, false, env), element);
+    }
+    return TsType.of("any");
   }
 
   /**
@@ -312,8 +382,10 @@ public class JavaToTsTypeConverter {
             param ->
                 new ParameterVisitor<TsInlinedFunctionType>(param, typeMapping, env).visit(tsType));
 
+    // Against the function's own method, like its parameters, so diagnostics point where the
+    // return type is written; whether it reaches TypeScript still depends on this use.
     tsType.setReturnType(
-        new JavaToTsTypeConverter(element, emissionContext, typeMapping, env)
+        new JavaToTsTypeConverter(executableElement, "", typeMapping, consumedByJava(), env)
             .toTsType(executableElement.getReturnType()));
     return tsType;
   }
@@ -347,6 +419,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getDeclaredType(DeclaredType declaredType, TsElement typeElement) {
+    if (isRaw(declaredType)) {
+      return reportRawType(declaredType);
+    }
     boolean explicitUnion = typeElement.isExplicitUnionType();
     String name = explicitUnion ? typeElement.getExplicitUnionName() : typeElement.getName();
     String nameSpace =
@@ -411,7 +486,7 @@ public class JavaToTsTypeConverter {
       DeclaredType type, int index, Predicate<Element> emitted) {
     TypeMirror argument = type.getTypeArguments().get(index);
     if (!TypeKind.WILDCARD.equals(argument.getKind())
-        || ElementKind.PARAMETER.equals(element.getKind())
+        || consumedByJava()
         || ElementKind.TYPE_PARAMETER.equals(element.getKind())
         || getTypeOrTypeRef(argument) != argument) {
       return;
