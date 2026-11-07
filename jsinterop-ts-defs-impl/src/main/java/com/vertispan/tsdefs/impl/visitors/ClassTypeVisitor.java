@@ -18,6 +18,7 @@ package com.vertispan.tsdefs.impl.visitors;
 import static java.util.stream.Collectors.groupingBy;
 
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
+import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsClass;
 import com.vertispan.tsdefs.impl.model.TsModifier;
@@ -27,8 +28,10 @@ import java.util.Map;
 import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 
 public class ClassTypeVisitor extends TsElement {
 
@@ -71,7 +74,8 @@ public class ClassTypeVisitor extends TsElement {
               });
 
       TsClass tsClass = builder.build();
-      getJavaSuperClass().ifPresent(superclass -> processSuperClass(tsClass, superclass));
+      getJavaSuperClass()
+          .ifPresent(superclass -> processSuperClass(tsClass, superclass, (TypeElement) element));
       builder.setEmitProtectedContr(requiresProtectedConstructor());
 
       moduleBuilder.addClass(tsClass);
@@ -90,10 +94,14 @@ public class ClassTypeVisitor extends TsElement {
     }
   }
 
-  private void processSuperClass(TsClass tsClass, TypeMirror superclass) {
+  /** @param writer the class whose extends clause names {@code superclass} */
+  private void processSuperClass(TsClass tsClass, TypeMirror superclass, TypeElement writer) {
     TsElement superTsElement = TsElement.of(superclass, env);
 
     if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
+      if (superTsElement.isTsIgnored()) {
+        reportIfRaw((DeclaredType) superclass, writer);
+      }
       mergeSuperClass(tsClass, superTsElement);
     }
 
@@ -101,8 +109,20 @@ public class ClassTypeVisitor extends TsElement {
         .getJavaSuperClass()
         .ifPresent(
             typeMirror -> {
-              processSuperClass(tsClass, typeMirror);
+              processSuperClass(tsClass, typeMirror, (TypeElement) superTsElement.element());
             });
+  }
+
+  /** Merged members expose the superclass's type parameters, so a raw clause can't be emitted. */
+  private void reportIfRaw(DeclaredType superclass, TypeElement writer) {
+    if (JavaToTsTypeConverter.isRaw(superclass)
+        && env.firstReport(writer, superclass.asElement())) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              JavaToTsTypeConverter.rawTypeMessage(superclass, true, env),
+              writer);
+    }
   }
 
   private void mergeSuperClass(TsClass tsClass, TsElement superTsElement) {
