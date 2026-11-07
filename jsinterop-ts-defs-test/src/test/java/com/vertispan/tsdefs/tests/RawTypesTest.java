@@ -22,6 +22,7 @@ import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import com.vertispan.tsdefs.processor.JsTypesProcessor;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import javax.tools.JavaFileObject;
@@ -174,6 +175,42 @@ public class RawTypesTest {
         "errors/raw/RawTsInterfaceMid.java",
         "errors/raw/ExtendsTsInterfaceMid1.java",
         "errors/raw/ExtendsTsInterfaceMid2.java");
+  }
+
+  @Test
+  public void rawInterfaceExtendsClauseShouldFail() {
+    assertSingleError(
+        "errors/raw/RawSubInterface.java",
+        "Raw type Container is not supported; give its type arguments,"
+            + " e.g. Container<Any> (jsinterop.base.Any).");
+  }
+
+  // Each error is on the line of the member, parameter or declaration that writes the raw type.
+  @Test
+  public void rawErrorsPointAtTheLineThatWritesThem() {
+    assertErrorLines(Arrays.asList("errors/raw/RawMember.java"), "RawMember.java:8");
+    assertErrorLines(Arrays.asList("errors/raw/RawImplements.java"), "RawImplements.java:7");
+    assertErrorLines(Arrays.asList("errors/raw/RawSubInterface.java"), "RawSubInterface.java:7");
+    // The JsFunction's return type on its method, its parameter on the parameter.
+    assertErrorLines(
+        Arrays.asList("errors/raw/RawFn.java", "errors/raw/RawFnUser.java"),
+        "RawFn.java:8",
+        "RawFn.java:9");
+  }
+
+  // The same raw type in two members of one type is two uses.
+  @Test
+  public void sameRawTypeInTwoMembersIsReportedForEach() {
+    assertErrorLines(
+        Arrays.asList("errors/raw/SameRawTwice.java"),
+        "SameRawTwice.java:8",
+        "SameRawTwice.java:10");
+  }
+
+  private static void assertErrorLines(List<String> resources, String... expected) {
+    assertThat(compile(resources.toArray(new String[0])).errors())
+        .extracting(e -> e.getSource().getName().replaceAll(".*/", "") + ":" + e.getLineNumber())
+        .containsExactlyInAnyOrder(expected);
   }
 
   private static void assertSingleError(String resource, String message) {
