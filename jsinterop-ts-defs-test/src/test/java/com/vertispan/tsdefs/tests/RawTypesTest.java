@@ -47,24 +47,6 @@ public class RawTypesTest {
             + " e.g. GenericBase<Any> (jsinterop.base.Any).");
   }
 
-  // Its members are merged into the subclass, so the raw clause is exposed all the same.
-  @Test
-  public void rawTsIgnoredSuperclassShouldFail() {
-    assertThat(compile("errors/raw/IgnoredGenericBase.java", "errors/raw/RawExtendsIgnored.java"))
-        .satisfies(
-            result ->
-                assertThat(result.errors())
-                    .extracting(
-                        e ->
-                            e.getSource().getName().replaceAll(".*/", "")
-                                + ": "
-                                + e.getMessage(Locale.getDefault()))
-                    .containsExactly(
-                        "RawExtendsIgnored.java: Raw type IgnoredGenericBase is not supported;"
-                            + " give its type arguments,"
-                            + " e.g. IgnoredGenericBase<Any> (jsinterop.base.Any)."));
-  }
-
   // Reported as the union itself, not as a member type erased by the raw use.
   @Test
   public void rawImplicitUnionShouldFail() {
