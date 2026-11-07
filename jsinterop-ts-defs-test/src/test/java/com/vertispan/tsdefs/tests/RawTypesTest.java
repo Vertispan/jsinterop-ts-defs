@@ -30,7 +30,7 @@ import org.junit.Test;
 
 public class RawTypesTest {
 
-  // A wildcard can't be a supertype's type argument in Java, so clauses suggest only Any.
+  // Java forbids a wildcard as a supertype's own type argument, so clauses suggest only Any.
   @Test
   public void rawImplementsClauseShouldFail() {
     assertSingleError(
@@ -79,7 +79,8 @@ public class RawTypesTest {
         "Raw type Bounded is not supported; give its type arguments.");
   }
 
-  // Inlined types: without the check, both crash looking up the missing type argument.
+  // This and the next test: inlined types, which without the check crash looking up the missing
+  // type argument.
   @Test
   public void rawJsFunctionShouldFail() {
     assertSingleError(
