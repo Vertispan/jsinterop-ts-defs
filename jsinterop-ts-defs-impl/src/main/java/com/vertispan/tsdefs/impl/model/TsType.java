@@ -27,6 +27,7 @@ public class TsType implements HasNamespace, Cloneable {
   protected final String name;
   protected final String namespace;
   private List<TsType> bounds = new ArrayList<>();
+  private TsType defaultType;
   private boolean tsReadOnly;
 
   public static TsType of(String name, String namespace) {
@@ -72,6 +73,12 @@ public class TsType implements HasNamespace, Cloneable {
     return this;
   }
 
+  /** Sets the default type argument of a type parameter declaration, e.g. {@code T = Item}. */
+  public TsType setDefaultType(TsType defaultType) {
+    this.defaultType = defaultType;
+    return this;
+  }
+
   public void setTsReadOnly(boolean tsReadOnly) {
     this.tsReadOnly = tsReadOnly;
   }
@@ -89,10 +96,18 @@ public class TsType implements HasNamespace, Cloneable {
 
   protected String emitType(String parentNamespace) {
     if (namespace.isEmpty() || namespace.equals(parentNamespace)) {
-      return resolveName(name) + emitBounds(parentNamespace);
+      return resolveName(name) + emitBounds(parentNamespace) + emitDefault(parentNamespace);
     } else {
-      return namespace + "." + resolveName(name) + emitBounds(parentNamespace);
+      return namespace
+          + "."
+          + resolveName(name)
+          + emitBounds(parentNamespace)
+          + emitDefault(parentNamespace);
     }
+  }
+
+  private String emitDefault(String parentNamespace) {
+    return defaultType == null ? "" : " = " + defaultType.emit(parentNamespace);
   }
 
   private String emitBounds(String parentNamespace) {
@@ -112,7 +127,8 @@ public class TsType implements HasNamespace, Cloneable {
     TsType tsType = (TsType) o;
     return Objects.equals(getName(), tsType.getName())
         && Objects.equals(getNamespace(), tsType.getNamespace())
-        && Objects.equals(bounds, tsType.bounds);
+        && Objects.equals(bounds, tsType.bounds)
+        && Objects.equals(defaultType, tsType.defaultType);
   }
 
   @Override

@@ -114,4 +114,16 @@ public class DocletTest {
         .contains(
             "useExplicitUnion(value:ExplicitUnion<ExplicitParamUnion>):ExplicitUnion<ExplicitParamUnion>;");
   }
+
+  @Test
+  public void testDefaultTypeArguments() throws IOException {
+    testDocs("defaults");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/defaults/types.d.ts"), StandardCharsets.UTF_8);
+    assertThat(definitions)
+        .contains("interface DefaultedApi<T extends DefaultedItem = DefaultedItem>")
+        .contains("read<V = any>(name:string):V;");
+  }
 }
