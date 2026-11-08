@@ -95,7 +95,8 @@ public class JavaToTsTypeConverter {
 
   /**
    * @param rawTypeElement where a raw type is reported: where it is written, which for a
-   *     JsFunction's return type is the function's method rather than {@code element}
+   *     JsFunction's return type or a union member's type is that method rather than {@code
+   *     element}
    */
   private JavaToTsTypeConverter(
       Element element,

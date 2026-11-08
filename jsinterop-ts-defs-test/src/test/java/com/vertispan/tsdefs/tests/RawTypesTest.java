@@ -151,7 +151,9 @@ public class RawTypesTest {
         Arrays.asList("errors/raw/RawPositions.java"),
         "in RawPositions.field",
         "in parameter ctorParam of the RawPositions constructor",
-        "in the bound of type parameter T of RawPositions");
+        "in the bound of type parameter T of RawPositions",
+        "in the bound of type parameter U of RawPositions.generic",
+        "in RawPositions.Nested.nestedField");
     assertRawContainerLocations(
         Arrays.asList("errors/raw/RawFn.java", "errors/raw/RawFnUser.java"),
         "in RawFn.apply",
