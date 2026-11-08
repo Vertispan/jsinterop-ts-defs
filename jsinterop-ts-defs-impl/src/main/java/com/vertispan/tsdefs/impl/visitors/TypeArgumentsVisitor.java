@@ -118,6 +118,23 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     Optional<TypeMirror> defaultType =
         TsElement.of(parameter, env).getClassValueFromAnnotation(TsDefault.class, "value");
     if (defaultType.isPresent()) {
+      // TODO(#142) A class literal can't carry type arguments, so a generic default isn't
+      //  supported yet: https://github.com/Vertispan/jsinterop-ts-defs/issues/142
+      if (defaultType.get() instanceof DeclaredType
+          && JavaToTsTypeConverter.isRaw((DeclaredType) defaultType.get())) {
+        env.messager()
+            .printMessage(
+                Diagnostic.Kind.ERROR,
+                "@TsDefault("
+                    + defaultType.get()
+                    + ") on type parameter "
+                    + parameter.getSimpleName()
+                    + " of "
+                    + ownerName(parameter)
+                    + " names a generic type, which a default can't give type arguments to.",
+                parameter);
+        return;
+      }
       TsType tsDefault = converter.toTsType(defaultType.get(), true);
       type.setDefaultType(tsDefault);
       // TypeScript's any satisfies every bound. Bounds are erased, since a class literal is raw.
