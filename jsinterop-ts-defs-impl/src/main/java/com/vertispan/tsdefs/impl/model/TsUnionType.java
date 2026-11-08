@@ -100,7 +100,12 @@ public class TsUnionType extends TsType {
       return super.emit(parentNamespace);
     }
     return tsTypes.stream()
-        .map(tsType -> tsType.emit(parentNamespace))
+        .map(
+            tsType ->
+                // Unparenthesized, a function type's return type would absorb the members after it.
+                tsType instanceof TsInlinedFunctionType
+                    ? "(" + tsType.emit(parentNamespace) + ")"
+                    : tsType.emit(parentNamespace))
         .collect(Collectors.joining("|"));
   }
 }

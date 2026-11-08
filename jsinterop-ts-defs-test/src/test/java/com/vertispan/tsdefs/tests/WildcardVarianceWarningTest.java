@@ -125,4 +125,28 @@ public class WildcardVarianceWarningTest {
         .singleElement()
         .satisfies(d -> assertThat(d.getSource().getName()).endsWith("WildSuper.java"));
   }
+
+  @Test
+  public void jsFunctionReturnWarnsOnlyWhereTypeScriptReceivesIt() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("Item", "Producer", "SuperFn", "UsesSuperFn")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/wildcards/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(result.warnings())
+        .filteredOn(d -> d.getMessage(null).startsWith("Wildcard ["))
+        .as("only give() returns the function to TypeScript")
+        .singleElement()
+        .satisfies(
+            d -> {
+              // give(), not take(), which is in the same file.
+              assertThat(d.getSource().getName()).endsWith("UsesSuperFn.java");
+              assertThat(d.getLineNumber()).isEqualTo(26);
+            });
+  }
 }
