@@ -15,19 +15,23 @@
  */
 package com.vertispan.tsdefs.impl.visitors;
 
+import com.vertispan.tsdefs.annotations.TsDefault;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Parameterizable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
 
 /**
  * Adds a type's type parameters to a builder: with bounds for the type's own declaration ({@link
@@ -82,15 +86,90 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     TsType type = TsElement.of(typeMirror, env).getType();
     Element typeElement = env.types().asElement(typeMirror);
     if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-      // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
-      // bound type's own declared parameter.
-      JavaToTsTypeConverter converter = new JavaToTsTypeConverter(typeElement, env);
-      ((TypeParameterElement) typeElement)
-          .getBounds().stream()
-              .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
-              .map(converter::toTsType)
-              .forEach(type::addBounds);
+      addBoundsAndDefault(type, (TypeParameterElement) typeElement, env);
     }
     return type;
+  }
+
+  /**
+   * Adds a type parameter's bounds and {@code @TsDefault} to its declaration, e.g. {@code T extends
+   * Item = Item}. Reports an error for a default TypeScript would reject.
+   */
+  static void addBoundsAndDefault(
+      TsType type, TypeParameterElement parameter, HasProcessorEnv env) {
+    // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
+    // bound type's own declared parameter.
+    JavaToTsTypeConverter converter = new JavaToTsTypeConverter(parameter, env);
+    parameter.getBounds().stream()
+        .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
+        .map(converter::toTsType)
+        .forEach(type::addBounds);
+
+    Optional<TypeMirror> defaultType =
+        TsElement.of(parameter, env).getClassValueFromAnnotation(TsDefault.class, "value");
+    if (defaultType.isPresent()) {
+      TsType tsDefault = converter.toTsType(defaultType.get(), true);
+      type.setDefaultType(tsDefault);
+      // TypeScript's any satisfies every bound. Bounds are erased, since a class literal is raw.
+      if (!"any".equals(tsDefault.emit(""))) {
+        parameter.getBounds().stream()
+            .filter(
+                bound -> !env.types().isAssignable(defaultType.get(), env.types().erasure(bound)))
+            .findFirst()
+            .ifPresent(
+                bound ->
+                    env.messager()
+                        .printMessage(
+                            Diagnostic.Kind.ERROR,
+                            "@TsDefault("
+                                + defaultType.get()
+                                + ") on type parameter "
+                                + parameter.getSimpleName()
+                                + " of "
+                                + ownerName(parameter)
+                                + " does not satisfy its bound "
+                                + bound
+                                + ".",
+                            parameter));
+      }
+    } else if (hasDefaultedPredecessor(parameter, env)) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              "Type parameter "
+                  + parameter.getSimpleName()
+                  + " of "
+                  + ownerName(parameter)
+                  + " has no @TsDefault, but follows one that does. TypeScript only allows"
+                  + " defaults on trailing type parameters.",
+              parameter);
+    }
+  }
+
+  private static boolean hasDefaultedPredecessor(
+      TypeParameterElement parameter, HasProcessorEnv env) {
+    for (TypeParameterElement sibling :
+        ((Parameterizable) parameter.getGenericElement()).getTypeParameters()) {
+      if (sibling.equals(parameter)) {
+        return false;
+      }
+      if (TsElement.of(sibling, env)
+          .getClassValueFromAnnotation(TsDefault.class, "value")
+          .isPresent()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** The declaring type, or {@code Type.method} for a method's type parameter. */
+  private static String ownerName(TypeParameterElement parameter) {
+    Element generic = parameter.getGenericElement();
+    if (generic instanceof TypeElement) {
+      return ((TypeElement) generic).getQualifiedName().toString();
+    }
+    return ((TypeElement) generic.getEnclosingElement()).getQualifiedName()
+        + "."
+        + generic.getSimpleName();
   }
 }

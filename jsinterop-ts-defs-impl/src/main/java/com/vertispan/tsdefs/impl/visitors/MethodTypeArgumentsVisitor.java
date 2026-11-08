@@ -17,7 +17,6 @@ package com.vertispan.tsdefs.impl.visitors;
 
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
-import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
@@ -39,14 +38,7 @@ public class MethodTypeArgumentsVisitor<T> extends TsElement {
         typeElement -> {
           TsType type = TsElement.of(typeElement, env).getType();
           if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-            // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting
-            // the bound type's own declared parameter.
-            JavaToTsTypeConverter converter = new JavaToTsTypeConverter(typeElement, env);
-            typeElement.getBounds().stream()
-                .filter(
-                    boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
-                .map(converter::toTsType)
-                .forEach(type::addBounds);
+            TypeArgumentsVisitor.addBoundsAndDefault(type, typeElement, env);
           }
           builder.addTypeArgument(type);
         });
