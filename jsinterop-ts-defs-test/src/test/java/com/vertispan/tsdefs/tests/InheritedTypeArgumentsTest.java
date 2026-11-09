@@ -253,6 +253,25 @@ public class InheritedTypeArgumentsTest {
     assertThat(result.errors()).isEmpty();
   }
 
+  // IB.value() narrows IA's Object to a type object includes, so its type stands in for C's.
+  @Test
+  public void widerMemberThatNarrowsFurtherUpStandsIn() throws IOException {
+    Compilation result =
+        compileSources(
+            "Named", "@jsinterop.annotations.JsType public class Named {}",
+            "Hidden", "public class Hidden extends Named {}",
+            "IA", "@jsinterop.annotations.JsType public interface IA { Object value(); }",
+            "IB", "@jsinterop.annotations.JsType public interface IB extends IA { Named value(); }",
+            "C",
+                "@jsinterop.annotations.JsType public abstract class C implements IB {"
+                    + " public abstract Hidden value(); }");
+
+    assertThat(result.errors()).isEmpty();
+    String output = output(result);
+    String c = output.substring(output.indexOf("class C"));
+    assertThat(c.substring(0, c.indexOf('}'))).contains("value():Named");
+  }
+
   // The wider member stands in for the override, which keeps its own modifiers and docs.
   @Test
   public void widerMemberInAnOverridesPlaceKeepsTheOverridesModifiersAndDocs() throws IOException {
