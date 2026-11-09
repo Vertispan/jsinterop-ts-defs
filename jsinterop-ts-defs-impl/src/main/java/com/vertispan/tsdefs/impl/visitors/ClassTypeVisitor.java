@@ -52,7 +52,7 @@ public class ClassTypeVisitor extends TsElement {
       getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
       TypeArgumentsVisitor.reportRawHiddenSupertypes((TypeElement) element, env);
-      InheritedTypeArguments.of((TypeElement) element, env).reportConflicts(env);
+      InheritedTypeArguments.reportConflicts((TypeElement) element, env);
 
       element.getEnclosedElements().stream()
           .map(e -> TsElement.of(e, env))

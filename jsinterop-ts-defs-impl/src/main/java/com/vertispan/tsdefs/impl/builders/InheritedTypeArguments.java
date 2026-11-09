@@ -62,15 +62,23 @@ public class InheritedTypeArguments {
     return new InheritedTypeArguments(
         () -> {
           Map<Element, List<Binding>> result = new HashMap<>();
-          walk(
-              subtype,
-              NONE,
-              Collections.singletonList(subtype),
-              new HashSet<>(),
-              result,
-              HasProcessorEnv.quiet(env));
+          walk(subtype, NONE, new HashSet<>(), result, HasProcessorEnv.quiet(env));
           return result;
         });
+  }
+
+  /** The supertypes {@code type}'s clauses name with their type arguments. */
+  private static List<DeclaredType> clauses(TypeElement type) {
+    List<TypeMirror> supertypes = new ArrayList<>(type.getInterfaces());
+    supertypes.add(type.getSuperclass());
+    List<DeclaredType> clauses = new ArrayList<>();
+    for (TypeMirror supertype : supertypes) {
+      if (TypeKind.DECLARED.equals(supertype.getKind())
+          && !JavaToTsTypeConverter.isRaw((DeclaredType) supertype)) {
+        clauses.add((DeclaredType) supertype);
+      }
+    }
+    return clauses;
   }
 
   /**
@@ -80,24 +88,16 @@ public class InheritedTypeArguments {
   private static void walk(
       TypeElement type,
       InheritedTypeArguments context,
-      List<TypeElement> path,
       Set<List<Object>> walked,
       Map<Element, List<Binding>> result,
       HasProcessorEnv quietEnv) {
-    List<TypeMirror> supertypes = new ArrayList<>(type.getInterfaces());
-    supertypes.add(type.getSuperclass());
-    for (TypeMirror supertype : supertypes) {
-      if (!TypeKind.DECLARED.equals(supertype.getKind())
-          || JavaToTsTypeConverter.isRaw((DeclaredType) supertype)) {
-        continue;
-      }
-      DeclaredType clause = (DeclaredType) supertype;
+    for (DeclaredType clause : clauses(type)) {
       TypeElement superElement = (TypeElement) clause.asElement();
       List<? extends TypeParameterElement> parameters = superElement.getTypeParameters();
       Map<Element, List<Binding>> passed = new HashMap<>();
       List<Object> key = new ArrayList<>(Collections.singletonList(superElement));
       for (int i = 0; i < parameters.size(); i++) {
-        Binding binding = new Binding(path, clause, i, context, quietEnv);
+        Binding binding = new Binding(type, clause, i, context, quietEnv);
         passed.put(parameters.get(i), Collections.singletonList(binding));
         key.add(binding.emitted);
         List<Binding> known = result.computeIfAbsent(parameters.get(i), p -> new ArrayList<>());
@@ -106,9 +106,7 @@ public class InheritedTypeArguments {
         }
       }
       if (walked.add(key)) {
-        List<TypeElement> superPath = new ArrayList<>(path);
-        superPath.add(superElement);
-        walk(superElement, new InheritedTypeArguments(passed), superPath, walked, result, quietEnv);
+        walk(superElement, new InheritedTypeArguments(passed), walked, result, quietEnv);
       }
     }
   }
@@ -133,30 +131,40 @@ public class InheritedTypeArguments {
     return Optional.of(passed.get(0).convert(env));
   }
 
+  private boolean conflicts(Element typeParameter) {
+    return bindings().getOrDefault(typeParameter, Collections.emptyList()).size() > 1;
+  }
+
   /**
-   * Reports each type parameter reached with arguments that differ in TypeScript, e.g. only in
-   * nullability, as TypeScript has no one type for both. Once, on the type where the paths meet,
-   * whether or not an emitted member uses the parameter.
+   * Reports each type parameter {@code subtype} reaches with arguments that differ in TypeScript,
+   * e.g. only in nullability, as TypeScript has no one type for both. Once, on the type where the
+   * paths meet, whether or not an emitted member uses the parameter.
    */
-  public void reportConflicts(HasProcessorEnv env) {
-    bindings()
+  public static void reportConflicts(TypeElement subtype, HasProcessorEnv env) {
+    InheritedTypeArguments passed = of(subtype, env);
+    passed.bindings().keySet().stream()
+        .filter(passed::conflicts)
         .forEach(
-            (typeParameter, passed) -> {
-              if (passed.size() > 1) {
-                reportConflict(typeParameter, passed.get(0), passed.get(1), env);
-              }
-            });
+            typeParameter ->
+                reportConflict(meeting(subtype, typeParameter, env), typeParameter, env));
+  }
+
+  /** Below the meeting point a supertype has the conflict already, so it is reported there. */
+  private static TypeElement meeting(TypeElement type, Element typeParameter, HasProcessorEnv env) {
+    for (DeclaredType clause : clauses(type)) {
+      TypeElement supertype = (TypeElement) clause.asElement();
+      if (of(supertype, env).conflicts(typeParameter)) {
+        return meeting(supertype, typeParameter, env);
+      }
+    }
+    return type;
   }
 
   private static void reportConflict(
-      Element typeParameter, Binding first, Binding other, HasProcessorEnv env) {
-    TypeElement meeting = first.path.get(0);
-    for (int i = 0;
-        i < Math.min(first.path.size(), other.path.size())
-            && first.path.get(i).equals(other.path.get(i));
-        i++) {
-      meeting = first.path.get(i);
-    }
+      TypeElement meeting, Element typeParameter, HasProcessorEnv env) {
+    List<Binding> passed = of(meeting, env).bindings().get(typeParameter);
+    Binding first = passed.get(0);
+    Binding other = passed.get(1);
     String message =
         "Type parameter "
             + typeParameter.getSimpleName()
@@ -165,11 +173,11 @@ public class InheritedTypeArguments {
             + " is passed ["
             + first.emitted
             + "] through "
-            + first.through().getSimpleName()
+            + first.through.getSimpleName()
             + " but ["
             + other.emitted
             + "] through "
-            + other.through().getSimpleName()
+            + other.through.getSimpleName()
             + " in "
             + meeting.getSimpleName()
             + "; TypeScript has no one type for both. Make the type arguments agree.";
@@ -178,14 +186,9 @@ public class InheritedTypeArguments {
     }
   }
 
-  /**
-   * One argument as written in a clause of the last type on {@code path}, with what reached that
-   * type.
-   */
+  /** One argument as written in a clause of {@code through}, with what reached {@code through}. */
   private static class Binding {
-    /** From the subtype to the type whose clause this is. */
-    private final List<TypeElement> path;
-
+    private final TypeElement through;
     private final DeclaredType clause;
     private final int index;
     private final InheritedTypeArguments context;
@@ -193,24 +196,20 @@ public class InheritedTypeArguments {
     private final String emitted;
 
     private Binding(
-        List<TypeElement> path,
+        TypeElement through,
         DeclaredType clause,
         int index,
         InheritedTypeArguments context,
         HasProcessorEnv quietEnv) {
-      this.path = path;
+      this.through = through;
       this.clause = clause;
       this.index = index;
       this.context = context;
       this.emitted = convert(quietEnv).emit("");
     }
 
-    private TypeElement through() {
-      return path.get(path.size() - 1);
-    }
-
     private TsType convert(HasProcessorEnv env) {
-      return JavaToTsTypeConverter.forSupertypesOf(through(), context, env)
+      return JavaToTsTypeConverter.forSupertypesOf(through, context, env)
           .clauseArgument(clause.getTypeArguments().get(index));
     }
   }
