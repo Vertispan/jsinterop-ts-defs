@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -96,7 +95,7 @@ public class ClassTypeVisitor extends TsElement {
   private void processSuperClass(TsClass tsClass, TypeMirror superclass) {
     TsElement superTsElement = TsElement.of(superclass, env);
 
-    if (superTsElement.isMergedIntoSubclasses()) {
+    if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
       mergeSuperClass(tsClass, superTsElement);
     }
 
@@ -112,14 +111,9 @@ public class ClassTypeVisitor extends TsElement {
     TsClass.TsClassBuilder superBuilder =
         TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
     TypeElement inheritedBy = (TypeElement) element;
-    // Overridden by this class or by a merged class below the one being merged.
-    List<ExecutableElement> overriders = enclosedMethods();
-    overriders.addAll(mergedSuperClassMethods());
-    superTsElement.element().getEnclosedElements().stream()
-        .filter(
-            e ->
-                !(e instanceof ExecutableElement)
-                    || !isOverriddenByAny((ExecutableElement) e, overriders))
+    superTsElement
+        .element()
+        .getEnclosedElements()
         .forEach(
             e -> {
               new ConstructorVisitor<TsClass.TsClassBuilder>(e, env).visit(superBuilder);

@@ -29,7 +29,6 @@ import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -44,8 +43,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import jsinterop.annotations.*;
-import jsinterop.base.Any;
-import jsinterop.base.JsPropertyMap;
 
 public class TsElement {
 
@@ -607,16 +604,6 @@ public class TsElement {
     return overridesOneOf(method, superMethods);
   }
 
-  /** The supertype methods that {@code method}, declared in this type, overrides. */
-  public List<ExecutableElement> overriddenMethods(ExecutableElement method) {
-    List<ExecutableElement> superMethods = superMethods();
-    superMethods.addAll(allSuperInterfacesMethods());
-    return superMethods.stream()
-        .filter(superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element))
-        .distinct()
-        .collect(Collectors.toList());
-  }
-
   private boolean overridesOneOf(ExecutableElement method, List<ExecutableElement> superMethods) {
     return superMethods.stream()
         .anyMatch(
@@ -679,121 +666,6 @@ public class TsElement {
         .map(typeMirror -> (TypeElement) env.types().asElement(typeMirror))
         .forEach(typeElement -> methods.addAll(allMethodsInInterface(typeElement)));
 
-    return methods;
-  }
-
-  /**
-   * Whether one of {@code others} that is emitted overrides {@code method}, as members of this
-   * type. One that isn't emitted leaves {@code method} to stand for it.
-   */
-  // TODO(#133) GWT also exports an override of an exported method; once that is modeled here,
-  //  such an override is emitted and replaces the wider method.
-  public boolean isOverriddenByAny(ExecutableElement method, Collection<ExecutableElement> others) {
-    return others.stream()
-        .anyMatch(
-            other ->
-                !other.equals(method)
-                    && env.elements().overrides(other, method, (TypeElement) element)
-                    && TsElement.of(other, env).isExportable()
-                    && !TsElement.of(other, env).narrowsBeyondTypeScript());
-  }
-
-  /**
-   * Whether this method overrides an exported one, including one a @TsIgnore type's subtypes
-   * declare, whose return type TypeScript may not replace with this one's: a type it has no name
-   * for, anything but a known object type where the overridden one is emitted as object, or a
-   * nullable type where the overridden one isn't. A copy of the overridden method is emitted next
-   * to a copy of this one, as an overload.
-   */
-  public boolean narrowsBeyondTypeScript() {
-    if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
-      return false;
-    }
-    TypeElement declaring = (TypeElement) element.getEnclosingElement();
-    TypeMirror returnType = ((ExecutableElement) element).getReturnType();
-    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
-    boolean unnamed = "unknown".equals(TsElement.of(element, quiet).getType().emit(""));
-    return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
-        .filter(overridden -> TsElement.of(overridden, env).isExportable())
-        .anyMatch(
-            overridden -> {
-              String inherited = TsElement.of(overridden, declaring, quiet).getType().emit("");
-              // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
-              if ("object".equals(inherited)) {
-                return unnamed || !isWithinObject(returnType);
-              }
-              if (isJsNullable() && !TsElement.of(overridden, env).isJsNullable()) {
-                return true;
-              }
-              return unnamed && !"unknown".equals(inherited);
-            });
-  }
-
-  /** Whether this method overrides one of {@code others} only to make its return type nullable. */
-  public boolean onlyAddsNullabilityTo(Collection<ExecutableElement> others) {
-    if (!isJsNullable() || !(element.getEnclosingElement() instanceof TypeElement)) {
-      return false;
-    }
-    TypeElement declaring = (TypeElement) element.getEnclosingElement();
-    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
-    return others.stream()
-        .anyMatch(
-            other ->
-                !other.equals(element)
-                    && env.elements().overrides((ExecutableElement) element, other, declaring)
-                    && !TsElement.of(other, env).isJsNullable()
-                    && TsElement.of(element, quiet)
-                        .getType()
-                        .equals(TsElement.of(other, declaring, quiet).getType()));
-  }
-
-  /**
-   * Whether this method's {@code returnType} is known to emit as a type TypeScript's {@code object}
-   * includes: an array, or a reference to an emitted type, a JsFunction, a property map or {@code
-   * Any}, not nullable. Anything else may be a primitive, so isn't.
-   */
-  private boolean isWithinObject(TypeMirror returnType) {
-    if (isJsNullable()
-        || returnType.getAnnotationMirrors().stream()
-            .anyMatch(
-                a ->
-                    a.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral"))) {
-      return false;
-    }
-    if (TypeKind.ARRAY.equals(returnType.getKind())) {
-      return true;
-    }
-    if (!TypeKind.DECLARED.equals(returnType.getKind())) {
-      return false;
-    }
-    ProcessorType processorType = ProcessorType.of(returnType, env);
-    TsElement type = TsElement.of(returnType, env);
-    if (processorType.isUnionType() || type.isTsTypeDef()) {
-      return false;
-    }
-    return processorType.isJsFunction()
-        || processorType.isAssignableFrom(JsPropertyMap.class)
-        || JavaToTsTypeConverter.isSameType(returnType, Any.class, env)
-        || type.isJsType()
-        || type.isTsInterface();
-  }
-
-  /** A {@code @TsIgnore} or {@code @TsInterface} superclass, whose members subclasses declare. */
-  public boolean isMergedIntoSubclasses() {
-    return isTsIgnored() || isTsInterface();
-  }
-
-  /** Methods of the superclasses whose members are merged into this class. */
-  public List<ExecutableElement> mergedSuperClassMethods() {
-    List<ExecutableElement> methods = new ArrayList<>();
-    Optional<TypeMirror> superclass = getJavaSuperClass();
-    while (superclass.isPresent()) {
-      TsElement superElement = TsElement.of(superclass.get(), env);
-      if (superElement.isMergedIntoSubclasses()) {
-        methods.addAll(superElement.enclosedMethods());
-      }
-      superclass = superElement.getJavaSuperClass();
-    }
     return methods;
   }
 
