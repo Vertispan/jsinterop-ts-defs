@@ -722,8 +722,6 @@ public class TsElement {
    * Whether one of {@code others} that is emitted overrides {@code method}, as members of this
    * type. One that isn't emitted leaves {@code method} to stand for it.
    */
-  // TODO(#133) GWT also exports an override of an exported method; once that is modeled here,
-  //  such an override is emitted and replaces the wider method.
   public boolean isOverriddenByAny(ExecutableElement method, Collection<ExecutableElement> others) {
     return others.stream()
         .anyMatch(
@@ -810,9 +808,29 @@ public class TsElement {
   }
 
   private boolean isExportableMethod() {
-    return ((isJsMethod() || isJsProperty()) || (isPublic() && parent().isJsType()))
+    return ((isJsMethod() || isJsProperty())
+            || (isPublic() && parent().isJsType())
+            || overridesExportedMethod())
         && !disallowedStatic()
         && !isTsIgnored();
+  }
+
+  /**
+   * JsInterop exports an override of an exported method, with or without its own annotation, under
+   * the overridden method's JS name. Only overrides of plain methods with the same name are
+   * emitted: for property accessors and renamed methods the inherited declaration already has the
+   * JS name, and this override's own name would be wrong.
+   */
+  private boolean overridesExportedMethod() {
+    return !isStatic()
+        && element.getEnclosingElement() instanceof TypeElement
+        && parent().overriddenMethods((ExecutableElement) element).stream()
+            .map(superMethod -> TsElement.of(superMethod, env))
+            .anyMatch(
+                superMethod ->
+                    superMethod.isExportable()
+                        && !superMethod.isJsProperty()
+                        && superMethod.getName().equals(getName()));
   }
 
   private boolean isExportableField() {
