@@ -501,13 +501,7 @@ public class JavaToTsTypeConverter {
       if (TsElement.of(declaredType, env).isTsTypeRef()) {
         return getTsTypeReference(declaredType);
       } else if (!TsElement.of(declaredType, env).isPublic()) {
-        env.messager()
-            .printMessage(
-                Diagnostic.Kind.ERROR,
-                "A none public type ["
-                    + declaredType.asElement().getSimpleName()
-                    + "] is referenced but it will not be exported.",
-                element);
+        reportNonPublic(declaredType);
       } else {
         TsElement typeElement = new TsElement(declaredType.asElement(), env);
         if (typeElement.isJsType() || typeElement.isJsFunction() || typeElement.hasJsMembers()) {
@@ -535,8 +529,9 @@ public class JavaToTsTypeConverter {
     return TsType.of(name, nameSpace);
   }
 
-  private TsType getTsTypeReference(DeclaredType declaredType) {
-    if (!TsElement.of(declaredType, env).isPublic()) {
+  /** Once per element, however often it is emitted, e.g. into each subtype inheriting it. */
+  private void reportNonPublic(DeclaredType declaredType) {
+    if (env.firstReport(element, declaredType.asElement())) {
       env.messager()
           .printMessage(
               Diagnostic.Kind.ERROR,
@@ -544,6 +539,12 @@ public class JavaToTsTypeConverter {
                   + declaredType.asElement().getSimpleName()
                   + "] is referenced but it will not be exported.",
               element);
+    }
+  }
+
+  private TsType getTsTypeReference(DeclaredType declaredType) {
+    if (!TsElement.of(declaredType, env).isPublic()) {
+      reportNonPublic(declaredType);
     }
 
     Optional<TypeMirror> typeRef =
