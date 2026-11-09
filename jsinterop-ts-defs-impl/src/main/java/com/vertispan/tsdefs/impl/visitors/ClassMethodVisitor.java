@@ -162,7 +162,20 @@ public class ClassMethodVisitor<T> extends TsElement {
     }
     TsElement declaring = TsElement.of(method.getEnclosingElement(), env);
     DeclaredType declaringType = (DeclaredType) declaring.element().asType();
-    for (ExecutableElement superMethod : declaring.overriddenMethods(method)) {
+    List<ExecutableElement> overriddenMethods = declaring.overriddenMethods(method);
+    // Nothing is lost when a supertype in between already emits the narrower type.
+    if (overriddenMethods.stream()
+        .anyMatch(
+            superMethod ->
+                TsElement.of(superMethod, env).isExportable()
+                    && env.types()
+                        .isSameType(
+                            method.getReturnType(),
+                            ((ExecutableType) env.types().asMemberOf(declaringType, superMethod))
+                                .getReturnType()))) {
+      return;
+    }
+    for (ExecutableElement superMethod : overriddenMethods) {
       TsElement overridden = TsElement.of(superMethod, env);
       if (!overridden.isExportable() || overridden.getName().equals(getName())) {
         continue;
