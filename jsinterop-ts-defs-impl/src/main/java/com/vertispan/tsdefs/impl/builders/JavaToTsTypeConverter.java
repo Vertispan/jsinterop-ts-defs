@@ -51,6 +51,7 @@ public class JavaToTsTypeConverter {
   private final Element element;
   private final String emissionContext;
   private final Map<Element, TsType> typeArguments;
+  private final Element rawTypeElement;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
     this(element, "", Collections.emptyMap(), env);
@@ -89,10 +90,25 @@ public class JavaToTsTypeConverter {
       String emissionContext,
       Map<Element, TsType> typeArguments,
       HasProcessorEnv env) {
+    this(element, emissionContext, typeArguments, element, env);
+  }
+
+  /**
+   * @param rawTypeElement where a raw type is reported: where it is written, which for a
+   *     JsFunction's return type or a union member's type is that method rather than {@code
+   *     element}
+   */
+  private JavaToTsTypeConverter(
+      Element element,
+      String emissionContext,
+      Map<Element, TsType> typeArguments,
+      Element rawTypeElement,
+      HasProcessorEnv env) {
     this.env = env;
     this.element = element;
     this.emissionContext = emissionContext;
     this.typeArguments = typeArguments;
+    this.rawTypeElement = rawTypeElement;
   }
 
   private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
@@ -196,6 +212,9 @@ public class JavaToTsTypeConverter {
 
       if (ProcessorType.of(type, env).isAssignableFrom(JsPropertyMap.class)) {
         DeclaredType declaredType = (DeclaredType) type;
+        if (isRaw(declaredType)) {
+          return reportRawType(declaredType);
+        }
         // The index signature reads and writes, so every member counts as emitted.
         warnIfSuperWildcardIsProduced(declaredType, 0, member -> true);
         return TsTemplatedInlinedType.of(
@@ -203,12 +222,19 @@ public class JavaToTsTypeConverter {
       }
 
       if (ProcessorType.of(type, env).isJsFunction()) {
+        if (isRaw((DeclaredType) type)) {
+          return reportRawType((DeclaredType) type);
+        }
         return inlineJsFunctionType(type);
       }
 
       if (ProcessorType.of(type, env).isUnionType()) {
         if (TsElement.of(type, env).isExplicitUnionType()) {
           return getDeclaredType((DeclaredType) type, TsElement.of(type, env));
+        }
+        // Before expanding it: a raw union's member types are erased, and would be reported.
+        if (isRaw((DeclaredType) type)) {
+          return reportRawType((DeclaredType) type);
         }
         return unionType(type);
       }
@@ -228,6 +254,100 @@ public class JavaToTsTypeConverter {
         || componentTsType instanceof TsNullableType
         || componentTsType instanceof TsInlinedFunctionType
         || (componentTsType instanceof ArrayTsType && componentTsType.isTsReadOnly());
+  }
+
+  /** Whether {@code type} omits the type arguments its declaration requires. */
+  public static boolean isRaw(DeclaredType type) {
+    return type.getTypeArguments().isEmpty()
+        && !((TypeElement) type.asElement()).getTypeParameters().isEmpty();
+  }
+
+  /**
+   * Names where the raw type is written, {@code where} being the element it is reported on, since
+   * the diagnostic's position can be missing (javadoc on parameters, library classes). Suggests
+   * only arguments Java accepts in that position: {@code Any} when no type parameter is bounded, a
+   * wildcard when not in an extends or implements clause.
+   */
+  public static String rawTypeMessage(
+      DeclaredType type, Element where, boolean inSupertypeClause, HasProcessorEnv env) {
+    String name = typeName((TypeElement) type.asElement());
+    List<? extends TypeParameterElement> parameters =
+        ((TypeElement) type.asElement()).getTypeParameters();
+    List<String> examples = new ArrayList<>();
+    boolean bounded =
+        parameters.stream()
+            .flatMap(parameter -> parameter.getBounds().stream())
+            .anyMatch(bound -> !isSameType(bound, Object.class, env));
+    if (!bounded) {
+      examples.add(
+          name
+              + "<"
+              + String.join(", ", Collections.nCopies(parameters.size(), "Any"))
+              + "> (jsinterop.base.Any)");
+    }
+    if (!inSupertypeClause) {
+      examples.add(
+          name + "<" + String.join(", ", Collections.nCopies(parameters.size(), "?")) + ">");
+    }
+    return "Raw type "
+        + name
+        + " "
+        + location(where)
+        + " is not supported; give its type arguments"
+        + (examples.isEmpty() ? "" : ", e.g. " + String.join(" or ", examples))
+        + ".";
+  }
+
+  private static String location(Element where) {
+    if (where instanceof TypeElement) {
+      return "in the supertypes of " + typeName((TypeElement) where);
+    }
+    switch (where.getKind()) {
+      case PARAMETER:
+        return "in parameter "
+            + where.getSimpleName()
+            + " of "
+            + memberName(where.getEnclosingElement());
+      case TYPE_PARAMETER:
+        return "in the bound of type parameter "
+            + where.getSimpleName()
+            + " of "
+            + memberName(((TypeParameterElement) where).getGenericElement());
+      default:
+        return "in " + memberName(where);
+    }
+  }
+
+  private static String memberName(Element member) {
+    if (member instanceof TypeElement) {
+      return typeName((TypeElement) member);
+    }
+    String type = typeName((TypeElement) member.getEnclosingElement());
+    return ElementKind.CONSTRUCTOR.equals(member.getKind())
+        ? "the " + type + " constructor"
+        : type + "." + member.getSimpleName();
+  }
+
+  /** With enclosing types, as written in Java: Outer.Inner. */
+  private static String typeName(TypeElement type) {
+    String name = type.getSimpleName().toString();
+    for (Element enclosing = type.getEnclosingElement();
+        enclosing instanceof TypeElement;
+        enclosing = enclosing.getEnclosingElement()) {
+      name = enclosing.getSimpleName() + "." + name;
+    }
+    return name;
+  }
+
+  private TsType reportRawType(DeclaredType type) {
+    if (env.firstReport(rawTypeElement, type.asElement())) {
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              rawTypeMessage(type, rawTypeElement, false, env),
+              rawTypeElement);
+    }
+    return TsType.of("any");
   }
 
   /**
@@ -270,10 +390,13 @@ public class JavaToTsTypeConverter {
         .map(
             e -> {
               if (e.isMethod()) {
+                // A raw type in the member is reported on the member, where it is written.
                 return e.typeOrNullable(
-                    toTsType(
-                        ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
-                            .getReturnType()));
+                    new JavaToTsTypeConverter(
+                            this.element, emissionContext, typeArguments, e.element(), env)
+                        .toTsType(
+                            ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
+                                .getReturnType()));
               }
               return e.getType();
             })
@@ -313,7 +436,7 @@ public class JavaToTsTypeConverter {
                 new ParameterVisitor<TsInlinedFunctionType>(param, typeMapping, env).visit(tsType));
 
     tsType.setReturnType(
-        new JavaToTsTypeConverter(element, emissionContext, typeMapping, env)
+        new JavaToTsTypeConverter(element, emissionContext, typeMapping, executableElement, env)
             .toTsType(executableElement.getReturnType()));
     return tsType;
   }
@@ -347,6 +470,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType getDeclaredType(DeclaredType declaredType, TsElement typeElement) {
+    if (isRaw(declaredType)) {
+      return reportRawType(declaredType);
+    }
     boolean explicitUnion = typeElement.isExplicitUnionType();
     String name = explicitUnion ? typeElement.getExplicitUnionName() : typeElement.getName();
     String nameSpace =

@@ -60,6 +60,16 @@ public class TsDefaultValidationTest {
             + " one that does. TypeScript only allows defaults on trailing type parameters.");
   }
 
+  // A class literal can't carry type arguments; reported as such, not as a raw type.
+  @Test
+  public void genericDefaultFails() {
+    assertSingleError(
+        compile("GenericBox", "GenericDefault"),
+        "@TsDefault(errors.defaults.GenericBox) on type parameter T of"
+            + " errors.defaults.GenericDefault names a generic type, which a default can't give"
+            + " type arguments to.");
+  }
+
   @Test
   public void defaultOutsideBoundFails() {
     assertSingleError(

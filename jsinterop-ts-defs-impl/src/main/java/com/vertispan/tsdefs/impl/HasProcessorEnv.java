@@ -29,4 +29,13 @@ public interface HasProcessorEnv {
   LogWrapper messager();
 
   TsDoc getDocs(Element element);
+
+  /**
+   * Whether a diagnostic about {@code subject} on {@code element} is reported for the first time;
+   * false for every later call with the same pair, so one diagnostic per pair however often the
+   * element is emitted. The default reports every time.
+   */
+  default boolean firstReport(Element element, Element subject) {
+    return true;
+  }
 }

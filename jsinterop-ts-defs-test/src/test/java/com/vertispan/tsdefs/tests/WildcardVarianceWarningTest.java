@@ -126,6 +126,29 @@ public class WildcardVarianceWarningTest {
         .satisfies(d -> assertThat(d.getSource().getName()).endsWith("WildSuper.java"));
   }
 
+  // Walking through a skipped class up to a @TsInterface: the skipped class's clause holds it.
+  @Test
+  public void wildcardInSkippedClassClauseWarnsOnThatClass() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("Item", "Producer", "TsInterfaceBase", "WildMid", "WildLeaf")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/wildcards/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(result.warnings())
+        .filteredOn(d -> d.getMessage(null).startsWith("Wildcard ["))
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.getSource().getName()).endsWith("WildMid.java");
+              assertThat(d.getMessage(null)).contains(" in the supertypes of WildMid,");
+            });
+  }
+
   @Test
   public void jsFunctionReturnWarnsOnlyWhereTypeScriptReceivesIt() {
     Compilation result =
