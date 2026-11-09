@@ -120,6 +120,54 @@ public class InheritedTypeArgumentsTest {
     assertThat(body).contains("get():string");
   }
 
+  private static final JavaFileObject SRC3 =
+      JavaFileObjects.forSourceString(
+          "p.Src3",
+          "package p; @jsinterop.annotations.JsType public interface Src3<T> {"
+              + " T a(); T b(); void c(T t); }");
+
+  private static final JavaFileObject PRODUCER =
+      JavaFileObjects.forSourceString(
+          "p.Producer",
+          "package p; @jsinterop.annotations.JsType public interface Producer<T> { T make(); }");
+
+  // The clause and each of the three copied members convert the argument.
+  @Test
+  public void wildcardWarningOnClauseArgumentIsReportedOnce() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                SRC3,
+                PRODUCER,
+                JavaFileObjects.forSourceString(
+                    "p.S1",
+                    "package p; @jsinterop.annotations.JsType public abstract class S1"
+                        + " implements Src3<Producer<? super String>> {}"));
+
+    assertThat(result.warnings())
+        .filteredOn(d -> d.getMessage(null).startsWith("Wildcard ["))
+        .hasSize(1);
+  }
+
+  @Test
+  public void unsupportedLiteralOnClauseArgumentIsReportedOnce() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                SRC3,
+                JavaFileObjects.forSourceString(
+                    "p.S2",
+                    "package p; @jsinterop.annotations.JsType public abstract class S2"
+                        + " implements Src3<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\")"
+                        + " Object> {}"));
+
+    assertThat(result.errors())
+        .filteredOn(d -> d.getMessage(null).startsWith("@TsLiteral is not supported"))
+        .hasSize(1);
+  }
+
   private static String output(Compilation result) throws IOException {
     return result
         .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
