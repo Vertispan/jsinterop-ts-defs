@@ -145,6 +145,12 @@ public class DocletTest {
         .as("undocumented class override in NamedImpl")
         .contains("Returns the name, as declared on the super-interface.")
         .doesNotContain("@inheritDoc");
+    // As javadoc does: the superclass's docs before an interface's.
+    softly
+        .assertThat(declaration(definitions, "abstract class NamedMulti"))
+        .as("override of a superclass and an interface method in NamedMulti")
+        .contains("Returns the name, as documented on the superclass.")
+        .doesNotContain("as declared on the super-interface");
     softly
         .assertThat(declaration(definitions, "interface Qux"))
         .as("override of an undocumented method in Qux has nothing to inherit")
