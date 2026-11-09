@@ -37,6 +37,11 @@ public interface HasProcessorEnv {
    * false for every later call with the same pair, so one diagnostic per pair however often the
    * element is emitted. The default reports every time.
    */
+  // TODO(#138) The pair has no notion of which diagnostic it is, so different ones collide and the
+  //  later is lost: a wildcard warning hides a diamond error on the same type and parameter, an
+  //  unsupported @TsLiteral hides a non-public type, two different wildcards or literals in one
+  //  element report once. Key on the element and the full message instead; that also replaces
+  //  JavaToTsTypeConverter.clauseArguments, which nested converters don't inherit.
   default boolean firstReport(Element element, Element subject) {
     return true;
   }
