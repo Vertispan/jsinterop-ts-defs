@@ -716,6 +716,7 @@ public class TsElement {
     TypeMirror returnType = ((ExecutableElement) element).getReturnType();
     HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
     boolean unnamed = "unknown".equals(TsElement.of(element, quiet).getType().emit(""));
+    boolean excludedByObject = unnamed || isExcludedByObject(returnType);
     return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
         .filter(overridden -> TsElement.of(overridden, env).isExportable())
         .filter(overridden -> !TsElement.of(overridden.getEnclosingElement(), env).isTsIgnored())
@@ -725,15 +726,37 @@ public class TsElement {
                   ((ExecutableType) env.types().asMemberOf(declaringType, overridden))
                       .getReturnType();
               // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
-              if (JavaToTsTypeConverter.isSameType(inherited, Object.class, env)
-                  && !JavaToTsTypeConverter.isSameType(returnType, Object.class, env)) {
-                return true;
+              if (JavaToTsTypeConverter.isSameType(inherited, Object.class, env)) {
+                return excludedByObject;
               }
               return unnamed
                   && !"unknown"
                       .equals(TsElement.of(overridden, declaring, quiet).getType().emit(""));
             })
         .findFirst();
+  }
+
+  /**
+   * Whether this method's {@code returnType} emits as a type TypeScript's {@code object} excludes:
+   * a primitive or its box, a string, a nullable, a literal, or a union, which may hold those.
+   */
+  private boolean isExcludedByObject(TypeMirror returnType) {
+    if (returnType.getKind().isPrimitive()
+        || JavaToTsTypeConverter.isSameType(returnType, String.class, env)
+        || isJsNullable()
+        || ProcessorType.of(returnType, env).isUnionType()
+        || returnType.getAnnotationMirrors().stream()
+            .anyMatch(
+                a ->
+                    a.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral"))) {
+      return true;
+    }
+    try {
+      env.types().unboxedType(returnType);
+      return true;
+    } catch (IllegalArgumentException notABox) {
+      return false;
+    }
   }
 
   /** A {@code @TsIgnore} or {@code @TsInterface} superclass, whose members subclasses declare. */
