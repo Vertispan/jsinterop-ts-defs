@@ -46,13 +46,16 @@ public class UnmodeledOverrideWarningTest {
     assertThat(
             result.warnings().stream()
                 .map(d -> d.getMessage(null))
-                .filter(message -> message.contains("TypeScript sees")))
+                .filter(message -> message.contains("to emit the narrower type")))
         .containsExactlyInAnyOrder(
-            "NarrowCircle.getSize() is exported as the property size and returns java.lang.Double,"
-                + " but TypeScript sees size from Shape; annotate it with"
-                + " @JsProperty(name = \"size\") to emit the narrower type.",
-            "NarrowCircle.text() is exported as describe() and returns java.lang.String, but"
-                + " TypeScript sees describe() from Shape; annotate it with"
+            "NarrowCircle.getSize() narrows the return type of Shape.getSize() to"
+                + " java.lang.Double, but is exported under Shape.getSize()'s JS name, which isn't"
+                + " modeled, so the declaration keeps Shape.getSize()'s type; annotate"
+                + " NarrowCircle.getSize() with @JsProperty(name = \"size\") to emit the narrower"
+                + " type.",
+            "NarrowCircle.text() narrows the return type of Shape.text() to java.lang.String,"
+                + " but is exported under Shape.text()'s JS name, which isn't modeled, so the"
+                + " declaration keeps Shape.text()'s type; annotate NarrowCircle.text() with"
                 + " @JsMethod(name = \"describe\") to emit the narrower type.");
   }
 }

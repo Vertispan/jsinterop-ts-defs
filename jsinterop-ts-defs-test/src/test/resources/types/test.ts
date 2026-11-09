@@ -1474,3 +1474,7 @@ expectType<() => OverridesFoo>()(unmappedNarrowingImpl.get);
 import StringValue = com.vertispan.tsdefs.tests.overrides.StringValue;
 declare const stringValue: StringValue;
 expectType<() => object>()(stringValue.value);
+// An unannotated override of an unnamed property accessor keeps the property's name.
+import SizedBar = com.vertispan.tsdefs.tests.overrides.SizedBar;
+declare const sizedBar: SizedBar;
+expectType<OverridesBar>()(sizedBar.size);
