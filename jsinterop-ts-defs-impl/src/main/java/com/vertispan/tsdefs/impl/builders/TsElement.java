@@ -698,12 +698,12 @@ public class TsElement {
                     && !TsElement.of(other, env).narrowsBeyondTypeScript());
   }
 
-  /** See {@link #widerThanTypeScriptAllows()}. */
   /**
    * Whether this method overrides an exported one, including one a @TsIgnore type's subtypes
-   * declare, whose return type TypeScript may not narrow to this one's: a type it has no name for,
-   * or anything but a known object type where the overridden one is emitted as object. A copy of
-   * the overridden method is emitted instead of a copy of this one.
+   * declare, whose return type TypeScript may not replace with this one's: a type it has no name
+   * for, anything but a known object type where the overridden one is emitted as object, or a
+   * nullable type where the overridden one isn't. A copy of the overridden method is emitted next
+   * to a copy of this one, as an overload.
    */
   public boolean narrowsBeyondTypeScript() {
     if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
@@ -722,8 +722,29 @@ public class TsElement {
               if ("object".equals(inherited)) {
                 return unnamed || !isWithinObject(returnType);
               }
+              if (isJsNullable() && !TsElement.of(overridden, env).isJsNullable()) {
+                return true;
+              }
               return unnamed && !"unknown".equals(inherited);
             });
+  }
+
+  /** Whether this method overrides one of {@code others} only to make its return type nullable. */
+  public boolean onlyAddsNullabilityTo(Collection<ExecutableElement> others) {
+    if (!isJsNullable() || !(element.getEnclosingElement() instanceof TypeElement)) {
+      return false;
+    }
+    TypeElement declaring = (TypeElement) element.getEnclosingElement();
+    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
+    return others.stream()
+        .anyMatch(
+            other ->
+                !other.equals(element)
+                    && env.elements().overrides((ExecutableElement) element, other, declaring)
+                    && !TsElement.of(other, env).isJsNullable()
+                    && TsElement.of(element, quiet)
+                        .getType()
+                        .equals(TsElement.of(other, declaring, quiet).getType()));
   }
 
   /**

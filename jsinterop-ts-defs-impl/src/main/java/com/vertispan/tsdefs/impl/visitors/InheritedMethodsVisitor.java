@@ -19,7 +19,9 @@ import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.HasMembers;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -38,8 +40,15 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     // overload, and callers may get its wider type.
     Set<ExecutableElement> overriders = new LinkedHashSet<>(nonOverriddenMethods);
     overriders.addAll(mergedSuperClassMethods());
-    nonOverriddenMethods.stream()
-        .filter(method -> !isOverriddenByAny(method, overriders))
+    List<ExecutableElement> copied =
+        nonOverriddenMethods.stream()
+            .filter(method -> !isOverriddenByAny(method, overriders))
+            .collect(Collectors.toList());
+    // An override that only makes the return type nullable can't be an overload next to the method
+    // it overrides (TsType equality ignores nullability), so that one is copied alone, as the
+    // emitted supertypes declare it.
+    copied.stream()
+        .filter(method -> !TsElement.of(method, env).onlyAddsNullabilityTo(copied))
         .forEach(
             executableElement -> {
               new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
