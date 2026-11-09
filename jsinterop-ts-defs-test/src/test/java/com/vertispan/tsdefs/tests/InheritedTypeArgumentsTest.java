@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import org.junit.Test;
@@ -193,6 +194,98 @@ public class InheritedTypeArgumentsTest {
     assertThat(result.errors())
         .filteredOn(d -> d.getMessage(null).startsWith("@TsLiteral is not supported"))
         .hasSize(1);
+  }
+
+  private static Compilation compileSources(String... nameAndSource) {
+    List<JavaFileObject> sources = new ArrayList<>();
+    for (int i = 0; i < nameAndSource.length; i += 2) {
+      sources.add(
+          JavaFileObjects.forSourceString(
+              "p." + nameAndSource[i], "package p; " + nameAndSource[i + 1]));
+    }
+    return Compiler.javac().withProcessors(new JsTypesProcessor()).compile(sources);
+  }
+
+  private static List<String> messages(List<? extends Diagnostic<?>> diagnostics) {
+    return diagnostics.stream().map(d -> d.getMessage(null)).collect(Collectors.toList());
+  }
+
+  // The clause's wildcard warning is about Src's T on D, as is the diamond error.
+  @Test
+  public void diamondErrorIsReportedBesideAWildcardWarning() {
+    Compilation result =
+        compileSources(
+            "Src", "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
+            "NB",
+                "@jsinterop.annotations.JsType public interface NB"
+                    + " extends Src<@jsinterop.annotations.JsNullable String> {}",
+            "PB", "@jsinterop.annotations.JsType public interface PB extends Src<String> {}",
+            "Other", "@jsinterop.annotations.JsType public interface Other<T> { T other(); }",
+            "D",
+                "@jsinterop.annotations.JsType public abstract class D"
+                    + " implements NB, PB, Other<Src<? super String>> {}");
+
+    assertThat(messages(result.errors())).anyMatch(m -> m.startsWith("Type parameter T of Src"));
+    assertThat(messages(result.warnings())).anyMatch(m -> m.startsWith("Wildcard ["));
+  }
+
+  @Test
+  public void unsupportedLiteralAndNonPublicTypeAreBothReported() {
+    Compilation result =
+        compileSources(
+            "Box", "@jsinterop.annotations.JsType public interface Box<T> { T get(); }",
+            "Hidden", "class Hidden {}",
+            "M",
+                "@jsinterop.annotations.JsType public class M { public void m("
+                    + "Box<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\") Hidden> b) {} }");
+
+    assertThat(messages(result.errors()))
+        .anyMatch(m -> m.startsWith("@TsLiteral is not supported"))
+        .anyMatch(m -> m.contains("[Hidden] is referenced"));
+  }
+
+  @Test
+  public void differentWildcardsInOneClauseAreEachReported() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                PRODUCER,
+                JavaFileObjects.forSourceString(
+                    "p.Two",
+                    "package p; @jsinterop.annotations.JsType public interface Two<A, B> {"
+                        + " A a(); B b(); }"),
+                JavaFileObjects.forSourceString(
+                    "p.S",
+                    "package p; @jsinterop.annotations.JsType public abstract class S"
+                        + " implements Two<Producer<? super String>, Producer<? super Integer>>"
+                        + " {}"));
+
+    assertThat(messages(result.warnings())).filteredOn(m -> m.startsWith("Wildcard [")).hasSize(2);
+  }
+
+  // The JsFunction's return type is converted again for each copied member using the argument.
+  @Test
+  public void wildcardInAJsFunctionClauseArgumentIsReportedOnce() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                SRC3,
+                JavaFileObjects.forSourceString(
+                    "p.Box",
+                    "package p; @jsinterop.annotations.JsType public interface Box<T> {"
+                        + " T get(); }"),
+                JavaFileObjects.forSourceString(
+                    "p.WildFn",
+                    "package p; @jsinterop.annotations.JsFunction public interface WildFn {"
+                        + " Box<? super String> call(); }"),
+                JavaFileObjects.forSourceString(
+                    "p.S1",
+                    "package p; @jsinterop.annotations.JsType public abstract class S1"
+                        + " implements Src3<WildFn> {}"));
+
+    assertThat(messages(result.warnings())).filteredOn(m -> m.startsWith("Wildcard [")).hasSize(1);
   }
 
   private static String output(Compilation result) throws IOException {
