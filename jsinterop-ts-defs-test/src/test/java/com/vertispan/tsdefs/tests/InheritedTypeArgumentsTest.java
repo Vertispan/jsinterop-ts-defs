@@ -234,6 +234,26 @@ public class InheritedTypeArgumentsTest {
     assertThat(result.errors()).isEmpty();
   }
 
+  // JsPropertyMap's members are overlays, so its T never reaches TypeScript.
+  @Test
+  public void differingArgumentsMentionedOnlyByOverlaysAreNotAnError() {
+    Compilation result =
+        compileSources(
+            "MapA",
+                "@jsinterop.annotations.JsType(isNative = true, namespace ="
+                    + " jsinterop.annotations.JsPackage.GLOBAL, name = \"Object\") public interface"
+                    + " MapA extends jsinterop.base.JsPropertyMap<jsinterop.base.Any> {}",
+            "MapB",
+                "@jsinterop.annotations.JsType(isNative = true, namespace ="
+                    + " jsinterop.annotations.JsPackage.GLOBAL, name = \"Object\") public interface"
+                    + " MapB extends jsinterop.base.JsPropertyMap<Object> {}",
+            "Options",
+                "@jsinterop.annotations.JsType public interface Options extends MapA, MapB {"
+                    + " @jsinterop.annotations.JsProperty String getName(); }");
+
+    assertThat(result.errors()).isEmpty();
+  }
+
   // any and any|null|undefined are the same type in TypeScript.
   @Test
   public void argumentsTheSameInTypeScriptAreNotAnError() {
