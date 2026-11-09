@@ -1466,3 +1466,8 @@ declare const plainFooHolder: PlainFooHolder;
 expectType<() => OverridesFoo>()(plainFooHolder.shape);
 declare const unmappedNarrowing: UnmappedNarrowing;
 expectType<() => OverridesFoo>()(unmappedNarrowing.get);
+// Object is emitted as object, which excludes string. TODO(#144) with Object as unknown, the
+// override narrows to string.
+import StringValue = com.vertispan.tsdefs.tests.overrides.StringValue;
+declare const stringValue: StringValue;
+expectType<() => object>()(stringValue.value);
