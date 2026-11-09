@@ -531,15 +531,22 @@ public class TsElement {
    * where {@code @TsLiteral} is used as a type-use annotation on type arguments, e.g. {@code
    * Supertype<@TsLiteral("hello") String>}.
    */
+  /**
+   * @param where the element written with {@code typeMirror}; an unsupported literal is reported
+   *     once per element and type, however often it is converted
+   */
   public static Optional<TsType> getLiteralTypeFromMirror(
-      TypeMirror typeMirror, HasProcessorEnv env) {
+      TypeMirror typeMirror, Element where, HasProcessorEnv env) {
     for (AnnotationMirror am : typeMirror.getAnnotationMirrors()) {
       if (am.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral")) {
         if (!isSupportedLiteralType(typeMirror, env)) {
-          env.messager()
-              .printMessage(
-                  Diagnostic.Kind.ERROR,
-                  String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror));
+          Element literalType = env.types().asElement(typeMirror);
+          if (literalType == null || env.firstReport(where, literalType)) {
+            env.messager()
+                .printMessage(
+                    Diagnostic.Kind.ERROR,
+                    String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror));
+          }
           return Optional.empty();
         }
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :

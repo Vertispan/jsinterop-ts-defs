@@ -53,6 +53,11 @@ public class JavaToTsTypeConverter {
   private final Map<Element, TsType> typeArguments;
   private final InheritedTypeArguments inherited;
   private final Element rawTypeElement;
+  /**
+   * Converts a supertype clause's arguments, which each copied member using them converts again
+   * with the same element and context, so its warnings are reported once.
+   */
+  private boolean clauseArguments;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
     this(element, "", Collections.emptyMap(), env);
@@ -115,13 +120,16 @@ public class JavaToTsTypeConverter {
   /** @param inherited what reached {@code subtype}, when it is itself a supertype */
   static JavaToTsTypeConverter forSupertypesOf(
       TypeElement subtype, InheritedTypeArguments inherited, HasProcessorEnv env) {
-    return new JavaToTsTypeConverter(
-        subtype,
-        " in the supertypes of " + subtype.getSimpleName(),
-        Collections.emptyMap(),
-        inherited,
-        subtype,
-        env);
+    JavaToTsTypeConverter converter =
+        new JavaToTsTypeConverter(
+            subtype,
+            " in the supertypes of " + subtype.getSimpleName(),
+            Collections.emptyMap(),
+            inherited,
+            subtype,
+            env);
+    converter.clauseArguments = true;
+    return converter;
   }
 
   /**
@@ -631,6 +639,7 @@ public class JavaToTsTypeConverter {
             member ->
                 mentions(declaredProducedType(member), producedType(generic, member), parameter))
         .findFirst()
+        .filter(member -> !clauseArguments || env.firstReport(element, parameters.get(index)))
         .ifPresent(
             member ->
                 env.messager()
@@ -734,7 +743,7 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType typeArgument(TypeMirror typeArgument) {
-    Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeArgument, env);
+    Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeArgument, element, env);
     if (literalType.isPresent()) {
       return literalType.get();
     }
