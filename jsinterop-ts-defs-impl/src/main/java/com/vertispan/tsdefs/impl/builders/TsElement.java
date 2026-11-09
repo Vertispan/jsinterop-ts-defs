@@ -534,19 +534,16 @@ public class TsElement {
    */
   /**
    * @param where the element written with {@code typeMirror}; an unsupported literal is reported
-   *     once per element and type, however often it is converted
+   *     once per element, however often it is converted
    */
   public static Optional<TsType> getLiteralTypeFromMirror(
       TypeMirror typeMirror, Element where, HasProcessorEnv env) {
     for (AnnotationMirror am : typeMirror.getAnnotationMirrors()) {
       if (am.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral")) {
         if (!isSupportedLiteralType(typeMirror, env)) {
-          Element literalType = env.types().asElement(typeMirror);
-          if (literalType == null || env.firstReport(where, literalType)) {
-            env.messager()
-                .printMessage(
-                    Diagnostic.Kind.ERROR,
-                    String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror));
+          String message = String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror);
+          if (env.firstReport(where, message)) {
+            env.messager().printMessage(Diagnostic.Kind.ERROR, message);
           }
           return Optional.empty();
         }

@@ -33,16 +33,12 @@ public interface HasProcessorEnv {
   TsDoc getDocs(Element element);
 
   /**
-   * Whether a diagnostic about {@code subject} on {@code element} is reported for the first time;
-   * false for every later call with the same pair, so one diagnostic per pair however often the
-   * element is emitted. The default reports every time.
+   * Whether {@code message} on {@code element} is reported for the first time; false for every
+   * later call with the same pair, so a diagnostic is reported once however often the element is
+   * emitted, and different diagnostics on one element are each reported. The default reports every
+   * time.
    */
-  // TODO(#138) The pair has no notion of which diagnostic it is, so different ones collide and the
-  //  later is lost: a wildcard warning hides a diamond error on the same type and parameter, an
-  //  unsupported @TsLiteral hides a non-public type, two different wildcards or literals in one
-  //  element report once. Key on the element and the full message instead; that also replaces
-  //  JavaToTsTypeConverter.clauseArguments, which nested converters don't inherit.
-  default boolean firstReport(Element element, Element subject) {
+  default boolean firstReport(Element element, String message) {
     return true;
   }
 

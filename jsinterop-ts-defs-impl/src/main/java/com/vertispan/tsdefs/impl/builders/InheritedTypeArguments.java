@@ -157,28 +157,25 @@ public class InheritedTypeArguments {
         i++) {
       meeting = first.path.get(i);
     }
-    if (!env.firstReport(meeting, typeParameter)) {
-      return;
+    String message =
+        "Type parameter "
+            + typeParameter.getSimpleName()
+            + " of "
+            + typeParameter.getEnclosingElement().getSimpleName()
+            + " is passed ["
+            + first.emitted
+            + "] through "
+            + first.through().getSimpleName()
+            + " but ["
+            + other.emitted
+            + "] through "
+            + other.through().getSimpleName()
+            + " in "
+            + meeting.getSimpleName()
+            + "; TypeScript has no one type for both. Make the type arguments agree.";
+    if (env.firstReport(meeting, message)) {
+      env.messager().printMessage(Diagnostic.Kind.ERROR, message, meeting);
     }
-    env.messager()
-        .printMessage(
-            Diagnostic.Kind.ERROR,
-            "Type parameter "
-                + typeParameter.getSimpleName()
-                + " of "
-                + typeParameter.getEnclosingElement().getSimpleName()
-                + " is passed ["
-                + first.emitted
-                + "] through "
-                + first.through().getSimpleName()
-                + " but ["
-                + other.emitted
-                + "] through "
-                + other.through().getSimpleName()
-                + " in "
-                + meeting.getSimpleName()
-                + "; TypeScript has no one type for both. Make the type arguments agree.",
-            meeting);
   }
 
   /**

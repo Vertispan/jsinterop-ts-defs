@@ -81,12 +81,9 @@ public class TypeArgumentsVisitor<T> extends TsElement {
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
     if (subtype != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
-      if (env.firstReport(subtype, classDeclaredType.asElement())) {
-        env.messager()
-            .printMessage(
-                Diagnostic.Kind.ERROR,
-                JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, subtype, true, env),
-                subtype);
+      String message = JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, subtype, true, env);
+      if (env.firstReport(subtype, message)) {
+        env.messager().printMessage(Diagnostic.Kind.ERROR, message, subtype);
       }
       return;
     }
@@ -119,12 +116,9 @@ public class TypeArgumentsVisitor<T> extends TsElement {
       TypeElement named = (TypeElement) clause.asElement();
       TsElement tsNamed = TsElement.of(named, env);
       if (JavaToTsTypeConverter.isRaw(clause)) {
-        if (reachesOutput(named, env) && env.firstReport(type, named)) {
-          env.messager()
-              .printMessage(
-                  Diagnostic.Kind.ERROR,
-                  JavaToTsTypeConverter.rawTypeMessage(clause, type, true, env),
-                  type);
+        String message = JavaToTsTypeConverter.rawTypeMessage(clause, type, true, env);
+        if (reachesOutput(named, env) && env.firstReport(type, message)) {
+          env.messager().printMessage(Diagnostic.Kind.ERROR, message, type);
         }
       } else if (tsNamed.isTsIgnored() || !isEmittedJsType(named)) {
         reportRawHiddenSupertypes(named, env);
