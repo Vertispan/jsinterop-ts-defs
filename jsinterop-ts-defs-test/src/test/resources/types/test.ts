@@ -1382,6 +1382,11 @@ import NarrowSub = com.vertispan.tsdefs.tests.overrides.NarrowSub;
 declare const narrowSub: NarrowSub;
 expectType<() => OverridesBar>()(narrowSub.dget);
 
+// Of two merged ignored superclasses, the subclass's override wins.
+import NarrowMerged = com.vertispan.tsdefs.tests.overrides.NarrowMerged;
+declare const narrowMerged: NarrowMerged;
+expectType<() => OverridesBar>()(narrowMerged.pick);
+
 // A class implementing a narrowing interface gets the narrower methods.
 import NarrowSourceImpl = com.vertispan.tsdefs.tests.overrides.NarrowSourceImpl;
 declare const narrowSourceImpl: NarrowSourceImpl;
