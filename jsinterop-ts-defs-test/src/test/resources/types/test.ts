@@ -1356,14 +1356,6 @@ expectType<() => Array<string | null | undefined>>()(nullableArrays.all);
 declare const unionArrayFields: UnionArrayFields;
 expectType<Array<"one" | "two" | Array<string>>>()(unionArrayFields.items);
 
-// A type parameter reached through two paths with different arguments satisfies both.
-import DiamondImpl = com.vertispan.tsdefs.tests.overrides.DiamondImpl;
-import IgnoredDiamondImpl = com.vertispan.tsdefs.tests.overrides.IgnoredDiamondImpl;
-declare const diamondImpl: DiamondImpl;
-expectType<() => string>()(diamondImpl.get);
-declare const ignoredDiamondImpl: IgnoredDiamondImpl;
-expectType<() => string>()(ignoredDiamondImpl.get);
-
 // Arguments are substituted through more than one level of supertypes.
 import ChainImpl = com.vertispan.tsdefs.tests.overrides.ChainImpl;
 declare const chainImpl: ChainImpl;

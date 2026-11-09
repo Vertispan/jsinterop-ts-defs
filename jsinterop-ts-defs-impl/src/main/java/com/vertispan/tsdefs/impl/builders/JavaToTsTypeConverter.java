@@ -325,7 +325,6 @@ public class JavaToTsTypeConverter {
     return ProcessorType.of(component, env).isUnionType()
         || componentTsType instanceof TsUnionType
         || componentTsType instanceof TsNullableType
-        || componentTsType instanceof TsIntersectionType
         || componentTsType instanceof TsInlinedFunctionType
         || (componentTsType instanceof ArrayTsType && componentTsType.isTsReadOnly());
   }

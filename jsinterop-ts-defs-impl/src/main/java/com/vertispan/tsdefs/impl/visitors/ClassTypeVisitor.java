@@ -18,6 +18,7 @@ package com.vertispan.tsdefs.impl.visitors;
 import static java.util.stream.Collectors.groupingBy;
 
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
+import com.vertispan.tsdefs.impl.builders.InheritedTypeArguments;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsClass;
 import com.vertispan.tsdefs.impl.model.TsModifier;
@@ -51,6 +52,7 @@ public class ClassTypeVisitor extends TsElement {
       getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
       TypeArgumentsVisitor.reportRawHiddenSupertypes((TypeElement) element, env);
+      InheritedTypeArguments.of((TypeElement) element, env).reportConflicts(env);
 
       element.getEnclosedElements().stream()
           .map(e -> TsElement.of(e, env))

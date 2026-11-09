@@ -16,7 +16,6 @@
 package com.vertispan.tsdefs.impl.builders;
 
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
-import com.vertispan.tsdefs.impl.model.TsIntersectionType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +26,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -115,30 +113,42 @@ public class InheritedTypeArguments {
     }
   }
 
-  /**
-   * {@code typeParameter} as passed down to the subtype, or empty if it is not passed. Arguments
-   * that differ through different paths, e.g. only in nullability, are emitted as their
-   * intersection, with a warning where the paths meet.
-   */
-  Optional<TsType> lookup(Element typeParameter, HasProcessorEnv env) {
+  private Map<Element, List<Binding>> bindings() {
     if (bindings == null) {
       bindings = walk.get();
       walk = null;
     }
-    List<Binding> passed = bindings.get(typeParameter);
+    return bindings;
+  }
+
+  /**
+   * {@code typeParameter} as passed down to the subtype, or empty if it is not passed. Of arguments
+   * that differ through different paths, the first; {@link #reportConflicts} reports them.
+   */
+  Optional<TsType> lookup(Element typeParameter, HasProcessorEnv env) {
+    List<Binding> passed = bindings().get(typeParameter);
     if (passed == null || passed.isEmpty()) {
       return Optional.empty();
     }
-    if (passed.size() == 1) {
-      return Optional.of(passed.get(0).convert(env));
-    }
-    warnConflict(typeParameter, passed.get(0), passed.get(1), env);
-    return Optional.of(
-        TsIntersectionType.of(
-            passed.stream().map(binding -> binding.convert(env)).collect(Collectors.toList())));
+    return Optional.of(passed.get(0).convert(env));
   }
 
-  private static void warnConflict(
+  /**
+   * Reports each type parameter reached with arguments that differ in TypeScript, e.g. only in
+   * nullability, as TypeScript has no one type for both. Once, on the type where the paths meet,
+   * whether or not an emitted member uses the parameter.
+   */
+  public void reportConflicts(HasProcessorEnv env) {
+    bindings()
+        .forEach(
+            (typeParameter, passed) -> {
+              if (passed.size() > 1) {
+                reportConflict(typeParameter, passed.get(0), passed.get(1), env);
+              }
+            });
+  }
+
+  private static void reportConflict(
       Element typeParameter, Binding first, Binding other, HasProcessorEnv env) {
     TypeElement meeting = first.path.get(0);
     for (int i = 0;
@@ -152,22 +162,22 @@ public class InheritedTypeArguments {
     }
     env.messager()
         .printMessage(
-            Diagnostic.Kind.WARNING,
+            Diagnostic.Kind.ERROR,
             "Type parameter "
                 + typeParameter.getSimpleName()
                 + " of "
                 + typeParameter.getEnclosingElement().getSimpleName()
-                + " is emitted as ["
+                + " is passed ["
                 + first.emitted
                 + "] through "
                 + first.through().getSimpleName()
-                + " but as ["
+                + " but ["
                 + other.emitted
                 + "] through "
                 + other.through().getSimpleName()
                 + " in "
                 + meeting.getSimpleName()
-                + "; it is emitted as their intersection.",
+                + "; TypeScript has no one type for both. Make the type arguments agree.",
             meeting);
   }
 
