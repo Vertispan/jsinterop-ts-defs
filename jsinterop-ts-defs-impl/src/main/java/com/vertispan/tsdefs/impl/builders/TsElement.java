@@ -643,6 +643,16 @@ public class TsElement {
     return overridesOneOf(method, superMethods);
   }
 
+  /** The supertype methods that {@code method}, declared in this type, overrides. */
+  public List<ExecutableElement> overriddenMethods(ExecutableElement method) {
+    List<ExecutableElement> superMethods = superMethods();
+    superMethods.addAll(allSuperInterfacesMethods());
+    return superMethods.stream()
+        .filter(superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element))
+        .distinct()
+        .collect(Collectors.toList());
+  }
+
   private boolean overridesOneOf(ExecutableElement method, List<ExecutableElement> superMethods) {
     return superMethods.stream()
         .anyMatch(
