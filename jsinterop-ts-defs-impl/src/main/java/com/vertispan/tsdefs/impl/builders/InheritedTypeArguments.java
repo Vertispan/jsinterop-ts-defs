@@ -126,11 +126,17 @@ public class InheritedTypeArguments {
   /** Whether {@code type}'s members or supertypes are emitted, in it or in its subtypes. */
   private static boolean reachesOutput(TypeElement type, HasProcessorEnv env) {
     TsElement tsElement = TsElement.of(type, env);
+    // A class's interfaces aren't carried into its subclasses' declarations; an interface's are.
     return tsElement.isJsType()
         || tsElement.isTsInterface()
         || tsElement.hasJsMembers()
         || supertypeClauses(type).stream()
+            .filter(clause -> type.getKind().isInterface() || isSuperclass(type, clause))
             .anyMatch(clause -> reachesOutput((TypeElement) clause.asElement(), env));
+  }
+
+  private static boolean isSuperclass(TypeElement type, DeclaredType clause) {
+    return clause.asElement().equals(((DeclaredType) type.getSuperclass()).asElement());
   }
 
   /**
