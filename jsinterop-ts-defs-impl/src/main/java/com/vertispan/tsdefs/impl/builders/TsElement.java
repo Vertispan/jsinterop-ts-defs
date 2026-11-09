@@ -703,9 +703,10 @@ public class TsElement {
   }
 
   /**
-   * A method TypeScript sees that this one overrides, with a return type TypeScript can't narrow to
-   * this one's: to a type it has no name for, or from Object, emitted as object, which excludes
-   * primitives. That method is emitted in this one's place.
+   * An exported method this one overrides, including one a @TsIgnore type's subtypes declare, with
+   * a return type TypeScript can't narrow to this one's: to a type it has no name for, or from
+   * Object, emitted as object, which excludes primitives. That method is emitted in this one's
+   * place.
    */
   public Optional<ExecutableElement> widerThanTypeScriptAllows() {
     if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
@@ -719,7 +720,6 @@ public class TsElement {
     boolean excludedByObject = unnamed || isExcludedByObject(returnType);
     return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
         .filter(overridden -> TsElement.of(overridden, env).isExportable())
-        .filter(overridden -> !TsElement.of(overridden.getEnclosingElement(), env).isTsIgnored())
         .filter(
             overridden -> {
               TypeMirror inherited =
