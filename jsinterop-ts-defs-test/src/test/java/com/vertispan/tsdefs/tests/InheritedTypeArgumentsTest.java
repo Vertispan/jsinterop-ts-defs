@@ -211,6 +211,27 @@ public class InheritedTypeArgumentsTest {
         .hasSize(1);
   }
 
+  // The wider member stands in for the override, which keeps its own modifiers and docs.
+  @Test
+  public void widerMemberInAnOverridesPlaceKeepsTheOverridesModifiersAndDocs() throws IOException {
+    Compilation result =
+        compileSources(
+            "AH",
+            "@jsinterop.annotations.JsType public abstract class AH {"
+                + " /** Docs of AH. */ public abstract Object value(); }",
+            "CH",
+            "@jsinterop.annotations.JsType public class CH extends AH {"
+                + " /** Docs of CH. */ @Deprecated public String value() { return \"\"; } }");
+
+    assertThat(result.errors()).isEmpty();
+    String output = output(result);
+    String ch = output.substring(output.indexOf("class CH"));
+    ch = ch.substring(0, ch.indexOf('}'));
+    assertThat(ch)
+        .contains("value():object", "Docs of CH.", "@deprecated")
+        .doesNotContain("abstract", "Docs of AH.");
+  }
+
   // Q meets the paths; Impl reaches R again through P, which the walk doesn't repeat.
   @Test
   public void conflictMetInASupertypeIsReportedOnceThere() {
