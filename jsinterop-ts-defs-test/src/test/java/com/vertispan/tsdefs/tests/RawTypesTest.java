@@ -121,6 +121,27 @@ public class RawTypesTest {
         .isEmpty();
   }
 
+  // A plain or @TsIgnore superclass's interfaces aren't carried into its subclasses.
+  @Test
+  public void rawInterfaceOfAPlainSuperclassIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/PlainRawImplements.java",
+                    "errors/raw/ExtendsPlainRawImplements.java")
+                .errors())
+        .isEmpty();
+  }
+
+  @Test
+  public void rawInterfaceOfATsIgnoredSuperclassIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/IgnoredRawImplements.java",
+                    "errors/raw/ExtendsIgnoredRawImplements.java")
+                .errors())
+        .isEmpty();
+  }
+
   // The skipped class's own extends clause, which passes its T on, is emitted in its subclass.
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
