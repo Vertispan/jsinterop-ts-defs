@@ -1426,6 +1426,17 @@ declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
 expectType<() => OverridesFoo>()(hiddenTypeGetterImpl.dget);
 declare const stringValueImpl: StringValueImpl;
 expectType<() => object>()(stringValueImpl.value);
+// A type's own override TypeScript can't narrow to is declared with the wider type instead.
+import OwnStringValue = com.vertispan.tsdefs.tests.overrides.OwnStringValue;
+import StringHolder = com.vertispan.tsdefs.tests.overrides.StringHolder;
+declare const ownStringValue: OwnStringValue;
+expectType<() => object>()(ownStringValue.value);
+declare const stringHolder: StringHolder;
+expectType<() => object>()(stringHolder.value);
+// What it overrides is in a @TsIgnore type, which TypeScript never sees: the narrower one stands.
+import StringFromIgnored = com.vertispan.tsdefs.tests.overrides.StringFromIgnored;
+declare const stringFromIgnored: StringFromIgnored;
+expectType<() => string>()(stringFromIgnored.value);
 // Narrowing a method TypeScript doesn't see leaves nothing to fall back to.
 import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
 declare const stringSource: StringSource;
