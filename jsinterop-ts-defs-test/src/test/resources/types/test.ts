@@ -1416,3 +1416,13 @@ declare const narrowSourceImpl: NarrowSourceImpl;
 expectType<() => OverridesBar>()(narrowSourceImpl.get);
 expectType<() => Promise<OverridesBar>>()(narrowSourceImpl.resolve);
 expectType<() => string>()(narrowSourceImpl.extra);
+
+// A narrower override TypeScript can't express isn't copied in place of the wider member: a type
+// it has no name for, or narrowing Object, emitted as object. TODO(#144) with Object as unknown,
+// stringValueImpl.value narrows to string.
+import HiddenTypeGetterImpl = com.vertispan.tsdefs.tests.overrides.HiddenTypeGetterImpl;
+import StringValueImpl = com.vertispan.tsdefs.tests.overrides.StringValueImpl;
+declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
+expectType<() => OverridesFoo>()(hiddenTypeGetterImpl.dget);
+declare const stringValueImpl: StringValueImpl;
+expectType<() => object>()(stringValueImpl.value);
