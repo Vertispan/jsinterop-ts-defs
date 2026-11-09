@@ -90,6 +90,18 @@ public class RawTypesTest {
         "errors/raw/RawExtendsUnused.java");
   }
 
+  // A native JsType is not emitted either, so its clauses are checked from the subtype.
+  @Test
+  public void rawClauseOfNativeSuperinterfaceShouldFail() {
+    assertSingleErrorIn(
+        "RawNativeMid.java",
+        "Raw type NativeSource in the supertypes of RawNativeMid is not supported;"
+            + " give its type arguments, e.g. NativeSource<Any> (jsinterop.base.Any).",
+        "errors/raw/NativeSource.java",
+        "errors/raw/RawNativeMid.java",
+        "errors/raw/ImplementsRawNativeMid.java");
+  }
+
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
     assertSingleErrorIn(
