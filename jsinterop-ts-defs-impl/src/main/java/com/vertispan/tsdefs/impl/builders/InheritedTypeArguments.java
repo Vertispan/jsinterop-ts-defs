@@ -109,7 +109,12 @@ public class InheritedTypeArguments {
    * only if the raw type reaches the output.
    */
   private static void reportRawHiddenSupertypes(TypeElement type, HasProcessorEnv env) {
-    for (DeclaredType clause : supertypeClauses(type)) {
+    reportRawClauses(type, supertypeClauses(type), env);
+  }
+
+  private static void reportRawClauses(
+      TypeElement type, List<DeclaredType> clauses, HasProcessorEnv env) {
+    for (DeclaredType clause : clauses) {
       TypeElement named = (TypeElement) clause.asElement();
       if (JavaToTsTypeConverter.isRaw(clause)) {
         String message = JavaToTsTypeConverter.rawTypeMessage(clause, type, true, env);
@@ -117,9 +122,21 @@ public class InheritedTypeArguments {
           env.messager().printMessage(Diagnostic.Kind.ERROR, message, type);
         }
       } else if (TsElement.of(named, env).isTsIgnored() || !isSelectedJsType(named)) {
-        reportRawHiddenSupertypes(named, env);
+        reportRawClauses(named, carriedClauses(named), env);
       }
     }
+  }
+
+  /**
+   * The clauses of {@code type} whose members or clauses are carried into its subtypes'
+   * declarations: an interface's or a TsInterface's all, another class's only its superclass.
+   */
+  private static List<DeclaredType> carriedClauses(TypeElement type) {
+    List<DeclaredType> clauses = supertypeClauses(type);
+    if (!type.getKind().isInterface() && type.getAnnotation(TsInterface.class) == null) {
+      clauses.removeIf(clause -> !isSuperclass(type, clause));
+    }
+    return clauses;
   }
 
   /** As the processor selects them: a native JsType is emitted only as a TsInterface. */
@@ -131,12 +148,10 @@ public class InheritedTypeArguments {
   /** Whether {@code type}'s members or supertypes are emitted, in it or in its subtypes. */
   private static boolean reachesOutput(TypeElement type, HasProcessorEnv env) {
     TsElement tsElement = TsElement.of(type, env);
-    // A class's interfaces aren't carried into its subclasses' declarations; an interface's are.
     return tsElement.isJsType()
         || tsElement.isTsInterface()
         || tsElement.hasJsMembers()
-        || supertypeClauses(type).stream()
-            .filter(clause -> type.getKind().isInterface() || isSuperclass(type, clause))
+        || carriedClauses(type).stream()
             .anyMatch(clause -> reachesOutput((TypeElement) clause.asElement(), env));
   }
 
