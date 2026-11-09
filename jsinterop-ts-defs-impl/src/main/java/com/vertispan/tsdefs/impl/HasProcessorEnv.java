@@ -16,9 +16,11 @@
 package com.vertispan.tsdefs.impl;
 
 import com.vertispan.tsdefs.impl.model.TsDoc;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 
 public interface HasProcessorEnv {
 
@@ -37,5 +39,45 @@ public interface HasProcessorEnv {
    */
   default boolean firstReport(Element element, Element subject) {
     return true;
+  }
+
+  /**
+   * {@code env} with its diagnostics discarded, for conversions made only to compare results.
+   * Claims no reports, so the conversion that emits still reports.
+   */
+  static HasProcessorEnv quiet(HasProcessorEnv env) {
+    LogWrapper discard =
+        new LogWrapper() {
+          @Override
+          public void printMessage(Diagnostic.Kind kind, CharSequence msg) {}
+
+          @Override
+          public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {}
+
+          @Override
+          public void printMessage(
+              Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {}
+        };
+    return new HasProcessorEnv() {
+      @Override
+      public Types types() {
+        return env.types();
+      }
+
+      @Override
+      public Elements elements() {
+        return env.elements();
+      }
+
+      @Override
+      public LogWrapper messager() {
+        return discard;
+      }
+
+      @Override
+      public TsDoc getDocs(Element element) {
+        return env.getDocs(element);
+      }
+    };
   }
 }

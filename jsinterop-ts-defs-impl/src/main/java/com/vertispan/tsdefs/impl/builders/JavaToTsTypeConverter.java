@@ -51,6 +51,7 @@ public class JavaToTsTypeConverter {
   private final Element element;
   private final String emissionContext;
   private final Map<Element, TsType> typeArguments;
+  private final InheritedTypeArguments inherited;
   private final Element rawTypeElement;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
@@ -69,16 +70,35 @@ public class JavaToTsTypeConverter {
   /**
    * @param inheritedBy the subtype whose TypeScript declaration {@code element} is being emitted
    *     into, when that is not the type that declares it; inherited members are emitted once per
-   *     subtype
+   *     subtype, with the type arguments that subtype passes
    */
   public JavaToTsTypeConverter(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
-    this(element, inheritedSuffix(element, inheritedBy), Collections.emptyMap(), env);
+    this(
+        element,
+        inheritedSuffix(element, inheritedBy),
+        Collections.emptyMap(),
+        isInherited(element, inheritedBy)
+            ? InheritedTypeArguments.of(inheritedBy, env)
+            : InheritedTypeArguments.NONE,
+        element,
+        env);
   }
 
   /** Converts the type arguments in {@code subtype}'s extends and implements clauses. */
   public static JavaToTsTypeConverter forSupertypesOf(TypeElement subtype, HasProcessorEnv env) {
+    return forSupertypesOf(subtype, InheritedTypeArguments.NONE, env);
+  }
+
+  /** @param inherited what reached {@code subtype}, when it is itself a supertype */
+  static JavaToTsTypeConverter forSupertypesOf(
+      TypeElement subtype, InheritedTypeArguments inherited, HasProcessorEnv env) {
     return new JavaToTsTypeConverter(
-        subtype, " in the supertypes of " + subtype.getSimpleName(), Collections.emptyMap(), env);
+        subtype,
+        " in the supertypes of " + subtype.getSimpleName(),
+        Collections.emptyMap(),
+        inherited,
+        subtype,
+        env);
   }
 
   /**
@@ -90,10 +110,11 @@ public class JavaToTsTypeConverter {
       String emissionContext,
       Map<Element, TsType> typeArguments,
       HasProcessorEnv env) {
-    this(element, emissionContext, typeArguments, element, env);
+    this(element, emissionContext, typeArguments, InheritedTypeArguments.NONE, element, env);
   }
 
   /**
+   * @param inherited consulted for type variables not in {@code typeArguments}
    * @param rawTypeElement where a raw type is reported: where it is written, which for a
    *     JsFunction's return type or a union member's type is that method rather than {@code
    *     element}
@@ -102,23 +123,38 @@ public class JavaToTsTypeConverter {
       Element element,
       String emissionContext,
       Map<Element, TsType> typeArguments,
+      InheritedTypeArguments inherited,
       Element rawTypeElement,
       HasProcessorEnv env) {
     this.env = env;
     this.element = element;
     this.emissionContext = emissionContext;
     this.typeArguments = typeArguments;
+    this.inherited = inherited;
     this.rawTypeElement = rawTypeElement;
   }
 
+  private static boolean isInherited(Element element, TypeElement inheritedBy) {
+    return nonNull(inheritedBy) && !inheritedBy.equals(declaringType(element));
+  }
+
+  /** The type declaring {@code element}, or declaring the method a parameter belongs to. */
+  private static TypeElement declaringType(Element element) {
+    Element enclosing = element.getEnclosingElement();
+    while (!(enclosing instanceof TypeElement)) {
+      enclosing = enclosing.getEnclosingElement();
+    }
+    return (TypeElement) enclosing;
+  }
+
   private static String inheritedSuffix(Element element, TypeElement inheritedBy) {
-    if (!nonNull(inheritedBy) || inheritedBy.equals(element.getEnclosingElement())) {
+    if (!isInherited(element, inheritedBy)) {
       return "";
     }
     return " in "
         + inheritedBy.getSimpleName()
         + " (inherited from "
-        + element.getEnclosingElement().getSimpleName()
+        + declaringType(element).getSimpleName()
         + ")";
   }
 
@@ -139,6 +175,12 @@ public class JavaToTsTypeConverter {
         && typeArguments.containsKey(((TypeVariable) type).asElement())) {
       // A copy: callers set flags such as read-only on the result, per use.
       return typeArguments.get(((TypeVariable) type).asElement()).copy();
+    }
+    if (TypeKind.TYPEVAR.equals(type.getKind())) {
+      Optional<TsType> passed = inherited.lookup(((TypeVariable) type).asElement(), env);
+      if (passed.isPresent()) {
+        return passed.get();
+      }
     }
     if (TypeKind.WILDCARD.equals(type.getKind())) {
       return wildcardType((WildcardType) type);
@@ -252,6 +294,7 @@ public class JavaToTsTypeConverter {
     return ProcessorType.of(component, env).isUnionType()
         || componentTsType instanceof TsUnionType
         || componentTsType instanceof TsNullableType
+        || componentTsType instanceof TsIntersectionType
         || componentTsType instanceof TsInlinedFunctionType
         || (componentTsType instanceof ArrayTsType && componentTsType.isTsReadOnly());
   }
@@ -393,7 +436,12 @@ public class JavaToTsTypeConverter {
                 // A raw type in the member is reported on the member, where it is written.
                 return e.typeOrNullable(
                     new JavaToTsTypeConverter(
-                            this.element, emissionContext, typeArguments, e.element(), env)
+                            this.element,
+                            emissionContext,
+                            typeArguments,
+                            inherited,
+                            e.element(),
+                            env)
                         .toTsType(
                             ((ExecutableType) env.types().asMemberOf(declaredType, e.element()))
                                 .getReturnType()));
@@ -436,7 +484,8 @@ public class JavaToTsTypeConverter {
                 new ParameterVisitor<TsInlinedFunctionType>(param, typeMapping, env).visit(tsType));
 
     tsType.setReturnType(
-        new JavaToTsTypeConverter(element, emissionContext, typeMapping, executableElement, env)
+        new JavaToTsTypeConverter(
+                element, emissionContext, typeMapping, inherited, executableElement, env)
             .toTsType(executableElement.getReturnType()));
     return tsType;
   }
@@ -653,6 +702,11 @@ public class JavaToTsTypeConverter {
       default:
         return false;
     }
+  }
+
+  /** Converts one type argument of an extends or implements clause. */
+  TsType clauseArgument(TypeMirror typeArgument) {
+    return typeArgument(typeArgument);
   }
 
   private TsType typeArgument(TypeMirror typeArgument) {

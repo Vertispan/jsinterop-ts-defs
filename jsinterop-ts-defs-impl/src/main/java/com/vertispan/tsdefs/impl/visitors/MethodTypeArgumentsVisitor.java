@@ -22,14 +22,23 @@ import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 
 public class MethodTypeArgumentsVisitor<T> extends TsElement {
   private final ExecutableElement element;
+  private final TypeElement inheritedBy;
 
   public MethodTypeArgumentsVisitor(ExecutableElement element, HasProcessorEnv env) {
+    this(element, null, env);
+  }
+
+  /** Visits the type parameters of a method inherited by {@code inheritedBy}, or null. */
+  public MethodTypeArgumentsVisitor(
+      ExecutableElement element, TypeElement inheritedBy, HasProcessorEnv env) {
     super(element, env);
     this.element = element;
+    this.inheritedBy = inheritedBy;
   }
 
   public void visit(HasTypeArguments<T> builder) {
@@ -38,7 +47,7 @@ public class MethodTypeArgumentsVisitor<T> extends TsElement {
         typeElement -> {
           TsType type = TsElement.of(typeElement, env).getType();
           if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-            TypeArgumentsVisitor.addBoundsAndDefault(type, typeElement, env);
+            TypeArgumentsVisitor.addBoundsAndDefault(type, typeElement, inheritedBy, env);
           }
           builder.addTypeArgument(type);
         });

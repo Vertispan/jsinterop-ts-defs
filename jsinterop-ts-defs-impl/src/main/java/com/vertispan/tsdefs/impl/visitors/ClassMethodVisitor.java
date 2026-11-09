@@ -26,10 +26,12 @@ import javax.lang.model.element.TypeElement;
 
 public class ClassMethodVisitor<T> extends TsElement {
   private final boolean copyDocs;
+  private final TypeElement inheritedBy;
 
   public ClassMethodVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
     this.copyDocs = true;
+    this.inheritedBy = null;
   }
 
   /** Visits a method inherited by {@code inheritedBy}. */
@@ -37,6 +39,7 @@ public class ClassMethodVisitor<T> extends TsElement {
       Element element, TypeElement inheritedBy, boolean copyDocs, HasProcessorEnv env) {
     super(element, inheritedBy, env);
     this.copyDocs = copyDocs;
+    this.inheritedBy = inheritedBy;
   }
 
   public void visit(HasFunctions<T> parent) {
@@ -56,12 +59,14 @@ public class ClassMethodVisitor<T> extends TsElement {
               .setDeprecated(isDeprecated());
 
       ExecutableElement executableElement = (ExecutableElement) element;
-      new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(executableElement, env)
+      new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(executableElement, inheritedBy, env)
           .visit(builder);
       executableElement
           .getParameters()
           .forEach(
-              param -> new ParameterVisitor<TsMethod.TsMethodBuilder>(param, env).visit(builder));
+              param ->
+                  new ParameterVisitor<TsMethod.TsMethodBuilder>(param, inheritedBy, env)
+                      .visit(builder));
       parent.addFunction(builder.build());
     }
   }

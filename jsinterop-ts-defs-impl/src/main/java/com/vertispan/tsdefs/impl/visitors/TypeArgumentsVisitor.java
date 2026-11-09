@@ -96,7 +96,7 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     TsType type = TsElement.of(typeMirror, env).getType();
     Element typeElement = env.types().asElement(typeMirror);
     if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-      addBoundsAndDefault(type, (TypeParameterElement) typeElement, env);
+      addBoundsAndDefault(type, (TypeParameterElement) typeElement, null, env);
     }
     return type;
   }
@@ -104,12 +104,14 @@ public class TypeArgumentsVisitor<T> extends TsElement {
   /**
    * Adds a type parameter's bounds and {@code @TsDefault} to its declaration, e.g. {@code T extends
    * Item = Item}. Reports an error for a default TypeScript would reject.
+   *
+   * @param inheritedBy the subtype a method with this type parameter is inherited by, or null
    */
   static void addBoundsAndDefault(
-      TsType type, TypeParameterElement parameter, HasProcessorEnv env) {
+      TsType type, TypeParameterElement parameter, TypeElement inheritedBy, HasProcessorEnv env) {
     // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
     // bound type's own declared parameter.
-    JavaToTsTypeConverter converter = new JavaToTsTypeConverter(parameter, env);
+    JavaToTsTypeConverter converter = new JavaToTsTypeConverter(parameter, inheritedBy, env);
     parameter.getBounds().stream()
         .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
         .map(converter::toTsType)
