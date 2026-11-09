@@ -79,6 +79,17 @@ public class RawTypesTest {
         "errors/raw/RawExtendsIgnored.java");
   }
 
+  // Reported though no emitted member uses T, as for an emitted raw clause.
+  @Test
+  public void rawTsIgnoredSuperclassWithUnusedParameterShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsUnused.java",
+        "Raw type UnusedParamBase in the supertypes of RawExtendsUnused is not supported;"
+            + " give its type arguments, e.g. UnusedParamBase<Any> (jsinterop.base.Any).",
+        "errors/raw/UnusedParamBase.java",
+        "errors/raw/RawExtendsUnused.java");
+  }
+
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
     assertSingleErrorIn(
