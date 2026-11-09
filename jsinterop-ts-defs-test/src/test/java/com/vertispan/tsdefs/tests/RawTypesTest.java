@@ -109,6 +109,18 @@ public class RawTypesTest {
         .isEmpty();
   }
 
+  // The plain class implements a native interface, but its interfaces don't reach its subclasses.
+  @Test
+  public void rawPlainSuperclassImplementingANativeInterfaceIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/NativeThen.java",
+                    "errors/raw/PlainThen.java",
+                    "errors/raw/ExtendsRawPlainThen.java")
+                .errors())
+        .isEmpty();
+  }
+
   // The skipped class's own extends clause, which passes its T on, is emitted in its subclass.
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
