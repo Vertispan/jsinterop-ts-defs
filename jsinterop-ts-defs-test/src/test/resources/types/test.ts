@@ -1417,15 +1417,15 @@ expectType<() => OverridesBar>()(narrowSourceImpl.get);
 expectType<() => Promise<OverridesBar>>()(narrowSourceImpl.resolve);
 expectType<() => string>()(narrowSourceImpl.extra);
 
-// A narrower override TypeScript can't express isn't copied in place of the wider member: a type
-// it has no name for, or narrowing Object, emitted as object. TODO(#144) with Object as unknown,
-// stringValueImpl.value narrows to string.
+// A narrower override TypeScript can't express is copied with the wider member as an overload: a
+// type it has no name for, or narrowing Object, emitted as object. TODO(#144) with Object as
+// unknown, stringValueImpl.value is string alone.
 import HiddenTypeGetterImpl = com.vertispan.tsdefs.tests.overrides.HiddenTypeGetterImpl;
 import StringValueImpl = com.vertispan.tsdefs.tests.overrides.StringValueImpl;
 declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
-expectType<() => OverridesFoo>()(hiddenTypeGetterImpl.dget);
+expectType<{ (): unknown; (): OverridesFoo }>()(hiddenTypeGetterImpl.dget);
 declare const stringValueImpl: StringValueImpl;
-expectType<() => object>()(stringValueImpl.value);
+expectType<{ (): string; (): object }>()(stringValueImpl.value);
 // A type's own override is declared as written. TODO(#144) narrowing Object to string is then
 // valid too.
 import ArrayValueHolder = com.vertispan.tsdefs.tests.overrides.ArrayValueHolder;
@@ -1441,3 +1441,22 @@ expectType<() => string>()(stringFromIgnored.value);
 import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
 declare const stringSource: StringSource;
 expectType<() => string>()(stringSource.value);
+// Where an emitted supertype declares the narrower override, or TypeScript would see the wider
+// one, a copy carries both as overloads.
+import TypedValueImpl = com.vertispan.tsdefs.tests.overrides.TypedValueImpl;
+import TypedValueSub = com.vertispan.tsdefs.tests.overrides.TypedValueSub;
+import StringOverIgnoredImpl = com.vertispan.tsdefs.tests.overrides.StringOverIgnoredImpl;
+import NullableFooGetterImpl = com.vertispan.tsdefs.tests.overrides.NullableFooGetterImpl;
+declare const typedValueImpl: TypedValueImpl<OverridesFoo>;
+expectType<{ (): OverridesFoo; (): object }>()(typedValueImpl.value);
+declare const typedValueSub: TypedValueSub<OverridesFoo>;
+expectType<{ (): OverridesFoo; (): object }>()(typedValueSub.value);
+declare const stringOverIgnoredImpl: StringOverIgnoredImpl;
+expectType<{ (): string; (): object }>()(stringOverIgnoredImpl.value);
+// An override that only adds nullability can't be an overload; the declared method is copied.
+declare const nullableFooGetterImpl: NullableFooGetterImpl;
+expectType<() => OverridesFoo>()(nullableFooGetterImpl.get);
+// A merged override whose wider member isn't carried into the subclass stands alone.
+import SubOfIgnoredString = com.vertispan.tsdefs.tests.overrides.SubOfIgnoredString;
+declare const subOfIgnoredString: SubOfIgnoredString;
+expectType<() => string>()(subOfIgnoredString.value);
