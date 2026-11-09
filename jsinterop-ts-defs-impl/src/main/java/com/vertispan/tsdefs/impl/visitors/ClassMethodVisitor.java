@@ -22,10 +22,12 @@ import com.vertispan.tsdefs.impl.builders.HasFunctions;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsDoc;
 import com.vertispan.tsdefs.impl.model.TsMethod;
+import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -37,6 +39,9 @@ import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 
 public class ClassMethodVisitor<T> extends TsElement {
+  /** A string, number or boolean literal type, as emitted. */
+  private static final Pattern LITERAL = Pattern.compile("\".*\"|-?[0-9.]+|true|false");
+
   private final boolean copyDocs;
   private final TypeElement inheritedBy;
   private final Map<Element, TsType> renamed;
@@ -74,6 +79,12 @@ public class ClassMethodVisitor<T> extends TsElement {
     }
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
+      if (inheritedBy == null) {
+        reportWidening();
+      }
+      if (narrowsBeyondTypeScript()) {
+        return;
+      }
       // A copy into a subtype was already chosen as the most specific override.
       TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
       if (inheritedBy == null
@@ -183,6 +194,53 @@ public class ClassMethodVisitor<T> extends TsElement {
                   + "(name = \""
                   + jsName
                   + "\") to emit the narrower type.",
+              method);
+      return;
+    }
+  }
+
+  /**
+   * Reports an override whose return type is wider in TypeScript than the one it overrides, which
+   * TypeScript rejects: nullable where that isn't, or the full type where that is a literal.
+   */
+  private void reportWidening() {
+    ExecutableElement method = (ExecutableElement) element;
+    TypeElement declaring = (TypeElement) method.getEnclosingElement();
+    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
+    TsType own = TsElement.of(method, quiet).getType();
+    for (ExecutableElement overridden : TsElement.of(declaring, env).overriddenMethods(method)) {
+      if (!isEmittedInSupertype(overridden)) {
+        continue;
+      }
+      TsType inherited = TsElement.of(overridden, declaring, quiet).getType();
+      String widening;
+      if (own instanceof TsNullableType && !(inherited instanceof TsNullableType)) {
+        widening = "is @JsNullable, but ";
+      } else if (LITERAL.matcher(inherited.emit("")).matches()
+          && !own.emit("").equals(inherited.emit(""))) {
+        widening = "returns " + own.emit("") + ", but ";
+      } else {
+        continue;
+      }
+      String overriddenName =
+          overridden.getEnclosingElement().getSimpleName()
+              + "."
+              + overridden.getSimpleName()
+              + "()";
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.ERROR,
+              declaring.getSimpleName()
+                  + "."
+                  + method.getSimpleName()
+                  + "() "
+                  + widening
+                  + overriddenName
+                  + ", which it overrides, "
+                  + (own instanceof TsNullableType
+                      ? "is not"
+                      : "returns the @TsLiteral " + inherited.emit(""))
+                  + "; TypeScript rejects an override with a wider return type.",
               method);
       return;
     }
