@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
@@ -643,6 +644,16 @@ public class TsElement {
     return overridesOneOf(method, superMethods);
   }
 
+  /** The supertype methods that {@code method}, declared in this type, overrides. */
+  public List<ExecutableElement> overriddenMethods(ExecutableElement method) {
+    List<ExecutableElement> superMethods = superMethods();
+    superMethods.addAll(allSuperInterfacesMethods());
+    return superMethods.stream()
+        .filter(superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element))
+        .distinct()
+        .collect(Collectors.toList());
+  }
+
   private boolean overridesOneOf(ExecutableElement method, List<ExecutableElement> superMethods) {
     return superMethods.stream()
         .anyMatch(
@@ -719,8 +730,41 @@ public class TsElement {
         .anyMatch(
             other ->
                 !other.equals(method)
+                    && env.elements().overrides(other, method, (TypeElement) element)
                     && TsElement.of(other, env).isExportable()
-                    && env.elements().overrides(other, method, (TypeElement) element));
+                    && !TsElement.of(other, env).narrowsBeyondTypeScript());
+  }
+
+  /**
+   * Whether this method overrides an emitted one whose return type TypeScript can't narrow to this
+   * one's: to a type it has no name for, or from Object, emitted as object, which excludes
+   * primitives. The inherited member is emitted in its place.
+   */
+  public boolean narrowsBeyondTypeScript() {
+    if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
+      return false;
+    }
+    TypeElement declaring = (TypeElement) element.getEnclosingElement();
+    DeclaredType declaringType = (DeclaredType) declaring.asType();
+    TypeMirror returnType = ((ExecutableElement) element).getReturnType();
+    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
+    boolean unnamed = "unknown".equals(TsElement.of(element, quiet).getType().emit(""));
+    return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
+        .filter(overridden -> TsElement.of(overridden, env).isExportable())
+        .anyMatch(
+            overridden -> {
+              TypeMirror inherited =
+                  ((ExecutableType) env.types().asMemberOf(declaringType, overridden))
+                      .getReturnType();
+              // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
+              if (JavaToTsTypeConverter.isSameType(inherited, Object.class, env)
+                  && !JavaToTsTypeConverter.isSameType(returnType, Object.class, env)) {
+                return true;
+              }
+              return unnamed
+                  && !"unknown"
+                      .equals(TsElement.of(overridden, declaring, quiet).getType().emit(""));
+            });
   }
 
   /**
