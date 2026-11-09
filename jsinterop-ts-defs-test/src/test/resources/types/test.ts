@@ -1426,3 +1426,7 @@ declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
 expectType<() => OverridesFoo>()(hiddenTypeGetterImpl.dget);
 declare const stringValueImpl: StringValueImpl;
 expectType<() => object>()(stringValueImpl.value);
+// Narrowing a method TypeScript doesn't see leaves nothing to fall back to.
+import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
+declare const stringSource: StringSource;
+expectType<() => string>()(stringSource.value);
