@@ -20,6 +20,8 @@ import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.List;
+import java.util.Map;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -28,26 +30,36 @@ import javax.lang.model.element.TypeParameterElement;
 public class MethodTypeArgumentsVisitor<T> extends TsElement {
   private final ExecutableElement element;
   private final TypeElement inheritedBy;
+  private final Map<Element, TsType> renamed;
 
-  public MethodTypeArgumentsVisitor(ExecutableElement element, HasProcessorEnv env) {
-    this(element, null, env);
-  }
-
-  /** Visits the type parameters of a method inherited by {@code inheritedBy}, or null. */
+  /**
+   * Visits the type parameters of a method inherited by {@code inheritedBy}, or null.
+   *
+   * @param renamed type parameters emitted under another name, see {@link
+   *     TsElement#renamedTypeParameters}
+   */
   public MethodTypeArgumentsVisitor(
-      ExecutableElement element, TypeElement inheritedBy, HasProcessorEnv env) {
+      ExecutableElement element,
+      TypeElement inheritedBy,
+      Map<Element, TsType> renamed,
+      HasProcessorEnv env) {
     super(element, env);
     this.element = element;
     this.inheritedBy = inheritedBy;
+    this.renamed = renamed;
   }
 
   public void visit(HasTypeArguments<T> builder) {
     List<? extends TypeParameterElement> typeParameters = element.getTypeParameters();
     typeParameters.forEach(
         typeElement -> {
-          TsType type = TsElement.of(typeElement, env).getType();
+          // A new type, not a copy: copies share the bounds added below, and uses would emit them.
+          TsType type =
+              renamed.containsKey(typeElement)
+                  ? TsType.of(renamed.get(typeElement).getName(), "")
+                  : TsElement.of(typeElement, env).getType();
           if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-            TypeArgumentsVisitor.addBoundsAndDefault(type, typeElement, inheritedBy, env);
+            TypeArgumentsVisitor.addBoundsAndDefault(type, typeElement, inheritedBy, renamed, env);
           }
           builder.addTypeArgument(type);
         });

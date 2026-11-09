@@ -33,9 +33,17 @@ public class ParameterVisitor<T> extends TsElement {
     super(element, env);
   }
 
-  /** Visits a parameter of a method inherited by {@code inheritedBy}, or null. */
-  public ParameterVisitor(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
-    super(element, inheritedBy, env);
+  /**
+   * Visits a parameter of a method inherited by {@code inheritedBy}, or null.
+   *
+   * @param typeArguments what each of the method's type parameters is emitted as
+   */
+  public ParameterVisitor(
+      Element element,
+      TypeElement inheritedBy,
+      Map<Element, TsType> typeArguments,
+      HasProcessorEnv env) {
+    super(element, inheritedBy, typeArguments, env);
   }
 
   /** @param typeArguments what each type parameter is emitted as, keyed by its element */

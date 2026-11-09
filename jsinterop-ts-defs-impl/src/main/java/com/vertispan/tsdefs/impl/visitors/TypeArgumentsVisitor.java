@@ -22,7 +22,9 @@ import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
@@ -152,7 +154,8 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     TsType type = TsElement.of(typeMirror, env).getType();
     Element typeElement = env.types().asElement(typeMirror);
     if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-      addBoundsAndDefault(type, (TypeParameterElement) typeElement, null, env);
+      addBoundsAndDefault(
+          type, (TypeParameterElement) typeElement, null, Collections.emptyMap(), env);
     }
     return type;
   }
@@ -162,12 +165,18 @@ public class TypeArgumentsVisitor<T> extends TsElement {
    * Item = Item}. Reports an error for a default TypeScript would reject.
    *
    * @param inheritedBy the subtype a method with this type parameter is inherited by, or null
+   * @param renamed the method's type parameters emitted under another name
    */
   static void addBoundsAndDefault(
-      TsType type, TypeParameterElement parameter, TypeElement inheritedBy, HasProcessorEnv env) {
+      TsType type,
+      TypeParameterElement parameter,
+      TypeElement inheritedBy,
+      Map<Element, TsType> renamed,
+      HasProcessorEnv env) {
     // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
     // bound type's own declared parameter.
-    JavaToTsTypeConverter converter = new JavaToTsTypeConverter(parameter, inheritedBy, env);
+    JavaToTsTypeConverter converter =
+        new JavaToTsTypeConverter(parameter, inheritedBy, renamed, env);
     parameter.getBounds().stream()
         .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
         .map(converter::toTsType)

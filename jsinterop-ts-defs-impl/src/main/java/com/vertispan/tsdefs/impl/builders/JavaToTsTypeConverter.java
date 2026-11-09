@@ -73,10 +73,19 @@ public class JavaToTsTypeConverter {
    *     subtype, with the type arguments that subtype passes
    */
   public JavaToTsTypeConverter(Element element, TypeElement inheritedBy, HasProcessorEnv env) {
+    this(element, inheritedBy, Collections.emptyMap(), env);
+  }
+
+  /** @param typeArguments as for {@link #JavaToTsTypeConverter(Element, Map, HasProcessorEnv)} */
+  public JavaToTsTypeConverter(
+      Element element,
+      TypeElement inheritedBy,
+      Map<Element, TsType> typeArguments,
+      HasProcessorEnv env) {
     this(
         element,
         inheritedSuffix(element, inheritedBy),
-        Collections.emptyMap(),
+        typeArguments,
         isInherited(element, inheritedBy)
             ? InheritedTypeArguments.of(inheritedBy, env)
             : InheritedTypeArguments.NONE,

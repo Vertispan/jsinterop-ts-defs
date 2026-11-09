@@ -20,6 +20,9 @@ import com.vertispan.tsdefs.impl.builders.HasFunctions;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsDoc;
 import com.vertispan.tsdefs.impl.model.TsMethod;
+import com.vertispan.tsdefs.impl.model.TsType;
+import java.util.Collections;
+import java.util.Map;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -27,19 +30,32 @@ import javax.lang.model.element.TypeElement;
 public class ClassMethodVisitor<T> extends TsElement {
   private final boolean copyDocs;
   private final TypeElement inheritedBy;
+  private final Map<Element, TsType> renamed;
 
   public ClassMethodVisitor(Element element, HasProcessorEnv env) {
     super(element, env);
     this.copyDocs = true;
     this.inheritedBy = null;
+    this.renamed = Collections.emptyMap();
   }
 
   /** Visits a method inherited by {@code inheritedBy}. */
   public ClassMethodVisitor(
       Element element, TypeElement inheritedBy, boolean copyDocs, HasProcessorEnv env) {
-    super(element, inheritedBy, env);
+    this(
+        element, inheritedBy, copyDocs, TsElement.renamedTypeParameters(element, inheritedBy), env);
+  }
+
+  private ClassMethodVisitor(
+      Element element,
+      TypeElement inheritedBy,
+      boolean copyDocs,
+      Map<Element, TsType> renamed,
+      HasProcessorEnv env) {
+    super(element, inheritedBy, renamed, env);
     this.copyDocs = copyDocs;
     this.inheritedBy = inheritedBy;
+    this.renamed = renamed;
   }
 
   public void visit(HasFunctions<T> parent) {
@@ -61,13 +77,14 @@ public class ClassMethodVisitor<T> extends TsElement {
               .setDeprecated(isDeprecated());
 
       ExecutableElement executableElement = (ExecutableElement) element;
-      new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(executableElement, inheritedBy, env)
+      new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(
+              executableElement, inheritedBy, renamed, env)
           .visit(builder);
       executableElement
           .getParameters()
           .forEach(
               param ->
-                  new ParameterVisitor<TsMethod.TsMethodBuilder>(param, inheritedBy, env)
+                  new ParameterVisitor<TsMethod.TsMethodBuilder>(param, inheritedBy, renamed, env)
                       .visit(builder));
       parent.addFunction(builder.build());
     }

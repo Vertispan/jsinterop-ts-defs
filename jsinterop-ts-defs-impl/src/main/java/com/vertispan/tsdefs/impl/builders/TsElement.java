@@ -30,9 +30,13 @@ import com.vertispan.tsdefs.impl.model.TsType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -62,10 +66,50 @@ public class TsElement {
 
   /** @param emittedIn the subtype this inherited element is being emitted into, or null */
   public TsElement(Element element, TypeElement emittedIn, HasProcessorEnv env) {
+    this(element, emittedIn, Collections.emptyMap(), env);
+  }
+
+  /** @param typeArguments what each type parameter in scope is emitted as */
+  protected TsElement(
+      Element element,
+      TypeElement emittedIn,
+      Map<Element, TsType> typeArguments,
+      HasProcessorEnv env) {
     this.element = element;
     this.env = env;
-    this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, env);
+    this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, typeArguments, env);
     this.typeMirror = nonNull(element) ? element.asType() : null;
+  }
+
+  /**
+   * New names for the type parameters of {@code method}, inherited by {@code inheritedBy}, that
+   * share a name with one of {@code inheritedBy}'s: substituted arguments can name those, and the
+   * method's own would capture them, e.g. {@code <U> U conv(T)} with {@code T} as {@code U[]}.
+   */
+  public static Map<Element, TsType> renamedTypeParameters(
+      Element method, TypeElement inheritedBy) {
+    if (!(method instanceof ExecutableElement) || inheritedBy == null) {
+      return Collections.emptyMap();
+    }
+    List<? extends TypeParameterElement> parameters =
+        ((ExecutableElement) method).getTypeParameters();
+    Set<String> taken = new HashSet<>();
+    inheritedBy.getTypeParameters().forEach(p -> taken.add(p.getSimpleName().toString()));
+    parameters.forEach(p -> taken.add(p.getSimpleName().toString()));
+    Map<Element, TsType> renamed = new HashMap<>();
+    for (TypeParameterElement parameter : parameters) {
+      String name = parameter.getSimpleName().toString();
+      if (inheritedBy.getTypeParameters().stream()
+          .anyMatch(p -> p.getSimpleName().contentEquals(name))) {
+        int suffix = 1;
+        while (taken.contains(name + suffix)) {
+          suffix++;
+        }
+        taken.add(name + suffix);
+        renamed.put(parameter, TsType.of(name + suffix, ""));
+      }
+    }
+    return renamed;
   }
 
   /** @param typeArguments what each type parameter in scope is emitted as */
