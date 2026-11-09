@@ -29,6 +29,7 @@ import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -653,6 +654,32 @@ public class TsElement {
         .map(typeMirror -> (TypeElement) env.types().asElement(typeMirror))
         .forEach(typeElement -> methods.addAll(allMethodsInInterface(typeElement)));
 
+    return methods;
+  }
+
+  /** Whether one of {@code others}, as a member of this type, overrides {@code method}. */
+  public boolean isOverriddenByAny(ExecutableElement method, Collection<ExecutableElement> others) {
+    return others.stream()
+        .anyMatch(
+            other ->
+                !other.equals(method)
+                    && env.elements().overrides(other, method, (TypeElement) element));
+  }
+
+  /**
+   * Methods of the {@code @TsIgnore} and {@code @TsInterface} superclasses, whose members are
+   * merged into this class.
+   */
+  public List<ExecutableElement> mergedSuperClassMethods() {
+    List<ExecutableElement> methods = new ArrayList<>();
+    Optional<TypeMirror> superclass = getJavaSuperClass();
+    while (superclass.isPresent()) {
+      TsElement superElement = TsElement.of(superclass.get(), env);
+      if (superElement.isTsIgnored() || superElement.isTsInterface()) {
+        methods.addAll(superElement.enclosedMethods());
+      }
+      superclass = superElement.getJavaSuperClass();
+    }
     return methods;
   }
 

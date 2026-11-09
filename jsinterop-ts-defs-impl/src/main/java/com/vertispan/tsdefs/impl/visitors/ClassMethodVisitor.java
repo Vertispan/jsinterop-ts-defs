@@ -46,8 +46,10 @@ public class ClassMethodVisitor<T> extends TsElement {
 
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
+      // A copy into a subtype was already chosen as the most specific override.
       TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
-      if (parentElement.isTsInterface()
+      if (inheritedBy == null
+          && parentElement.isTsInterface()
           && parentElement.isInheritedMethod((ExecutableElement) this.element)) {
         return;
       }

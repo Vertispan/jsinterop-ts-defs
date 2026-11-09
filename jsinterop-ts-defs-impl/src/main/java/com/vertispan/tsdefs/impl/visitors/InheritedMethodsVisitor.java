@@ -34,10 +34,16 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     // Listed once per path to it; emitted once.
     Set<ExecutableElement> nonOverriddenMethods =
         new LinkedHashSet<>(allNotOverriddenInterfacesMethods());
-    nonOverriddenMethods.forEach(
-        executableElement -> {
-          new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
-              .visit(parent);
-        });
+    // Only the most specific override is emitted: a wider method from further up would be an
+    // overload TypeScript rejects.
+    Set<ExecutableElement> overriders = new LinkedHashSet<>(nonOverriddenMethods);
+    overriders.addAll(mergedSuperClassMethods());
+    nonOverriddenMethods.stream()
+        .filter(method -> !isOverriddenByAny(method, overriders))
+        .forEach(
+            executableElement -> {
+              new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
+                  .visit(parent);
+            });
   }
 }
