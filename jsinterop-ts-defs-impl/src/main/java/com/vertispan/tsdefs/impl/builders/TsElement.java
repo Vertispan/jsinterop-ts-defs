@@ -39,12 +39,13 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import jsinterop.annotations.*;
+import jsinterop.base.Any;
+import jsinterop.base.JsPropertyMap;
 
 public class TsElement {
 
@@ -698,65 +699,62 @@ public class TsElement {
   }
 
   /** See {@link #widerThanTypeScriptAllows()}. */
-  public boolean narrowsBeyondTypeScript() {
-    return widerThanTypeScriptAllows().isPresent();
-  }
-
   /**
-   * An exported method this one overrides, including one a @TsIgnore type's subtypes declare, with
-   * a return type TypeScript can't narrow to this one's: to a type it has no name for, or from
-   * Object, emitted as object, which excludes primitives. That method is emitted in this one's
-   * place.
+   * Whether this method overrides an exported one, including one a @TsIgnore type's subtypes
+   * declare, whose return type TypeScript may not narrow to this one's: a type it has no name for,
+   * or anything but a known object type where the overridden one is emitted as object. A copy of
+   * the overridden method is emitted instead of a copy of this one.
    */
-  public Optional<ExecutableElement> widerThanTypeScriptAllows() {
+  public boolean narrowsBeyondTypeScript() {
     if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
-      return Optional.empty();
+      return false;
     }
     TypeElement declaring = (TypeElement) element.getEnclosingElement();
-    DeclaredType declaringType = (DeclaredType) declaring.asType();
     TypeMirror returnType = ((ExecutableElement) element).getReturnType();
     HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
     boolean unnamed = "unknown".equals(TsElement.of(element, quiet).getType().emit(""));
-    boolean excludedByObject = unnamed || isExcludedByObject(returnType);
     return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
         .filter(overridden -> TsElement.of(overridden, env).isExportable())
-        .filter(
+        .anyMatch(
             overridden -> {
-              TypeMirror inherited =
-                  ((ExecutableType) env.types().asMemberOf(declaringType, overridden))
-                      .getReturnType();
+              String inherited = TsElement.of(overridden, declaring, quiet).getType().emit("");
               // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
-              if (JavaToTsTypeConverter.isSameType(inherited, Object.class, env)) {
-                return excludedByObject;
+              if ("object".equals(inherited)) {
+                return unnamed || !isWithinObject(returnType);
               }
-              return unnamed
-                  && !"unknown"
-                      .equals(TsElement.of(overridden, declaring, quiet).getType().emit(""));
-            })
-        .findFirst();
+              return unnamed && !"unknown".equals(inherited);
+            });
   }
 
   /**
-   * Whether this method's {@code returnType} emits as a type TypeScript's {@code object} excludes:
-   * a primitive or its box, a string, a nullable, a literal, or a union, which may hold those.
+   * Whether this method's {@code returnType} is known to emit as a type TypeScript's {@code object}
+   * includes: an array, or a reference to an emitted type, a JsFunction, a property map or {@code
+   * Any}, not nullable. Anything else may be a primitive, so isn't.
    */
-  private boolean isExcludedByObject(TypeMirror returnType) {
-    if (returnType.getKind().isPrimitive()
-        || JavaToTsTypeConverter.isSameType(returnType, String.class, env)
-        || isJsNullable()
-        || ProcessorType.of(returnType, env).isUnionType()
+  private boolean isWithinObject(TypeMirror returnType) {
+    if (isJsNullable()
         || returnType.getAnnotationMirrors().stream()
             .anyMatch(
                 a ->
                     a.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral"))) {
-      return true;
-    }
-    try {
-      env.types().unboxedType(returnType);
-      return true;
-    } catch (IllegalArgumentException notABox) {
       return false;
     }
+    if (TypeKind.ARRAY.equals(returnType.getKind())) {
+      return true;
+    }
+    if (!TypeKind.DECLARED.equals(returnType.getKind())) {
+      return false;
+    }
+    ProcessorType processorType = ProcessorType.of(returnType, env);
+    TsElement type = TsElement.of(returnType, env);
+    if (processorType.isUnionType() || type.isTsTypeDef()) {
+      return false;
+    }
+    return processorType.isJsFunction()
+        || processorType.isAssignableFrom(JsPropertyMap.class)
+        || JavaToTsTypeConverter.isSameType(returnType, Any.class, env)
+        || type.isJsType()
+        || type.isTsInterface();
   }
 
   /** A {@code @TsIgnore} or {@code @TsInterface} superclass, whose members subclasses declare. */

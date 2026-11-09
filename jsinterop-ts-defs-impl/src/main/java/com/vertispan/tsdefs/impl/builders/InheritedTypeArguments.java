@@ -198,10 +198,10 @@ public class InheritedTypeArguments {
    * Whether {@code typeParameter} is reached with arguments that are different TypeScript types,
    * and its type mentions it anywhere, so that a declaration could disagree.
    */
-  private boolean conflicts(Element typeParameter) {
+  private boolean conflicts(Element typeParameter, HasProcessorEnv env) {
     List<Binding> passed = bindings().getOrDefault(typeParameter, Collections.emptyList());
     return passed.stream().map(binding -> sameType(binding.emitted)).distinct().count() > 1
-        && mentionsAnywhere(typeParameter);
+        && mentionsAnywhere(typeParameter, env);
   }
 
   /** {@code any} and {@code unknown} already include null and undefined. */
@@ -211,10 +211,12 @@ public class InheritedTypeArguments {
         : emitted;
   }
 
-  /** In any member of the type declaring it, or in a clause passing it on. */
-  private static boolean mentionsAnywhere(Element typeParameter) {
+  /** In an emitted member of the type declaring it, or in a clause passing it on. */
+  private static boolean mentionsAnywhere(Element typeParameter, HasProcessorEnv env) {
     TypeElement owner = (TypeElement) typeParameter.getEnclosingElement();
+    // Overlays and ignored members never reach TypeScript.
     return owner.getEnclosedElements().stream()
+            .filter(member -> TsElement.of(member, env).isExportable())
             .anyMatch(member -> mentions(member.asType(), typeParameter))
         || supertypeClauses(owner).stream().anyMatch(clause -> mentions(clause, typeParameter));
   }
@@ -257,7 +259,7 @@ public class InheritedTypeArguments {
   private static void reportConflicts(TypeElement subtype, HasProcessorEnv env) {
     InheritedTypeArguments passed = of(subtype, env);
     passed.bindings().keySet().stream()
-        .filter(passed::conflicts)
+        .filter(typeParameter -> passed.conflicts(typeParameter, env))
         .forEach(
             typeParameter ->
                 reportConflict(meeting(subtype, typeParameter, env), typeParameter, env));
@@ -267,11 +269,17 @@ public class InheritedTypeArguments {
   private static TypeElement meeting(TypeElement type, Element typeParameter, HasProcessorEnv env) {
     for (DeclaredType clause : clauses(type)) {
       TypeElement supertype = (TypeElement) clause.asElement();
-      if (of(supertype, env).conflicts(typeParameter)) {
+      if (of(supertype, env).conflicts(typeParameter, env)) {
         return meeting(supertype, typeParameter, env);
       }
     }
     return type;
+  }
+
+  private static String path(Binding binding, TypeElement meeting) {
+    return binding.through.equals(meeting)
+        ? "in its own clause"
+        : "through " + binding.through.getSimpleName();
   }
 
   private static void reportConflict(
@@ -290,12 +298,12 @@ public class InheritedTypeArguments {
             + typeParameter.getEnclosingElement().getSimpleName()
             + " is passed ["
             + first.emitted
-            + "] through "
-            + first.through.getSimpleName()
+            + "] "
+            + path(first, meeting)
             + " but ["
             + other.emitted
-            + "] through "
-            + other.through.getSimpleName()
+            + "] "
+            + path(other, meeting)
             + " in "
             + meeting.getSimpleName()
             + "; the type arguments disagree. Make them agree.";

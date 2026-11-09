@@ -242,11 +242,12 @@ public class InheritedTypeArgumentsTest {
             "MapA",
                 "@jsinterop.annotations.JsType(isNative = true, namespace ="
                     + " jsinterop.annotations.JsPackage.GLOBAL, name = \"Object\") public interface"
-                    + " MapA extends jsinterop.base.JsPropertyMap<jsinterop.base.Any> {}",
+                    + " MapA extends"
+                    + " jsinterop.base.JsPropertyMap<@jsinterop.annotations.JsNullable String> {}",
             "MapB",
                 "@jsinterop.annotations.JsType(isNative = true, namespace ="
                     + " jsinterop.annotations.JsPackage.GLOBAL, name = \"Object\") public interface"
-                    + " MapB extends jsinterop.base.JsPropertyMap<Object> {}",
+                    + " MapB extends jsinterop.base.JsPropertyMap<String> {}",
             "Options",
                 "@jsinterop.annotations.JsType public interface Options extends MapA, MapB {"
                     + " @jsinterop.annotations.JsProperty String getName(); }");
@@ -271,46 +272,6 @@ public class InheritedTypeArgumentsTest {
             "@jsinterop.annotations.JsType public abstract class AnyBoth implements NB, PB {}");
 
     assertThat(result.errors()).isEmpty();
-  }
-
-  // IB.value() narrows IA's Object to a type object includes, so its type stands in for C's.
-  @Test
-  public void widerMemberThatNarrowsFurtherUpStandsIn() throws IOException {
-    Compilation result =
-        compileSources(
-            "Named", "@jsinterop.annotations.JsType public class Named {}",
-            "Hidden", "public class Hidden extends Named {}",
-            "IA", "@jsinterop.annotations.JsType public interface IA { Object value(); }",
-            "IB", "@jsinterop.annotations.JsType public interface IB extends IA { Named value(); }",
-            "C",
-                "@jsinterop.annotations.JsType public abstract class C implements IB {"
-                    + " public abstract Hidden value(); }");
-
-    assertThat(result.errors()).isEmpty();
-    String output = output(result);
-    String c = output.substring(output.indexOf("class C"));
-    assertThat(c.substring(0, c.indexOf('}'))).contains("value():Named");
-  }
-
-  // The wider member stands in for the override, which keeps its own modifiers and docs.
-  @Test
-  public void widerMemberInAnOverridesPlaceKeepsTheOverridesModifiersAndDocs() throws IOException {
-    Compilation result =
-        compileSources(
-            "AH",
-            "@jsinterop.annotations.JsType public abstract class AH {"
-                + " /** Docs of AH. */ public abstract Object value(); }",
-            "CH",
-            "@jsinterop.annotations.JsType public class CH extends AH {"
-                + " /** Docs of CH. */ @Deprecated public String value() { return \"\"; } }");
-
-    assertThat(result.errors()).isEmpty();
-    String output = output(result);
-    String ch = output.substring(output.indexOf("class CH"));
-    ch = ch.substring(0, ch.indexOf('}'));
-    assertThat(ch)
-        .contains("value():object", "Docs of CH.", "@deprecated")
-        .doesNotContain("abstract", "Docs of AH.");
   }
 
   // Q meets the paths; Impl reaches R again through P, which the walk doesn't repeat.

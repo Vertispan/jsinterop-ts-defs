@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -98,14 +97,8 @@ public class ClassMethodVisitor<T> extends TsElement {
 
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
-      Optional<ExecutableElement> wider = widerThanTypeScriptAllows();
-      if (wider.isPresent()) {
-        // A copy stands for the wider member chosen in its place; a declaration must declare
-        // itself, with the wider return type.
-        if (inheritedBy == null) {
-          TypeElement declaring = (TypeElement) element.getEnclosingElement();
-          parent.addFunction(toTsMethod(TsElement.of(wider.get(), declaring, env).getType()));
-        }
+      // The wider member it overrides is copied instead.
+      if (inheritedBy != null && narrowsBeyondTypeScript()) {
         return;
       }
       // A copy into a subtype was already chosen as the most specific override.
@@ -115,13 +108,13 @@ public class ClassMethodVisitor<T> extends TsElement {
           && parentElement.isInheritedMethod((ExecutableElement) this.element)) {
         return;
       }
-      parent.addFunction(toTsMethod(getType()));
+      parent.addFunction(toTsMethod());
     }
   }
 
-  private TsMethod toTsMethod(TsType returnType) {
+  private TsMethod toTsMethod() {
     TsMethod.TsMethodBuilder builder =
-        TsMethod.builder(getName(), returnType)
+        TsMethod.builder(getName(), getType())
             .addModifiers(getJsModifiers())
             .setDocs(copyDocs ? getDocs() : TsDoc.empty())
             .setDeprecated(isDeprecated());

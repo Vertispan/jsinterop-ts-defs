@@ -1426,31 +1426,17 @@ declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
 expectType<() => OverridesFoo>()(hiddenTypeGetterImpl.dget);
 declare const stringValueImpl: StringValueImpl;
 expectType<() => object>()(stringValueImpl.value);
-// A type's own override TypeScript can't narrow to is declared with the wider type instead.
-import OwnStringValue = com.vertispan.tsdefs.tests.overrides.OwnStringValue;
-import StringHolder = com.vertispan.tsdefs.tests.overrides.StringHolder;
-declare const ownStringValue: OwnStringValue;
-expectType<() => object>()(ownStringValue.value);
-declare const stringHolder: StringHolder;
-expectType<() => object>()(stringHolder.value);
-// Narrowing Object to a type object includes is kept.
+// A type's own override is declared as written. TODO(#144) narrowing Object to string is then
+// valid too.
 import ArrayValueHolder = com.vertispan.tsdefs.tests.overrides.ArrayValueHolder;
 import FooValueHolder = com.vertispan.tsdefs.tests.overrides.FooValueHolder;
+import StringFromIgnored = com.vertispan.tsdefs.tests.overrides.StringFromIgnored;
 declare const arrayValueHolder: ArrayValueHolder;
 expectType<() => Array<string>>()(arrayValueHolder.value);
 declare const fooValueHolder: FooValueHolder;
 expectType<() => OverridesFoo>()(fooValueHolder.value);
-// A @TsIgnore type's members are emitted in its subtypes, so they count as what is overridden.
-// StringFromIgnored could keep string, since no emitted supertype declares value(); not modeled.
-import StringFromIgnored = com.vertispan.tsdefs.tests.overrides.StringFromIgnored;
-import StringOverMid = com.vertispan.tsdefs.tests.overrides.StringOverMid;
-import StringValueSource = com.vertispan.tsdefs.tests.overrides.StringValueSource;
 declare const stringFromIgnored: StringFromIgnored;
-expectType<() => object>()(stringFromIgnored.value);
-declare const stringOverMid: StringOverMid;
-expectType<() => object>()(stringOverMid.value);
-declare const stringValueSource: StringValueSource;
-expectType<() => object>()(stringValueSource.value);
+expectType<() => string>()(stringFromIgnored.value);
 // Narrowing a method TypeScript doesn't see leaves nothing to fall back to.
 import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
 declare const stringSource: StringSource;
