@@ -1363,3 +1363,28 @@ declare const diamondImpl: DiamondImpl;
 expectType<() => string>()(diamondImpl.get);
 declare const ignoredDiamondImpl: IgnoredDiamondImpl;
 expectType<() => string>()(ignoredDiamondImpl.get);
+
+// Arguments are substituted through more than one level of supertypes.
+import ChainImpl = com.vertispan.tsdefs.tests.overrides.ChainImpl;
+declare const chainImpl: ChainImpl;
+expectType<() => string[]>()(chainImpl.get);
+expectType<(value: string[]) => void>()(chainImpl.put);
+
+// Inherited properties and method type-parameter bounds are substituted too.
+import FooSettable = com.vertispan.tsdefs.tests.overrides.FooSettable;
+declare const fooSettable: FooSettable;
+expectType<OverridesFoo>()(fooSettable.value);
+expectType<OverridesFoo>()(fooSettable.target);
+expectType<<R extends OverridesFoo>() => R>()(fooSettable.narrow);
+
+// A narrower override from a superclass wins over the wider interface method.
+import NarrowSub = com.vertispan.tsdefs.tests.overrides.NarrowSub;
+declare const narrowSub: NarrowSub;
+expectType<() => OverridesBar>()(narrowSub.dget);
+
+// A class implementing a narrowing interface gets the narrower methods.
+import NarrowSourceImpl = com.vertispan.tsdefs.tests.overrides.NarrowSourceImpl;
+declare const narrowSourceImpl: NarrowSourceImpl;
+expectType<() => OverridesBar>()(narrowSourceImpl.get);
+expectType<() => Promise<OverridesBar>>()(narrowSourceImpl.resolve);
+expectType<() => string>()(narrowSourceImpl.extra);

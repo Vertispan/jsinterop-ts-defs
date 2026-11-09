@@ -21,11 +21,13 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import com.vertispan.tsdefs.processor.JsTypesProcessor;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
 import org.junit.Test;
 
 /** Type arguments that inherited members are emitted with. */
@@ -102,6 +104,28 @@ public class InheritedTypeArgumentsTest {
                   .contains("T of Source", "NullableBranch", "PlainBranch", "Diamond");
               assertThat(d.getSource().getName()).endsWith("Diamond.java");
             });
+  }
+
+  @Test
+  public void memberReachedTwiceWithSameArgumentIsEmittedOnce() throws IOException {
+    Compilation result = compile("Source", "PlainBranch", "PassBranch", "SameTwice");
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(result.warnings()).noneMatch(d -> d.getMessage(null).startsWith("Type parameter "));
+    String output = output(result);
+    int start = output.indexOf("class SameTwice");
+    assertThat(start).as("SameTwice is emitted").isNotNegative();
+    String body = output.substring(start, output.indexOf('}', start));
+    assertThat(body.split("\\bget\\(", -1)).as("get() in %s", body).hasSize(2);
+    assertThat(body).contains("get():string");
+  }
+
+  private static String output(Compilation result) throws IOException {
+    return result
+        .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+        .orElseThrow(AssertionError::new)
+        .getCharContent(false)
+        .toString();
   }
 
   /**

@@ -68,6 +68,38 @@ public class RawTypesTest {
             + " e.g. GenericUnion<Any> (jsinterop.base.Any) or GenericUnion<?>.");
   }
 
+  // This and the next two: the raw supertype isn't emitted, but its members are merged in.
+  @Test
+  public void rawTsIgnoredSuperclassShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsIgnored.java",
+        "Raw type IgnoredGenericBase in the supertypes of RawExtendsIgnored is not supported;"
+            + " give its type arguments, e.g. IgnoredGenericBase<Any> (jsinterop.base.Any).",
+        "errors/raw/IgnoredGenericBase.java",
+        "errors/raw/RawExtendsIgnored.java");
+  }
+
+  @Test
+  public void rawSkippedGenericSuperclassShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsGenericMid.java",
+        "Raw type GenericMid in the supertypes of RawExtendsGenericMid is not supported;"
+            + " give its type arguments, e.g. GenericMid<Any> (jsinterop.base.Any).",
+        "errors/raw/GenericMid.java",
+        "errors/raw/RawExtendsGenericMid.java");
+  }
+
+  @Test
+  public void rawTsIgnoredSuperinterfaceShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsIgnoredInterface.java",
+        "Raw type IgnoredContainer in the supertypes of RawExtendsIgnoredInterface is not"
+            + " supported; give its type arguments,"
+            + " e.g. IgnoredContainer<Any> (jsinterop.base.Any).",
+        "errors/raw/IgnoredContainer.java",
+        "errors/raw/RawExtendsIgnoredInterface.java");
+  }
+
   @Test
   public void rawMemberTypeShouldFail() {
     assertSingleError(
@@ -265,6 +297,16 @@ public class RawTypesTest {
         .extracting(e -> e.getMessage(Locale.getDefault()))
         .as("errors in %s", resource)
         .containsExactly(message);
+  }
+
+  private static void assertSingleErrorIn(String file, String message, String... resources) {
+    assertThat(compile(resources).errors())
+        .extracting(
+            e ->
+                e.getSource().getName().replaceAll(".*/", "")
+                    + ": "
+                    + e.getMessage(Locale.getDefault()))
+        .containsExactly(file + ": " + message);
   }
 
   private static void assertErrorsOnlyIn(int count, String file, String... resources) {
