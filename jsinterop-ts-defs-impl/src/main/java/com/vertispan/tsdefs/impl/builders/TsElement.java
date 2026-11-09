@@ -850,9 +850,9 @@ public class TsElement {
 
   /**
    * JsInterop exports an override of an exported method, with or without its own annotation, under
-   * the overridden method's JS name. Only overrides of plain methods with the same name are
-   * emitted: for property accessors and renamed methods the inherited declaration already has the
-   * JS name, and this override's own name would be wrong.
+   * the overridden method's JS name. Only overrides with the same name are emitted, including
+   * unnamed property accessors: for a renamed method or accessor this override's own name would be
+   * wrong.
    */
   private boolean overridesExportedMethod() {
     return !isStatic()
@@ -861,9 +861,7 @@ public class TsElement {
             .map(superMethod -> TsElement.of(superMethod, env))
             .anyMatch(
                 superMethod ->
-                    superMethod.isExportable()
-                        && !superMethod.isJsProperty()
-                        && superMethod.getName().equals(getName()));
+                    superMethod.isExportable() && superMethod.getName().equals(getName()));
   }
 
   private boolean isExportableField() {

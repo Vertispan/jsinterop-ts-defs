@@ -164,8 +164,7 @@ public class ClassMethodVisitor<T> extends TsElement {
     DeclaredType declaringType = (DeclaredType) declaring.element().asType();
     for (ExecutableElement superMethod : declaring.overriddenMethods(method)) {
       TsElement overridden = TsElement.of(superMethod, env);
-      if (!overridden.isExportable()
-          || (!overridden.isJsProperty() && overridden.getName().equals(getName()))) {
+      if (!overridden.isExportable() || overridden.getName().equals(getName())) {
         continue;
       }
       TypeMirror inheritedReturn =
@@ -173,23 +172,29 @@ public class ClassMethodVisitor<T> extends TsElement {
       if (env.types().isSameType(method.getReturnType(), inheritedReturn)) {
         continue;
       }
-      String jsName = overridden.getName();
       boolean property = overridden.isJsProperty();
+      String jsName = property ? overridden.nonGetSetName() : overridden.getName();
+      String override = declaring.element().getSimpleName() + "." + method.getSimpleName() + "()";
+      String inherited =
+          superMethod.getEnclosingElement().getSimpleName()
+              + "."
+              + superMethod.getSimpleName()
+              + "()";
       env.messager()
           .printMessage(
               Diagnostic.Kind.WARNING,
-              declaring.element().getSimpleName()
-                  + "."
-                  + method.getSimpleName()
-                  + "() is exported as "
-                  + (property ? "the property " + jsName : jsName + "()")
-                  + " and returns "
+              override
+                  + " narrows the return type of "
+                  + inherited
+                  + " to "
                   + method.getReturnType()
-                  + ", but TypeScript sees "
-                  + (property ? jsName : jsName + "()")
-                  + " from "
-                  + superMethod.getEnclosingElement().getSimpleName()
-                  + "; annotate it with "
+                  + ", but is exported under "
+                  + inherited
+                  + "'s JS name, which isn't modeled, so the declaration keeps "
+                  + inherited
+                  + "'s type; annotate "
+                  + override
+                  + " with "
                   + (property ? "@JsProperty" : "@JsMethod")
                   + "(name = \""
                   + jsName
