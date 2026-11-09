@@ -210,6 +210,24 @@ public class InheritedTypeArgumentsTest {
     return diagnostics.stream().map(d -> d.getMessage(null)).collect(Collectors.toList());
   }
 
+  // Q meets the paths; Impl reaches R again through P, which the walk doesn't repeat.
+  @Test
+  public void conflictMetInASupertypeIsReportedOnceThere() {
+    Compilation result =
+        compileSources(
+            "Src", "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
+            "R", "@jsinterop.annotations.JsType public interface R extends Src<String> {}",
+            "P", "@jsinterop.annotations.JsType public interface P extends R {}",
+            "Q",
+                "@jsinterop.annotations.JsType public interface Q"
+                    + " extends R, Src<@jsinterop.annotations.JsNullable String> {}",
+            "Impl", "@jsinterop.annotations.JsType public abstract class Impl implements P, Q {}");
+
+    assertThat(result.errors())
+        .singleElement()
+        .satisfies(d -> assertThat(d.getSource().getName()).endsWith("Q.java"));
+  }
+
   // The clause's wildcard warning is about Src's T on D, as is the diamond error.
   @Test
   public void diamondErrorIsReportedBesideAWildcardWarning() {
