@@ -21,6 +21,7 @@ import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import javax.lang.model.element.Parameterizable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
 
@@ -83,6 +85,49 @@ public class TypeArgumentsVisitor<T> extends TsElement {
           .asTypeWithArgument(classDeclaredType)
           .forEach(builder::addTypeArgument);
     }
+  }
+
+  /**
+   * Reports raw clauses on the way up from {@code type} through supertypes that are not emitted
+   * themselves, such as {@code @TsIgnore} types and skipped classes, whose members or clauses are
+   * emitted into {@code type} instead. Each is reported on the type whose clause writes it, and
+   * only if the raw type reaches the output.
+   */
+  public static void reportRawHiddenSupertypes(TypeElement type, HasProcessorEnv env) {
+    List<TypeMirror> supertypes = new ArrayList<>(type.getInterfaces());
+    supertypes.add(type.getSuperclass());
+    for (TypeMirror supertype : supertypes) {
+      if (!TypeKind.DECLARED.equals(supertype.getKind())) {
+        continue;
+      }
+      DeclaredType clause = (DeclaredType) supertype;
+      TypeElement named = (TypeElement) clause.asElement();
+      TsElement tsNamed = TsElement.of(named, env);
+      if (JavaToTsTypeConverter.isRaw(clause)) {
+        if (reachesOutput(named, env) && env.firstReport(type, named)) {
+          env.messager()
+              .printMessage(
+                  Diagnostic.Kind.ERROR,
+                  JavaToTsTypeConverter.rawTypeMessage(clause, type, true, env),
+                  type);
+        }
+      } else if (tsNamed.isTsIgnored() || !tsNamed.isJsType()) {
+        reportRawHiddenSupertypes(named, env);
+      }
+    }
+  }
+
+  /** Whether {@code type}'s members or supertypes are emitted, in it or in its subtypes. */
+  private static boolean reachesOutput(TypeElement type, HasProcessorEnv env) {
+    TsElement tsElement = TsElement.of(type, env);
+    if (tsElement.isJsType() || tsElement.isTsInterface() || tsElement.hasJsMembers()) {
+      return true;
+    }
+    List<TypeMirror> supertypes = new ArrayList<>(type.getInterfaces());
+    supertypes.add(type.getSuperclass());
+    return supertypes.stream()
+        .filter(supertype -> TypeKind.DECLARED.equals(supertype.getKind()))
+        .anyMatch(supertype -> reachesOutput((TypeElement) env.types().asElement(supertype), env));
   }
 
   /** The type parameters a type declares, each with its bounds, e.g. {@code <T extends Item>}. */
