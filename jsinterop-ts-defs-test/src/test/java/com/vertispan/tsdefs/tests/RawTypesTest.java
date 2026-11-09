@@ -102,6 +102,13 @@ public class RawTypesTest {
         "errors/raw/ImplementsRawNativeMid.java");
   }
 
+  // Raw in Java, but nothing of the raw type reaches TypeScript.
+  @Test
+  public void rawPlainSuperclassWithoutJsMembersIsNotReported() {
+    assertThat(compile("errors/raw/PlainGeneric.java", "errors/raw/ExtendsRawPlain.java").errors())
+        .isEmpty();
+  }
+
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
     assertSingleErrorIn(

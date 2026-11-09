@@ -299,9 +299,10 @@ public class InheritedTypeArgumentsTest {
   /**
    * Each level has two interfaces extending both below it, so the top is reached by 2^depth paths.
    */
-  @Test(timeout = 10_000)
+  // At depth 16 this takes about 2.5s; walking each path instead of each type takes about 12s.
+  @Test(timeout = 6_000)
   public void diamondLatticeIsWalkedOncePerType() {
-    int depth = 12;
+    int depth = 16;
     List<JavaFileObject> sources = new ArrayList<>();
     for (int level = 0; level <= depth; level++) {
       for (String side : new String[] {"A", "B"}) {
