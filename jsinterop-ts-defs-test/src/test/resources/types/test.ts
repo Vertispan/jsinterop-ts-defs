@@ -1369,6 +1369,10 @@ import ChainImpl = com.vertispan.tsdefs.tests.overrides.ChainImpl;
 declare const chainImpl: ChainImpl;
 expectType<() => string[]>()(chainImpl.get);
 expectType<(value: string[]) => void>()(chainImpl.put);
+// The same through a skipped class's extends clause.
+import ThroughSkipped = com.vertispan.tsdefs.tests.overrides.ThroughSkipped;
+declare const throughSkipped: ThroughSkipped;
+expectType<string[]>()(throughSkipped.held);
 
 // Inherited properties and method type-parameter bounds are substituted too.
 import FooSettable = com.vertispan.tsdefs.tests.overrides.FooSettable;
