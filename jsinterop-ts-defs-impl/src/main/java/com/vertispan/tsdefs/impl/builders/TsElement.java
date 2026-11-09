@@ -708,12 +708,18 @@ public class TsElement {
     return methods;
   }
 
-  /** Whether one of {@code others}, as a member of this type, overrides {@code method}. */
+  /**
+   * Whether one of {@code others} that is emitted overrides {@code method}, as members of this
+   * type. One that isn't emitted leaves {@code method} to stand for it.
+   */
+  // TODO(#133) GWT also exports an override of an exported method; once that is modeled here,
+  //  such an override is emitted and replaces the wider method.
   public boolean isOverriddenByAny(ExecutableElement method, Collection<ExecutableElement> others) {
     return others.stream()
         .anyMatch(
             other ->
                 !other.equals(method)
+                    && TsElement.of(other, env).isExportable()
                     && env.elements().overrides(other, method, (TypeElement) element));
   }
 
