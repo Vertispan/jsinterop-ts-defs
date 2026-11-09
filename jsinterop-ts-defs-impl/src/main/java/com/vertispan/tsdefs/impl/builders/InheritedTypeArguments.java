@@ -30,9 +30,14 @@ import java.util.function.Supplier;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 import javax.tools.Diagnostic;
 import jsinterop.annotations.JsType;
 
@@ -189,14 +194,65 @@ public class InheritedTypeArguments {
     return Optional.of(passed.get(0).convert(env));
   }
 
+  /**
+   * Whether {@code typeParameter} is reached with arguments that are different TypeScript types,
+   * and its type mentions it anywhere, so that a declaration could disagree.
+   */
   private boolean conflicts(Element typeParameter) {
-    return bindings().getOrDefault(typeParameter, Collections.emptyList()).size() > 1;
+    List<Binding> passed = bindings().getOrDefault(typeParameter, Collections.emptyList());
+    return passed.stream().map(binding -> sameType(binding.emitted)).distinct().count() > 1
+        && mentionsAnywhere(typeParameter);
+  }
+
+  /** {@code any} and {@code unknown} already include null and undefined. */
+  private static String sameType(String emitted) {
+    return emitted.matches("(any|unknown)(\\|null)?(\\|undefined)?")
+        ? emitted.replaceAll("\\|.*", "")
+        : emitted;
+  }
+
+  /** In any member of the type declaring it, or in a clause passing it on. */
+  private static boolean mentionsAnywhere(Element typeParameter) {
+    TypeElement owner = (TypeElement) typeParameter.getEnclosingElement();
+    return owner.getEnclosedElements().stream()
+            .anyMatch(member -> mentions(member.asType(), typeParameter))
+        || supertypeClauses(owner).stream().anyMatch(clause -> mentions(clause, typeParameter));
+  }
+
+  private static boolean mentions(TypeMirror type, Element typeParameter) {
+    switch (type.getKind()) {
+      case TYPEVAR:
+        // Not its bound, which can mention itself; bounds are checked where they are declared.
+        return ((TypeVariable) type).asElement().equals(typeParameter);
+      case DECLARED:
+        return ((DeclaredType) type)
+            .getTypeArguments().stream().anyMatch(argument -> mentions(argument, typeParameter));
+      case ARRAY:
+        return mentions(((ArrayType) type).getComponentType(), typeParameter);
+      case WILDCARD:
+        WildcardType wildcard = (WildcardType) type;
+        return (wildcard.getExtendsBound() != null
+                && mentions(wildcard.getExtendsBound(), typeParameter))
+            || (wildcard.getSuperBound() != null
+                && mentions(wildcard.getSuperBound(), typeParameter));
+      case EXECUTABLE:
+        ExecutableType method = (ExecutableType) type;
+        return mentions(method.getReturnType(), typeParameter)
+            || method.getParameterTypes().stream().anyMatch(p -> mentions(p, typeParameter))
+            || method.getTypeVariables().stream()
+                .anyMatch(v -> mentions(v.getUpperBound(), typeParameter));
+      case INTERSECTION:
+        return ((IntersectionType) type)
+            .getBounds().stream().anyMatch(bound -> mentions(bound, typeParameter));
+      default:
+        return false;
+    }
   }
 
   /**
    * Reports each type parameter {@code subtype} reaches with arguments that differ in TypeScript,
-   * e.g. only in nullability, as TypeScript has no one type for both. Once, on the type where the
-   * paths meet, whether or not an emitted member uses the parameter.
+   * e.g. only in nullability, where its type mentions it at all: declarations could disagree on
+   * which one TypeScript sees. Once, on the type where the paths meet.
    */
   private static void reportConflicts(TypeElement subtype, HasProcessorEnv env) {
     InheritedTypeArguments passed = of(subtype, env);
@@ -222,7 +278,11 @@ public class InheritedTypeArguments {
       TypeElement meeting, Element typeParameter, HasProcessorEnv env) {
     List<Binding> passed = of(meeting, env).bindings().get(typeParameter);
     Binding first = passed.get(0);
-    Binding other = passed.get(1);
+    Binding other =
+        passed.stream()
+            .filter(binding -> !sameType(binding.emitted).equals(sameType(first.emitted)))
+            .findFirst()
+            .get();
     String message =
         "Type parameter "
             + typeParameter.getSimpleName()
@@ -238,7 +298,7 @@ public class InheritedTypeArguments {
             + other.through.getSimpleName()
             + " in "
             + meeting.getSimpleName()
-            + "; TypeScript has no one type for both. Make the type arguments agree.";
+            + "; the type arguments disagree. Make them agree.";
     if (env.firstReport(meeting, message)) {
       env.messager().printMessage(Diagnostic.Kind.ERROR, message, meeting);
     }

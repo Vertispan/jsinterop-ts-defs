@@ -243,7 +243,7 @@ public class InheritedTypeArgumentsTest {
             "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
             "NB",
             "@jsinterop.annotations.JsType public interface NB"
-                + " extends Src<@jsinterop.annotations.JsNullable jsinterop.base.Any> {}",
+                + " extends Src<jsinterop.base.@jsinterop.annotations.JsNullable Any> {}",
             "PB",
             "@jsinterop.annotations.JsType public interface PB"
                 + " extends Src<jsinterop.base.Any> {}",
