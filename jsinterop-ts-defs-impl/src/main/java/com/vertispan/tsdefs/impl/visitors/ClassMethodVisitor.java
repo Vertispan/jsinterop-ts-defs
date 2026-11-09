@@ -23,6 +23,7 @@ import com.vertispan.tsdefs.impl.model.TsMethod;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -62,7 +63,14 @@ public class ClassMethodVisitor<T> extends TsElement {
 
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
-      if (narrowsBeyondTypeScript()) {
+      Optional<ExecutableElement> wider = widerThanTypeScriptAllows();
+      if (wider.isPresent()) {
+        // A copy stands for the wider member chosen in its place; a declaration must declare it.
+        if (inheritedBy == null) {
+          new ClassMethodVisitor<T>(
+                  wider.get(), (TypeElement) element.getEnclosingElement(), copyDocs, env)
+              .visit(parent);
+        }
         return;
       }
       // A copy into a subtype was already chosen as the most specific override.

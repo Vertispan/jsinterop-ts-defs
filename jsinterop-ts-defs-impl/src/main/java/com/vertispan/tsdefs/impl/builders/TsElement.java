@@ -732,14 +732,19 @@ public class TsElement {
                     && !TsElement.of(other, env).narrowsBeyondTypeScript());
   }
 
-  /**
-   * Whether this method overrides an emitted one whose return type TypeScript can't narrow to this
-   * one's: to a type it has no name for, or from Object, emitted as object, which excludes
-   * primitives. The inherited member is emitted in its place.
-   */
+  /** See {@link #widerThanTypeScriptAllows()}. */
   public boolean narrowsBeyondTypeScript() {
+    return widerThanTypeScriptAllows().isPresent();
+  }
+
+  /**
+   * A method TypeScript sees that this one overrides, with a return type TypeScript can't narrow to
+   * this one's: to a type it has no name for, or from Object, emitted as object, which excludes
+   * primitives. That method is emitted in this one's place.
+   */
+  public Optional<ExecutableElement> widerThanTypeScriptAllows() {
     if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
-      return false;
+      return Optional.empty();
     }
     TypeElement declaring = (TypeElement) element.getEnclosingElement();
     DeclaredType declaringType = (DeclaredType) declaring.asType();
@@ -748,7 +753,8 @@ public class TsElement {
     boolean unnamed = "unknown".equals(TsElement.of(element, quiet).getType().emit(""));
     return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
         .filter(overridden -> TsElement.of(overridden, env).isExportable())
-        .anyMatch(
+        .filter(overridden -> !TsElement.of(overridden.getEnclosingElement(), env).isTsIgnored())
+        .filter(
             overridden -> {
               TypeMirror inherited =
                   ((ExecutableType) env.types().asMemberOf(declaringType, overridden))
@@ -761,7 +767,8 @@ public class TsElement {
               return unnamed
                   && !"unknown"
                       .equals(TsElement.of(overridden, declaring, quiet).getType().emit(""));
-            });
+            })
+        .findFirst();
   }
 
   /**
