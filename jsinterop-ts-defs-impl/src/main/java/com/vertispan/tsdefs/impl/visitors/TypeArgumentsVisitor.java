@@ -42,6 +42,7 @@ import javax.tools.Diagnostic;
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
   private final TypeElement subtype;
+  private final TypeElement emittedIn;
 
   /**
    * Visits the type arguments of a type in a usage position, such as a superclass or implemented
@@ -49,9 +50,19 @@ public class TypeArgumentsVisitor<T> extends TsElement {
    * type parameters.
    */
   public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
+    this(typeMirror, subtype, subtype, env);
+  }
+
+  /**
+   * As above, for a clause of a skipped {@code subtype} emitted in its subtype {@code emittedIn},
+   * which passes the arguments.
+   */
+  public TypeArgumentsVisitor(
+      TypeMirror typeMirror, TypeElement subtype, TypeElement emittedIn, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
     this.subtype = subtype;
+    this.emittedIn = emittedIn;
   }
 
   /**
@@ -60,7 +71,7 @@ public class TypeArgumentsVisitor<T> extends TsElement {
    */
   public static <T> TypeArgumentsVisitor<T> ofDeclaration(
       TypeMirror typeMirror, HasProcessorEnv env) {
-    return new TypeArgumentsVisitor<>(typeMirror, null, env);
+    return new TypeArgumentsVisitor<>(typeMirror, null, null, env);
   }
 
   public void visit(HasTypeArguments<T> builder) {
@@ -81,7 +92,7 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     if (subtype == null) {
       declaredTypeParameters(classDeclaredType, env).forEach(builder::addTypeArgument);
     } else {
-      JavaToTsTypeConverter.forSupertypesOf(subtype, env)
+      JavaToTsTypeConverter.forSupertypesOf(subtype, emittedIn, env)
           .asTypeWithArgument(classDeclaredType)
           .forEach(builder::addTypeArgument);
     }

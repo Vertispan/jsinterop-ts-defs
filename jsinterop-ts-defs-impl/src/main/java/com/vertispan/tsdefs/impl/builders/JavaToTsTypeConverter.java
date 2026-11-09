@@ -89,6 +89,20 @@ public class JavaToTsTypeConverter {
     return forSupertypesOf(subtype, InheritedTypeArguments.NONE, env);
   }
 
+  /**
+   * Converts the type arguments in {@code writer}'s clauses, as emitted in {@code emittedIn}, a
+   * subtype of a {@code writer} that is not emitted itself.
+   */
+  public static JavaToTsTypeConverter forSupertypesOf(
+      TypeElement writer, TypeElement emittedIn, HasProcessorEnv env) {
+    return forSupertypesOf(
+        writer,
+        writer.equals(emittedIn)
+            ? InheritedTypeArguments.NONE
+            : InheritedTypeArguments.of(emittedIn, env),
+        env);
+  }
+
   /** @param inherited what reached {@code subtype}, when it is itself a supertype */
   static JavaToTsTypeConverter forSupertypesOf(
       TypeElement subtype, InheritedTypeArguments inherited, HasProcessorEnv env) {

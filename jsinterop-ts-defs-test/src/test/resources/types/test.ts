@@ -1373,6 +1373,10 @@ expectType<(value: string[]) => void>()(chainImpl.put);
 import ThroughSkipped = com.vertispan.tsdefs.tests.overrides.ThroughSkipped;
 declare const throughSkipped: ThroughSkipped;
 expectType<string[]>()(throughSkipped.held);
+// Its implements clause names HolderShape<string[]>; an unresolved U fails in the d.ts.
+import ShapeThroughSkipped = com.vertispan.tsdefs.tests.overrides.ShapeThroughSkipped;
+declare const shapeThroughSkipped: ShapeThroughSkipped;
+expectType<() => string[]>()(shapeThroughSkipped.shape);
 
 // Inherited properties and method type-parameter bounds are substituted too.
 import FooSettable = com.vertispan.tsdefs.tests.overrides.FooSettable;

@@ -192,7 +192,8 @@ public class ClassTypeVisitor extends TsElement {
 
       TsClass.TsClassBuilder builder =
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
-      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(superclass, (TypeElement) element, env)
+      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(
+              superclass, (TypeElement) element, (TypeElement) this.element, env)
           .visit(builder);
       return Optional.of(builder.build());
     } else {
