@@ -30,6 +30,11 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
+import javax.lang.model.type.TypeMirror;
+import javax.tools.Diagnostic;
+import jsinterop.annotations.JsMethod;
+import jsinterop.annotations.JsProperty;
 
 public class ClassMethodVisitor<T> extends TsElement {
   private final boolean copyDocs;
@@ -64,6 +69,9 @@ public class ClassMethodVisitor<T> extends TsElement {
 
   public void visit(HasFunctions<T> parent) {
 
+    if (isMethod() && inheritedBy == null) {
+      warnIfNarrowingIsLost();
+    }
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
       // A copy into a subtype was already chosen as the most specific override.
@@ -126,6 +134,58 @@ public class ClassMethodVisitor<T> extends TsElement {
                         new ClassMethodVisitor<T>(superMethod, declaringType, false, quiet)
                             .toTsMethod(TsDoc.empty())
                             .emit("", "")));
+  }
+
+  /**
+   * JsInterop exports an unannotated override of a renamed method or a property accessor under the
+   * overridden member's JS name, which this emitter doesn't model: TypeScript sees only the
+   * inherited declaration, so a narrower return type is lost. Warns with the annotation that emits
+   * it.
+   */
+  private void warnIfNarrowingIsLost() {
+    ExecutableElement method = (ExecutableElement) element;
+    if (nonNull(method.getAnnotation(JsMethod.class))
+        || nonNull(method.getAnnotation(JsProperty.class))
+        || isExportable()) {
+      return;
+    }
+    TsElement declaring = TsElement.of(method.getEnclosingElement(), env);
+    DeclaredType declaringType = (DeclaredType) declaring.element().asType();
+    for (ExecutableElement superMethod : declaring.overriddenMethods(method)) {
+      TsElement overridden = TsElement.of(superMethod, env);
+      if (!overridden.isExportable()
+          || (!overridden.isJsProperty() && overridden.getName().equals(getName()))) {
+        continue;
+      }
+      TypeMirror inheritedReturn =
+          ((ExecutableType) env.types().asMemberOf(declaringType, superMethod)).getReturnType();
+      if (env.types().isSameType(method.getReturnType(), inheritedReturn)) {
+        continue;
+      }
+      String jsName = overridden.getName();
+      boolean property = overridden.isJsProperty();
+      env.messager()
+          .printMessage(
+              Diagnostic.Kind.WARNING,
+              declaring.element().getSimpleName()
+                  + "."
+                  + method.getSimpleName()
+                  + "() is exported as "
+                  + (property ? "the property " + jsName : jsName + "()")
+                  + " and returns "
+                  + method.getReturnType()
+                  + ", but TypeScript sees "
+                  + (property ? jsName : jsName + "()")
+                  + " from "
+                  + superMethod.getEnclosingElement().getSimpleName()
+                  + "; annotate it with "
+                  + (property ? "@JsProperty" : "@JsMethod")
+                  + "(name = \""
+                  + jsName
+                  + "\") to emit the narrower type.",
+              method);
+      return;
+    }
   }
 
   /** A blank comment, or one that only inherits, says nothing of its own. */
