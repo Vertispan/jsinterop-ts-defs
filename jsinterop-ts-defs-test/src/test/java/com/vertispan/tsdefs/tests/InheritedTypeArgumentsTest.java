@@ -211,6 +211,48 @@ public class InheritedTypeArgumentsTest {
         .hasSize(1);
   }
 
+  // Nothing of Tag mentions T, so nothing in the output can disagree.
+  @Test
+  public void differingArgumentsToAnUnusedParameterAreNotAnError() {
+    Compilation result =
+        compileSources(
+            "Tag", "@jsinterop.annotations.JsType public interface Tag<T> {}",
+            "IgnoredTag",
+                "@com.vertispan.tsdefs.annotations.TsIgnore @jsinterop.annotations.JsType"
+                    + " public interface IgnoredTag<T> {}",
+            "NTag",
+                "@jsinterop.annotations.JsType public interface NTag extends"
+                    + " Tag<@jsinterop.annotations.JsNullable String>,"
+                    + " IgnoredTag<@jsinterop.annotations.JsNullable String> {}",
+            "PTag",
+                "@jsinterop.annotations.JsType public interface PTag"
+                    + " extends Tag<String>, IgnoredTag<String> {}",
+            "Tagged",
+                "@jsinterop.annotations.JsType public abstract class Tagged implements NTag, PTag {"
+                    + " @jsinterop.annotations.JsMethod public void x() {} }");
+
+    assertThat(result.errors()).isEmpty();
+  }
+
+  // any and any|null|undefined are the same type in TypeScript.
+  @Test
+  public void argumentsTheSameInTypeScriptAreNotAnError() {
+    Compilation result =
+        compileSources(
+            "Src",
+            "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
+            "NB",
+            "@jsinterop.annotations.JsType public interface NB"
+                + " extends Src<@jsinterop.annotations.JsNullable jsinterop.base.Any> {}",
+            "PB",
+            "@jsinterop.annotations.JsType public interface PB"
+                + " extends Src<jsinterop.base.Any> {}",
+            "AnyBoth",
+            "@jsinterop.annotations.JsType public abstract class AnyBoth implements NB, PB {}");
+
+    assertThat(result.errors()).isEmpty();
+  }
+
   // The wider member stands in for the override, which keeps its own modifiers and docs.
   @Test
   public void widerMemberInAnOverridesPlaceKeepsTheOverridesModifiersAndDocs() throws IOException {
