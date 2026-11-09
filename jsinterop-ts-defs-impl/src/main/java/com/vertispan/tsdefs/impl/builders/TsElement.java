@@ -31,12 +31,9 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -80,37 +77,6 @@ public class TsElement {
     this.env = env;
     this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, typeArguments, env);
     this.typeMirror = nonNull(element) ? element.asType() : null;
-  }
-
-  /**
-   * New names for the type parameters of {@code method}, inherited by {@code inheritedBy}, that
-   * share a name with one of {@code inheritedBy}'s: substituted arguments can name those, and the
-   * method's own would capture them, e.g. {@code <U> U conv(T)} with {@code T} as {@code U[]}.
-   */
-  public static Map<Element, TsType> renamedTypeParameters(
-      Element method, TypeElement inheritedBy) {
-    if (!(method instanceof ExecutableElement) || inheritedBy == null) {
-      return Collections.emptyMap();
-    }
-    List<? extends TypeParameterElement> parameters =
-        ((ExecutableElement) method).getTypeParameters();
-    Set<String> taken = new HashSet<>();
-    inheritedBy.getTypeParameters().forEach(p -> taken.add(p.getSimpleName().toString()));
-    parameters.forEach(p -> taken.add(p.getSimpleName().toString()));
-    Map<Element, TsType> renamed = new HashMap<>();
-    for (TypeParameterElement parameter : parameters) {
-      String name = parameter.getSimpleName().toString();
-      if (inheritedBy.getTypeParameters().stream()
-          .anyMatch(p -> p.getSimpleName().contentEquals(name))) {
-        int suffix = 1;
-        while (taken.contains(name + suffix)) {
-          suffix++;
-        }
-        taken.add(name + suffix);
-        renamed.put(parameter, TsType.of(name + suffix, ""));
-      }
-    }
-    return renamed;
   }
 
   /** @param typeArguments what each type parameter in scope is emitted as */
@@ -531,8 +497,7 @@ public class TsElement {
    * Resolves a literal type from a {@link TypeMirror}'s TYPE_USE annotations. This handles the case
    * where {@code @TsLiteral} is used as a type-use annotation on type arguments, e.g. {@code
    * Supertype<@TsLiteral("hello") String>}.
-   */
-  /**
+   *
    * @param where the element written with {@code typeMirror}; an unsupported literal is reported
    *     once per element, however often it is converted
    */
@@ -771,16 +736,18 @@ public class TsElement {
         .findFirst();
   }
 
-  /**
-   * Methods of the {@code @TsIgnore} and {@code @TsInterface} superclasses, whose members are
-   * merged into this class.
-   */
+  /** A {@code @TsIgnore} or {@code @TsInterface} superclass, whose members subclasses declare. */
+  public boolean isMergedIntoSubclasses() {
+    return isTsIgnored() || isTsInterface();
+  }
+
+  /** Methods of the superclasses whose members are merged into this class. */
   public List<ExecutableElement> mergedSuperClassMethods() {
     List<ExecutableElement> methods = new ArrayList<>();
     Optional<TypeMirror> superclass = getJavaSuperClass();
     while (superclass.isPresent()) {
       TsElement superElement = TsElement.of(superclass.get(), env);
-      if (superElement.isTsIgnored() || superElement.isTsInterface()) {
+      if (superElement.isMergedIntoSubclasses()) {
         methods.addAll(superElement.enclosedMethods());
       }
       superclass = superElement.getJavaSuperClass();

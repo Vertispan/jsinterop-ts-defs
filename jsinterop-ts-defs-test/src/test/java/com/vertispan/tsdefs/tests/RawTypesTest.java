@@ -68,7 +68,7 @@ public class RawTypesTest {
             + " e.g. GenericUnion<Any> (jsinterop.base.Any) or GenericUnion<?>.");
   }
 
-  // This and the next two: the raw supertype isn't emitted, but its members are merged in.
+  // The raw supertype isn't emitted, but its members are merged in.
   @Test
   public void rawTsIgnoredSuperclassShouldFail() {
     assertSingleErrorIn(
@@ -109,6 +109,7 @@ public class RawTypesTest {
         .isEmpty();
   }
 
+  // The skipped class's own extends clause, which passes its T on, is emitted in its subclass.
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
     assertSingleErrorIn(
@@ -119,6 +120,7 @@ public class RawTypesTest {
         "errors/raw/RawExtendsGenericMid.java");
   }
 
+  // The raw superinterface isn't emitted, but its methods are copied in.
   @Test
   public void rawTsIgnoredSuperinterfaceShouldFail() {
     assertSingleErrorIn(

@@ -35,8 +35,8 @@ public class MethodTypeArgumentsVisitor<T> extends TsElement {
   /**
    * Visits the type parameters of a method inherited by {@code inheritedBy}, or null.
    *
-   * @param renamed type parameters emitted under another name, see {@link
-   *     TsElement#renamedTypeParameters}
+   * @param renamed type parameters emitted under another name, so a copy's own don't capture the
+   *     subtype's
    */
   public MethodTypeArgumentsVisitor(
       ExecutableElement element,

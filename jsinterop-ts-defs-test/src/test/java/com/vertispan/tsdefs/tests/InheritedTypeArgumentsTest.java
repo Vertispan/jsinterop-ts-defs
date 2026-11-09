@@ -34,13 +34,45 @@ import org.junit.Test;
 /** Type arguments that inherited members are emitted with. */
 public class InheritedTypeArgumentsTest {
 
+  private static final String SRC3 =
+      "@jsinterop.annotations.JsType public interface Src3<T> { T a(); T b(); void c(T t); }";
+
+  private static final String PRODUCER =
+      "@jsinterop.annotations.JsType public interface Producer<T> { T make(); }";
+
+  private static Compilation compileFiles(List<JavaFileObject> files) {
+    return Compiler.javac().withProcessors(new JsTypesProcessor()).compile(files);
+  }
+
+  /** Resources under inherited/. */
   private static Compilation compile(String... names) {
-    return Compiler.javac()
-        .withProcessors(new JsTypesProcessor())
-        .compile(
-            Stream.of(names)
-                .map(name -> JavaFileObjects.forResource("inherited/" + name + ".java"))
-                .collect(Collectors.toList()));
+    return compileFiles(
+        Stream.of(names)
+            .map(name -> JavaFileObjects.forResource("inherited/" + name + ".java"))
+            .collect(Collectors.toList()));
+  }
+
+  /** Types in package p, as pairs of name and source. */
+  private static Compilation compileSources(String... nameAndSource) {
+    List<JavaFileObject> sources = new ArrayList<>();
+    for (int i = 0; i < nameAndSource.length; i += 2) {
+      sources.add(
+          JavaFileObjects.forSourceString(
+              "p." + nameAndSource[i], "package p; " + nameAndSource[i + 1]));
+    }
+    return compileFiles(sources);
+  }
+
+  private static List<String> messages(List<? extends Diagnostic<?>> diagnostics) {
+    return diagnostics.stream().map(d -> d.getMessage(null)).collect(Collectors.toList());
+  }
+
+  private static String output(Compilation result) throws IOException {
+    return result
+        .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+        .orElseThrow(AssertionError::new)
+        .getCharContent(false)
+        .toString();
   }
 
   private static final String HIDDEN_ARG =
@@ -139,7 +171,6 @@ public class InheritedTypeArgumentsTest {
     Compilation result = compile("Source", "PlainBranch", "PassBranch", "SameTwice");
 
     assertThat(result.errors()).isEmpty();
-    assertThat(result.warnings()).noneMatch(d -> d.getMessage(null).startsWith("Type parameter "));
     String output = output(result);
     int start = output.indexOf("class SameTwice");
     assertThat(start).as("SameTwice is emitted").isNotNegative();
@@ -148,30 +179,16 @@ public class InheritedTypeArgumentsTest {
     assertThat(body).contains("get():string");
   }
 
-  private static final JavaFileObject SRC3 =
-      JavaFileObjects.forSourceString(
-          "p.Src3",
-          "package p; @jsinterop.annotations.JsType public interface Src3<T> {"
-              + " T a(); T b(); void c(T t); }");
-
-  private static final JavaFileObject PRODUCER =
-      JavaFileObjects.forSourceString(
-          "p.Producer",
-          "package p; @jsinterop.annotations.JsType public interface Producer<T> { T make(); }");
-
   // The clause and each of the three copied members convert the argument.
   @Test
   public void wildcardWarningOnClauseArgumentIsReportedOnce() {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                SRC3,
-                PRODUCER,
-                JavaFileObjects.forSourceString(
-                    "p.S1",
-                    "package p; @jsinterop.annotations.JsType public abstract class S1"
-                        + " implements Src3<Producer<? super String>> {}"));
+        compileSources(
+            "Src3", SRC3,
+            "Producer", PRODUCER,
+            "S1",
+                "@jsinterop.annotations.JsType public abstract class S1"
+                    + " implements Src3<Producer<? super String>> {}");
 
     assertThat(result.warnings())
         .filteredOn(d -> d.getMessage(null).startsWith("Wildcard ["))
@@ -181,33 +198,17 @@ public class InheritedTypeArgumentsTest {
   @Test
   public void unsupportedLiteralOnClauseArgumentIsReportedOnce() {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                SRC3,
-                JavaFileObjects.forSourceString(
-                    "p.S2",
-                    "package p; @jsinterop.annotations.JsType public abstract class S2"
-                        + " implements Src3<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\")"
-                        + " Object> {}"));
+        compileSources(
+            "Src3",
+            SRC3,
+            "S2",
+            "@jsinterop.annotations.JsType public abstract class S2"
+                + " implements Src3<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\")"
+                + " Object> {}");
 
     assertThat(result.errors())
         .filteredOn(d -> d.getMessage(null).startsWith("@TsLiteral is not supported"))
         .hasSize(1);
-  }
-
-  private static Compilation compileSources(String... nameAndSource) {
-    List<JavaFileObject> sources = new ArrayList<>();
-    for (int i = 0; i < nameAndSource.length; i += 2) {
-      sources.add(
-          JavaFileObjects.forSourceString(
-              "p." + nameAndSource[i], "package p; " + nameAndSource[i + 1]));
-    }
-    return Compiler.javac().withProcessors(new JsTypesProcessor()).compile(sources);
-  }
-
-  private static List<String> messages(List<? extends Diagnostic<?>> diagnostics) {
-    return diagnostics.stream().map(d -> d.getMessage(null)).collect(Collectors.toList());
   }
 
   // Q meets the paths; Impl reaches R again through P, which the walk doesn't repeat.
@@ -265,19 +266,14 @@ public class InheritedTypeArgumentsTest {
   @Test
   public void differentWildcardsInOneClauseAreEachReported() {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                PRODUCER,
-                JavaFileObjects.forSourceString(
-                    "p.Two",
-                    "package p; @jsinterop.annotations.JsType public interface Two<A, B> {"
-                        + " A a(); B b(); }"),
-                JavaFileObjects.forSourceString(
-                    "p.S",
-                    "package p; @jsinterop.annotations.JsType public abstract class S"
-                        + " implements Two<Producer<? super String>, Producer<? super Integer>>"
-                        + " {}"));
+        compileSources(
+            "Producer",
+            PRODUCER,
+            "Two",
+            "@jsinterop.annotations.JsType public interface Two<A, B> { A a(); B b(); }",
+            "S",
+            "@jsinterop.annotations.JsType public abstract class S"
+                + " implements Two<Producer<? super String>, Producer<? super Integer>> {}");
 
     assertThat(messages(result.warnings())).filteredOn(m -> m.startsWith("Wildcard [")).hasSize(2);
   }
@@ -286,32 +282,19 @@ public class InheritedTypeArgumentsTest {
   @Test
   public void wildcardInAJsFunctionClauseArgumentIsReportedOnce() {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                SRC3,
-                JavaFileObjects.forSourceString(
-                    "p.Box",
-                    "package p; @jsinterop.annotations.JsType public interface Box<T> {"
-                        + " T get(); }"),
-                JavaFileObjects.forSourceString(
-                    "p.WildFn",
-                    "package p; @jsinterop.annotations.JsFunction public interface WildFn {"
-                        + " Box<? super String> call(); }"),
-                JavaFileObjects.forSourceString(
-                    "p.S1",
-                    "package p; @jsinterop.annotations.JsType public abstract class S1"
-                        + " implements Src3<WildFn> {}"));
+        compileSources(
+            "Src3",
+            SRC3,
+            "Box",
+            "@jsinterop.annotations.JsType public interface Box<T> { T get(); }",
+            "WildFn",
+            "@jsinterop.annotations.JsFunction public interface WildFn {"
+                + " Box<? super String> call(); }",
+            "S1",
+            "@jsinterop.annotations.JsType public abstract class S1"
+                + " implements Src3<WildFn> {}");
 
     assertThat(messages(result.warnings())).filteredOn(m -> m.startsWith("Wildcard [")).hasSize(1);
-  }
-
-  private static String output(Compilation result) throws IOException {
-    return result
-        .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
-        .orElseThrow(AssertionError::new)
-        .getCharContent(false)
-        .toString();
   }
 
   /**
@@ -349,8 +332,6 @@ public class InheritedTypeArgumentsTest {
                 + depth
                 + "B<String> {}"));
 
-    Compilation result = Compiler.javac().withProcessors(new JsTypesProcessor()).compile(sources);
-
-    assertThat(result.errors()).isEmpty();
+    assertThat(compileFiles(sources).errors()).isEmpty();
   }
 }

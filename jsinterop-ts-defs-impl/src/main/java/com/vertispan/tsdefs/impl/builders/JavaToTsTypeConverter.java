@@ -93,14 +93,9 @@ public class JavaToTsTypeConverter {
         env);
   }
 
-  /** Converts the type arguments in {@code subtype}'s extends and implements clauses. */
-  public static JavaToTsTypeConverter forSupertypesOf(TypeElement subtype, HasProcessorEnv env) {
-    return forSupertypesOf(subtype, InheritedTypeArguments.NONE, env);
-  }
-
   /**
-   * Converts the type arguments in {@code writer}'s clauses, as emitted in {@code emittedIn}, a
-   * subtype of a {@code writer} that is not emitted itself.
+   * Converts the type arguments in {@code writer}'s extends and implements clauses for {@code
+   * emittedIn}, which is {@code writer} or a subtype emitted in place of {@code writer}.
    */
   public static JavaToTsTypeConverter forSupertypesOf(
       TypeElement writer, TypeElement emittedIn, HasProcessorEnv env) {
@@ -112,15 +107,15 @@ public class JavaToTsTypeConverter {
         env);
   }
 
-  /** @param inherited what reached {@code subtype}, when it is itself a supertype */
+  /** @param inherited what reached {@code writer}, when it is itself a supertype */
   static JavaToTsTypeConverter forSupertypesOf(
-      TypeElement subtype, InheritedTypeArguments inherited, HasProcessorEnv env) {
+      TypeElement writer, InheritedTypeArguments inherited, HasProcessorEnv env) {
     return new JavaToTsTypeConverter(
-        subtype,
-        " in the supertypes of " + subtype.getSimpleName(),
+        writer,
+        " in the supertypes of " + writer.getSimpleName(),
         Collections.emptyMap(),
         inherited,
-        subtype,
+        writer,
         env);
   }
 
@@ -724,12 +719,7 @@ public class JavaToTsTypeConverter {
     }
   }
 
-  /** Converts one type argument of an extends or implements clause. */
-  TsType clauseArgument(TypeMirror typeArgument) {
-    return typeArgument(typeArgument);
-  }
-
-  private TsType typeArgument(TypeMirror typeArgument) {
+  TsType typeArgument(TypeMirror typeArgument) {
     Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeArgument, element, env);
     if (literalType.isPresent()) {
       return literalType.get();

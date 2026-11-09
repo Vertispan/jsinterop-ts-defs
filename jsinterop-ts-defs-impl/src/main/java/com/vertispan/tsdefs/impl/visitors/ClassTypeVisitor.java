@@ -51,8 +51,7 @@ public class ClassTypeVisitor extends TsElement {
           .visit(builder);
       getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
-      TypeArgumentsVisitor.reportRawHiddenSupertypes((TypeElement) element, env);
-      InheritedTypeArguments.reportConflicts((TypeElement) element, env);
+      InheritedTypeArguments.report((TypeElement) element, env);
 
       element.getEnclosedElements().stream()
           .map(e -> TsElement.of(e, env))
@@ -97,7 +96,7 @@ public class ClassTypeVisitor extends TsElement {
   private void processSuperClass(TsClass tsClass, TypeMirror superclass) {
     TsElement superTsElement = TsElement.of(superclass, env);
 
-    if (superTsElement.isTsIgnored() || superTsElement.isTsInterface()) {
+    if (superTsElement.isMergedIntoSubclasses()) {
       mergeSuperClass(tsClass, superTsElement);
     }
 
@@ -176,8 +175,9 @@ public class ClassTypeVisitor extends TsElement {
     new ClassMethodVisitor<TsClass.TsClassBuilder>(enclosedElement, env).visit(classBuilder);
   }
 
-  private Optional<TsClass> getSuperClass(Element element) {
-    TypeMirror superclass = ((TypeElement) element).getSuperclass();
+  /** @param writer this class, or a skipped superclass whose extends clause is emitted for it */
+  private Optional<TsClass> getSuperClass(Element writer) {
+    TypeMirror superclass = ((TypeElement) writer).getSuperclass();
 
     if (((TypeElement) env.types().asElement(superclass))
         .getSuperclass()
@@ -195,7 +195,7 @@ public class ClassTypeVisitor extends TsElement {
       TsClass.TsClassBuilder builder =
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
       new TypeArgumentsVisitor<TsClass.TsClassBuilder>(
-              superclass, (TypeElement) element, (TypeElement) this.element, env)
+              superclass, (TypeElement) writer, (TypeElement) element, env)
           .visit(builder);
       return Optional.of(builder.build());
     } else {

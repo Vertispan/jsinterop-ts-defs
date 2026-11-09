@@ -16,13 +16,11 @@
 package com.vertispan.tsdefs.impl.visitors;
 
 import com.vertispan.tsdefs.annotations.TsDefault;
-import com.vertispan.tsdefs.annotations.TsInterface;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +32,8 @@ import javax.lang.model.element.Parameterizable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-import jsinterop.annotations.JsType;
 
 /**
  * Adds a type's type parameters to a builder: with bounds for the type's own declaration ({@link
@@ -45,27 +41,27 @@ import jsinterop.annotations.JsType;
  */
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
-  private final TypeElement subtype;
+  private final TypeElement writer;
   private final TypeElement emittedIn;
 
   /**
    * Visits the type arguments of a type in a usage position, such as a superclass or implemented
-   * interface of {@code subtype}. Bounds are never emitted here, only on the declaring type's own
-   * type parameters.
+   * interface written by {@code writer}. Bounds are never emitted here, only on the declaring
+   * type's own type parameters.
    */
-  public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
-    this(typeMirror, subtype, subtype, env);
+  public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement writer, HasProcessorEnv env) {
+    this(typeMirror, writer, writer, env);
   }
 
   /**
-   * As above, for a clause of a skipped {@code subtype} emitted in its subtype {@code emittedIn},
+   * As above, for a clause of a skipped {@code writer} emitted in its subtype {@code emittedIn},
    * which passes the arguments.
    */
   public TypeArgumentsVisitor(
-      TypeMirror typeMirror, TypeElement subtype, TypeElement emittedIn, HasProcessorEnv env) {
+      TypeMirror typeMirror, TypeElement writer, TypeElement emittedIn, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
-    this.subtype = subtype;
+    this.writer = writer;
     this.emittedIn = emittedIn;
   }
 
@@ -80,69 +76,23 @@ public class TypeArgumentsVisitor<T> extends TsElement {
 
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
-    if (subtype != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
-      String message = JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, subtype, true, env);
-      if (env.firstReport(subtype, message)) {
-        env.messager().printMessage(Diagnostic.Kind.ERROR, message, subtype);
+    if (writer != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
+      String message = JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, writer, true, env);
+      if (env.firstReport(writer, message)) {
+        env.messager().printMessage(Diagnostic.Kind.ERROR, message, writer);
       }
       return;
     }
     if (classDeclaredType.getTypeArguments().isEmpty()) {
       return;
     }
-    if (subtype == null) {
+    if (writer == null) {
       declaredTypeParameters(classDeclaredType, env).forEach(builder::addTypeArgument);
     } else {
-      JavaToTsTypeConverter.forSupertypesOf(subtype, emittedIn, env)
+      JavaToTsTypeConverter.forSupertypesOf(writer, emittedIn, env)
           .asTypeWithArgument(classDeclaredType)
           .forEach(builder::addTypeArgument);
     }
-  }
-
-  /**
-   * Reports raw clauses on the way up from {@code type} through supertypes that are not emitted
-   * themselves, such as {@code @TsIgnore} types and skipped classes, whose members or clauses are
-   * emitted into {@code type} instead. Each is reported on the type whose clause writes it, and
-   * only if the raw type reaches the output.
-   */
-  public static void reportRawHiddenSupertypes(TypeElement type, HasProcessorEnv env) {
-    List<TypeMirror> supertypes = new ArrayList<>(type.getInterfaces());
-    supertypes.add(type.getSuperclass());
-    for (TypeMirror supertype : supertypes) {
-      if (!TypeKind.DECLARED.equals(supertype.getKind())) {
-        continue;
-      }
-      DeclaredType clause = (DeclaredType) supertype;
-      TypeElement named = (TypeElement) clause.asElement();
-      TsElement tsNamed = TsElement.of(named, env);
-      if (JavaToTsTypeConverter.isRaw(clause)) {
-        String message = JavaToTsTypeConverter.rawTypeMessage(clause, type, true, env);
-        if (reachesOutput(named, env) && env.firstReport(type, message)) {
-          env.messager().printMessage(Diagnostic.Kind.ERROR, message, type);
-        }
-      } else if (tsNamed.isTsIgnored() || !isEmittedJsType(named)) {
-        reportRawHiddenSupertypes(named, env);
-      }
-    }
-  }
-
-  /** As the processor selects them: a native JsType is emitted only as a TsInterface. */
-  private static boolean isEmittedJsType(TypeElement type) {
-    JsType jsType = type.getAnnotation(JsType.class);
-    return jsType != null && (!jsType.isNative() || type.getAnnotation(TsInterface.class) != null);
-  }
-
-  /** Whether {@code type}'s members or supertypes are emitted, in it or in its subtypes. */
-  private static boolean reachesOutput(TypeElement type, HasProcessorEnv env) {
-    TsElement tsElement = TsElement.of(type, env);
-    if (tsElement.isJsType() || tsElement.isTsInterface() || tsElement.hasJsMembers()) {
-      return true;
-    }
-    List<TypeMirror> supertypes = new ArrayList<>(type.getInterfaces());
-    supertypes.add(type.getSuperclass());
-    return supertypes.stream()
-        .filter(supertype -> TypeKind.DECLARED.equals(supertype.getKind()))
-        .anyMatch(supertype -> reachesOutput((TypeElement) env.types().asElement(supertype), env));
   }
 
   /** The type parameters a type declares, each with its bounds, e.g. {@code <T extends Item>}. */
