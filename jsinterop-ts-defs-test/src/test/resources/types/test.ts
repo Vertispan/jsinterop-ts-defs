@@ -1323,3 +1323,43 @@ const readItemResult = lookup.readItem("name");
 expectType<SpecialItem>()(readItemResult);
 const explicitReadItemResult = lookup.readItem<WildcardItem>("name");
 expectType<WildcardItem>()(explicitReadItemResult);
+
+// --- Inherited members with the inheriting type's type arguments (#138) ---------------------
+import OverridesFoo = com.vertispan.tsdefs.tests.overrides.Foo;
+import OverridesBar = com.vertispan.tsdefs.tests.overrides.Bar;
+
+// Methods inherited from a generic interface use the implementing type's type argument.
+import FooContainer = com.vertispan.tsdefs.tests.overrides.FooContainer;
+declare const fooContainer: FooContainer;
+expectType<() => OverridesFoo>()(fooContainer.get);
+expectType<(value: OverridesFoo) => void>()(fooContainer.put);
+
+// A type-use annotation on an inherited type variable survives substitution.
+import AnnotatedImpl = com.vertispan.tsdefs.tests.overrides.AnnotatedImpl;
+import AnnotatedJs = com.vertispan.tsdefs.tests.overrides.AnnotatedJs;
+import AnnotatedSame = com.vertispan.tsdefs.tests.overrides.AnnotatedSame;
+declare const annotatedImpl: AnnotatedImpl;
+expectType<() => Array<OverridesBar>>()(annotatedImpl.refArg);
+declare const annotatedJs: AnnotatedJs;
+expectType<() => Array<OverridesBar>>()(annotatedJs.refArg);
+declare const annotatedSame: AnnotatedSame<OverridesFoo>;
+expectType<() => Array<OverridesBar>>()(annotatedSame.refArg);
+
+// A union or nullable type argument substituted into T[] stays the array's element type.
+import UnionArrays = com.vertispan.tsdefs.tests.overrides.UnionArrays;
+import NullableArrays = com.vertispan.tsdefs.tests.overrides.NullableArrays;
+import UnionArrayFields = com.vertispan.tsdefs.tests.overrides.UnionArrayFields;
+declare const unionArrays: UnionArrays;
+expectType<() => Array<"one" | "two" | Array<string>>>()(unionArrays.all);
+declare const nullableArrays: NullableArrays;
+expectType<() => Array<string | null | undefined>>()(nullableArrays.all);
+declare const unionArrayFields: UnionArrayFields;
+expectType<Array<"one" | "two" | Array<string>>>()(unionArrayFields.items);
+
+// A type parameter reached through two paths with different arguments satisfies both.
+import DiamondImpl = com.vertispan.tsdefs.tests.overrides.DiamondImpl;
+import IgnoredDiamondImpl = com.vertispan.tsdefs.tests.overrides.IgnoredDiamondImpl;
+declare const diamondImpl: DiamondImpl;
+expectType<() => string>()(diamondImpl.get);
+declare const ignoredDiamondImpl: IgnoredDiamondImpl;
+expectType<() => string>()(ignoredDiamondImpl.get);
