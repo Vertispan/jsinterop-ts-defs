@@ -16,6 +16,7 @@
 package com.vertispan.tsdefs.impl.visitors;
 
 import com.vertispan.tsdefs.annotations.TsDefault;
+import com.vertispan.tsdefs.annotations.TsInterface;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
@@ -36,6 +37,7 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
+import jsinterop.annotations.JsType;
 
 /**
  * Adds a type's type parameters to a builder: with bounds for the type's own declaration ({@link
@@ -124,10 +126,16 @@ public class TypeArgumentsVisitor<T> extends TsElement {
                   JavaToTsTypeConverter.rawTypeMessage(clause, type, true, env),
                   type);
         }
-      } else if (tsNamed.isTsIgnored() || !tsNamed.isJsType()) {
+      } else if (tsNamed.isTsIgnored() || !isEmittedJsType(named)) {
         reportRawHiddenSupertypes(named, env);
       }
     }
+  }
+
+  /** As the processor selects them: a native JsType is emitted only as a TsInterface. */
+  private static boolean isEmittedJsType(TypeElement type) {
+    JsType jsType = type.getAnnotation(JsType.class);
+    return jsType != null && (!jsType.isNative() || type.getAnnotation(TsInterface.class) != null);
   }
 
   /** Whether {@code type}'s members or supertypes are emitted, in it or in its subtypes. */
