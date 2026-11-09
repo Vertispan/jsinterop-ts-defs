@@ -1406,6 +1406,18 @@ import NarrowMerged = com.vertispan.tsdefs.tests.overrides.NarrowMerged;
 declare const narrowMerged: NarrowMerged;
 expectType<() => OverridesBar>()(narrowMerged.pick);
 
+// An override that isn't emitted doesn't replace the copied method. TODO(#133): once an
+// override of an exported method is exported, hiddenNarrowImpl.get narrows to OverridesBar.
+import HiddenNarrowImpl = com.vertispan.tsdefs.tests.overrides.HiddenNarrowImpl;
+import RunImpl = com.vertispan.tsdefs.tests.overrides.RunImpl;
+import UnannotatedPick = com.vertispan.tsdefs.tests.overrides.UnannotatedPick;
+declare const hiddenNarrowImpl: HiddenNarrowImpl;
+expectType<() => OverridesFoo>()(hiddenNarrowImpl.get);
+declare const runImpl: RunImpl;
+expectType<() => void>()(runImpl.run);
+declare const unannotatedPick: UnannotatedPick;
+expectType<() => OverridesFoo>()(unannotatedPick.pick);
+
 // A class implementing a narrowing interface gets the narrower methods.
 import NarrowSourceImpl = com.vertispan.tsdefs.tests.overrides.NarrowSourceImpl;
 declare const narrowSourceImpl: NarrowSourceImpl;
