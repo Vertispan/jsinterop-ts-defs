@@ -1385,6 +1385,17 @@ expectType<OverridesFoo>()(fooSettable.value);
 expectType<OverridesFoo>()(fooSettable.target);
 expectType<<R extends OverridesFoo>() => R>()(fooSettable.narrow);
 
+// A copied generic method's type parameter doesn't capture a same-named one of the subtype.
+import SelfNarrowing = com.vertispan.tsdefs.tests.overrides.SelfNarrowing;
+import ArrayNarrowing = com.vertispan.tsdefs.tests.overrides.ArrayNarrowing;
+import IgnoredConvSub = com.vertispan.tsdefs.tests.overrides.IgnoredConvSub;
+declare const selfNarrowing: SelfNarrowing<string>;
+expectType<<X extends string>() => X>()(selfNarrowing.narrow);
+declare const arrayNarrowing: ArrayNarrowing<string>;
+expectType<<X>(t: string[]) => X>()(arrayNarrowing.conv);
+declare const ignoredConvSub: IgnoredConvSub<string>;
+expectType<<X>(t: string[]) => X>()(ignoredConvSub.conv);
+
 // A narrower override from a superclass wins over the wider interface method.
 import NarrowSub = com.vertispan.tsdefs.tests.overrides.NarrowSub;
 declare const narrowSub: NarrowSub;
