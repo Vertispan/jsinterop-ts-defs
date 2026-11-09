@@ -1459,3 +1459,10 @@ expectType<() => string>()(jsTypeOverride.name);
 import IgnoredNamedOverride = com.vertispan.tsdefs.tests.overrides.IgnoredNamedOverride;
 declare const ignoredNamedOverride: IgnoredNamedOverride;
 expectType<() => string>()(ignoredNamedOverride.name);
+// An override narrowing to a type TypeScript can't name keeps the inherited, wider type.
+import PlainFooHolder = com.vertispan.tsdefs.tests.overrides.PlainFooHolder;
+import UnmappedNarrowing = com.vertispan.tsdefs.tests.overrides.UnmappedNarrowing;
+declare const plainFooHolder: PlainFooHolder;
+expectType<() => OverridesFoo>()(plainFooHolder.shape);
+declare const unmappedNarrowing: UnmappedNarrowing;
+expectType<() => OverridesFoo>()(unmappedNarrowing.get);
