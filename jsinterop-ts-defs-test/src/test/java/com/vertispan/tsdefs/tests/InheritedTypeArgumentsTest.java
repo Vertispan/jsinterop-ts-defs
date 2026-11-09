@@ -88,21 +88,48 @@ public class InheritedTypeArgumentsTest {
     assertThat(result.errors()).isEmpty();
   }
 
-  /** Warned once, where the paths meet, though a subclass inherits the conflict. */
+  /**
+   * TypeScript has no single type for both, so it is an error, once, where the paths meet, though
+   * an emitted subclass inherits the conflict.
+   */
   @Test
-  public void conflictingArgumentsThroughDiamondWarnOnce() {
+  public void conflictingArgumentsThroughDiamondAreAnErrorOnce() {
     Compilation result =
         compile("Source", "NullableBranch", "PlainBranch", "Diamond", "DiamondSub");
 
-    assertThat(result.errors()).isEmpty();
-    assertThat(result.warnings())
-        .filteredOn(d -> d.getMessage(null).startsWith("Type parameter "))
+    assertThat(result.errors())
         .singleElement()
         .satisfies(
             d -> {
               assertThat(d.getMessage(null))
+                  .startsWith("Type parameter ")
                   .contains("T of Source", "NullableBranch", "PlainBranch", "Diamond");
               assertThat(d.getSource().getName()).endsWith("Diamond.java");
+            });
+  }
+
+  // Where the paths meet is a @TsIgnore interface, not either of the emitted classes.
+  @Test
+  public void conflictingArgumentsAreReportedWhereThePathsMeet() {
+    Compilation result =
+        compile("Source", "NullableBranch", "PlainBranch", "Meet", "MeetUser1", "MeetUser2");
+
+    assertThat(result.errors())
+        .singleElement()
+        .satisfies(d -> assertThat(d.getSource().getName()).endsWith("Meet.java"));
+  }
+
+  // The override chosen from OverridingBase uses T as String; the clause passes it nullable.
+  @Test
+  public void conflictHiddenByChosenOverrideIsReported() {
+    Compilation result = compile("BoundedSource", "OverridingBase", "ViaOverride");
+
+    assertThat(result.errors())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.getMessage(null)).contains("T of BoundedSource");
+              assertThat(d.getSource().getName()).endsWith("ViaOverride.java");
             });
   }
 

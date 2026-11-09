@@ -17,6 +17,8 @@ package com.vertispan.tsdefs.tests.inherited;
 
 import jsinterop.annotations.JsType;
 
-/** Inherits {@link Diamond}'s conflict without adding one of its own. */
+/** Inherits {@link Diamond}'s conflict without adding one of its own; emitted for its field. */
 @JsType
-public abstract class DiamondSub extends Diamond {}
+public abstract class DiamondSub extends Diamond {
+  public String name;
+}
