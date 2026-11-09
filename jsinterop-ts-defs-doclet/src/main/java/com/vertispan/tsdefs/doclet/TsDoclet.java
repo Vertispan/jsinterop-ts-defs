@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import javax.annotation.processing.Messager;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -248,13 +249,33 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
     return inheritedDocsOrEmpty(element);
   }
 
+  /**
+   * An override without javadoc gets the docs of a method it overrides, copied: typedoc drops the
+   * other tags, such as {@code @deprecated}, next to a block {@code @inheritDoc}. That stays only
+   * for an overridden method without source here, e.g. from a library, whose docs can't be read.
+   */
   private TsDoc inheritedDocsOrEmpty(Element element) {
 
     TsElement tsElement = TsElement.of(element, this);
-    if (tsElement.overridesAnyMethod()) {
-      return TsDoc.inherited();
+    if (!tsElement.overridesAnyMethod()) {
+      return TsDoc.empty();
     }
-    return TsDoc.empty();
+    String inherited = TsDoc.inherited().emit("", false);
+    boolean unreadable = false;
+    for (ExecutableElement overridden :
+        TsElement.of(element.getEnclosingElement(), this)
+            .overriddenMethods((ExecutableElement) element)) {
+      if (env.getDocTrees().getPath(overridden) == null) {
+        unreadable = true;
+        continue;
+      }
+      TsDoc docs = getDocs(overridden);
+      String text = docs.emit("", false);
+      if (!text.isEmpty() && !text.equals(inherited)) {
+        return docs;
+      }
+    }
+    return unreadable ? TsDoc.inherited() : TsDoc.empty();
   }
 
   @Override
