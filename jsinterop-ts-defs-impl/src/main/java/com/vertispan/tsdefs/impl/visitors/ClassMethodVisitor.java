@@ -100,11 +100,11 @@ public class ClassMethodVisitor<T> extends TsElement {
 
       Optional<ExecutableElement> wider = widerThanTypeScriptAllows();
       if (wider.isPresent()) {
-        // A copy stands for the wider member chosen in its place; a declaration must declare it.
+        // A copy stands for the wider member chosen in its place; a declaration must declare
+        // itself, with the wider return type.
         if (inheritedBy == null) {
-          new ClassMethodVisitor<T>(
-                  wider.get(), (TypeElement) element.getEnclosingElement(), copyDocs, env)
-              .visit(parent);
+          TypeElement declaring = (TypeElement) element.getEnclosingElement();
+          parent.addFunction(toTsMethod(TsElement.of(wider.get(), declaring, env).getType()));
         }
         return;
       }
@@ -115,24 +115,27 @@ public class ClassMethodVisitor<T> extends TsElement {
           && parentElement.isInheritedMethod((ExecutableElement) this.element)) {
         return;
       }
-
-      TsMethod.TsMethodBuilder builder =
-          TsMethod.builder(getName(), getType())
-              .addModifiers(getJsModifiers())
-              .setDocs(copyDocs ? getDocs() : TsDoc.empty())
-              .setDeprecated(isDeprecated());
-
-      ExecutableElement executableElement = (ExecutableElement) element;
-      new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(
-              executableElement, inheritedBy, renamed, env)
-          .visit(builder);
-      executableElement
-          .getParameters()
-          .forEach(
-              param ->
-                  new ParameterVisitor<TsMethod.TsMethodBuilder>(param, inheritedBy, renamed, env)
-                      .visit(builder));
-      parent.addFunction(builder.build());
+      parent.addFunction(toTsMethod(getType()));
     }
+  }
+
+  private TsMethod toTsMethod(TsType returnType) {
+    TsMethod.TsMethodBuilder builder =
+        TsMethod.builder(getName(), returnType)
+            .addModifiers(getJsModifiers())
+            .setDocs(copyDocs ? getDocs() : TsDoc.empty())
+            .setDeprecated(isDeprecated());
+
+    ExecutableElement executableElement = (ExecutableElement) element;
+    new MethodTypeArgumentsVisitor<TsMethod.TsMethodBuilder>(
+            executableElement, inheritedBy, renamed, env)
+        .visit(builder);
+    executableElement
+        .getParameters()
+        .forEach(
+            param ->
+                new ParameterVisitor<TsMethod.TsMethodBuilder>(param, inheritedBy, renamed, env)
+                    .visit(builder));
+    return builder.build();
   }
 }
