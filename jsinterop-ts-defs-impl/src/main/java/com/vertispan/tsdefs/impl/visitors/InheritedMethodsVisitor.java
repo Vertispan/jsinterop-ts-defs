@@ -34,8 +34,8 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     // Listed once per path to it; emitted once.
     Set<ExecutableElement> nonOverriddenMethods =
         new LinkedHashSet<>(allNotOverriddenInterfacesMethods());
-    // Only the most specific override is emitted: a wider method from further up would be an
-    // overload TypeScript rejects.
+    // Only the most specific override is emitted: a wider method from further up would be a second
+    // overload, and callers may get its wider type.
     Set<ExecutableElement> overriders = new LinkedHashSet<>(nonOverriddenMethods);
     overriders.addAll(mergedSuperClassMethods());
     nonOverriddenMethods.stream()
