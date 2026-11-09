@@ -1416,3 +1416,46 @@ declare const narrowSourceImpl: NarrowSourceImpl;
 expectType<() => OverridesBar>()(narrowSourceImpl.get);
 expectType<() => Promise<OverridesBar>>()(narrowSourceImpl.resolve);
 expectType<() => string>()(narrowSourceImpl.extra);
+
+// --- Overrides in a @TsInterface sub-interface (#133) -----------------------
+import Qux = com.vertispan.tsdefs.tests.overrides.Qux;
+import UnannotatedOverride = com.vertispan.tsdefs.tests.overrides.UnannotatedOverride;
+import NarrowedHolder = com.vertispan.tsdefs.tests.overrides.NarrowedHolder;
+import RestatedImpl = com.vertispan.tsdefs.tests.overrides.RestatedImpl;
+import OptionalOverride = com.vertispan.tsdefs.tests.overrides.OptionalOverride;
+import BothPutter = com.vertispan.tsdefs.tests.overrides.BothPutter;
+
+// An override that narrows its return type keeps the narrower type.
+declare const qux: Qux<OverridesBar>;
+expectType<() => OverridesBar>()(qux.get);
+expectType<() => Promise<OverridesBar>>()(qux.resolve);
+expectType<() => string>()(qux.extra);
+// An override is exported like what it overrides, with or without its own @JsMethod.
+declare const unannotatedOverride: UnannotatedOverride;
+expectType<() => OverridesBar>()(unannotatedOverride.get);
+// The override's T is NarrowedHolder's, not GetHolder's, though both print as T.
+declare const narrowedHolder: NarrowedHolder<OverridesBar>;
+expectType<() => OverridesBar>()(narrowedHolder.get);
+// A class implementing an interface that skips a restated override still declares the method.
+declare const restatedImpl: RestatedImpl;
+expectType<() => string>()(restatedImpl.foo);
+// Overrides that match in Java but not in TypeScript are emitted.
+declare const optionalOverride: OptionalOverride;
+optionalOverride.put();
+declare const bothPutter: BothPutter;
+expectType<(value: OverridesFoo) => void>()(bothPutter.put);
+// Overriding a method that isn't exported: exported only with @JsMethod, or public in a JsType.
+import ShownOverride = com.vertispan.tsdefs.tests.overrides.ShownOverride;
+import HiddenOverride = com.vertispan.tsdefs.tests.overrides.HiddenOverride;
+import JsTypeOverride = com.vertispan.tsdefs.tests.overrides.JsTypeOverride;
+declare const shownOverride: ShownOverride;
+expectType<() => string>()(shownOverride.name);
+declare const hiddenOverride: HiddenOverride;
+// @ts-expect-error
+hiddenOverride.name;
+declare const jsTypeOverride: JsTypeOverride;
+expectType<() => string>()(jsTypeOverride.name);
+// Restating a method of a @TsIgnore super-interface: TypeScript sees it only here.
+import IgnoredNamedOverride = com.vertispan.tsdefs.tests.overrides.IgnoredNamedOverride;
+declare const ignoredNamedOverride: IgnoredNamedOverride;
+expectType<() => string>()(ignoredNamedOverride.name);
