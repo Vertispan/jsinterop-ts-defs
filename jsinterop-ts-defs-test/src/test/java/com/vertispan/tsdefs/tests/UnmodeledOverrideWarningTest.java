@@ -58,4 +58,22 @@ public class UnmodeledOverrideWarningTest {
                 + " declaration keeps Shape.text()'s type; annotate NarrowCircle.text() with"
                 + " @JsMethod(name = \"describe\") to emit the narrower type.");
   }
+
+  // A supertype between them already emits the narrower type under the JS name.
+  @Test
+  public void overrideOfANarrowingOverrideDoesNotWarn() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("RenamedText", "NarrowedText", "RestatedText", "BothTexts")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(result.warnings())
+        .filteredOn(d -> d.getMessage(null).contains("to emit the narrower type"))
+        .isEmpty();
+  }
 }
