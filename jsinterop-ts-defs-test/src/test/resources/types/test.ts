@@ -1440,10 +1440,17 @@ declare const arrayValueHolder: ArrayValueHolder;
 expectType<() => Array<string>>()(arrayValueHolder.value);
 declare const fooValueHolder: FooValueHolder;
 expectType<() => OverridesFoo>()(fooValueHolder.value);
-// What it overrides is in a @TsIgnore type, which TypeScript never sees: the narrower one stands.
+// A @TsIgnore type's members are emitted in its subtypes, so they count as what is overridden.
+// StringFromIgnored could keep string, since no emitted supertype declares value(); not modeled.
 import StringFromIgnored = com.vertispan.tsdefs.tests.overrides.StringFromIgnored;
+import StringOverMid = com.vertispan.tsdefs.tests.overrides.StringOverMid;
+import StringValueSource = com.vertispan.tsdefs.tests.overrides.StringValueSource;
 declare const stringFromIgnored: StringFromIgnored;
-expectType<() => string>()(stringFromIgnored.value);
+expectType<() => object>()(stringFromIgnored.value);
+declare const stringOverMid: StringOverMid;
+expectType<() => object>()(stringOverMid.value);
+declare const stringValueSource: StringValueSource;
+expectType<() => object>()(stringValueSource.value);
 // Narrowing a method TypeScript doesn't see leaves nothing to fall back to.
 import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
 declare const stringSource: StringSource;
