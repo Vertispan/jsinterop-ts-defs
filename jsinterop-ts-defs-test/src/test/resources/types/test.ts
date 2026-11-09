@@ -1433,6 +1433,13 @@ declare const ownStringValue: OwnStringValue;
 expectType<() => object>()(ownStringValue.value);
 declare const stringHolder: StringHolder;
 expectType<() => object>()(stringHolder.value);
+// Narrowing Object to a type object includes is kept.
+import ArrayValueHolder = com.vertispan.tsdefs.tests.overrides.ArrayValueHolder;
+import FooValueHolder = com.vertispan.tsdefs.tests.overrides.FooValueHolder;
+declare const arrayValueHolder: ArrayValueHolder;
+expectType<() => Array<string>>()(arrayValueHolder.value);
+declare const fooValueHolder: FooValueHolder;
+expectType<() => OverridesFoo>()(fooValueHolder.value);
 // What it overrides is in a @TsIgnore type, which TypeScript never sees: the narrower one stands.
 import StringFromIgnored = com.vertispan.tsdefs.tests.overrides.StringFromIgnored;
 declare const stringFromIgnored: StringFromIgnored;
