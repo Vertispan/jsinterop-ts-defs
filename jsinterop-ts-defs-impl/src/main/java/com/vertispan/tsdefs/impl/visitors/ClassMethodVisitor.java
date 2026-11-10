@@ -117,10 +117,13 @@ public class ClassMethodVisitor<T> extends TsElement {
       // which is copied too. TODO a follow-up copies only the most specific override.
       if (inheritedBy == null) {
         reportWidening();
-        if (narrowsBeyondTypeScript()) {
+        TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
+        // An interface inherits the wider declaration; a class that implements one inherits
+        // nothing, and one left without members isn't emitted.
+        if ((parentElement.isInterface() || parentElement.isTsInterface())
+            && narrowsBeyondTypeScript()) {
           return;
         }
-        TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
         if (parentElement.isTsInterface() && restatesInheritedMethods(parentElement)) {
           return;
         }

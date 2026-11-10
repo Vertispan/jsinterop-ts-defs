@@ -15,14 +15,19 @@
  */
 package com.vertispan.tsdefs.tests.overrides;
 
+import com.vertispan.tsdefs.annotations.TsTypeRef;
 import jsinterop.annotations.JsMethod;
 
-/** Exported for x(); its shape() narrows to a type TypeScript can't name. */
+/**
+ * Exported for x(); its shape() narrows to a type TypeScript can't name, which a class declares as
+ * written, so @TsTypeRef names the type to emit instead.
+ */
 public class PlainFooHolder extends FooHolder {
   @JsMethod
   public void x() {}
 
   @Override
+  @TsTypeRef(Foo.class)
   public PlainFoo shape() {
     return null;
   }
