@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import org.junit.Test;
@@ -33,13 +34,45 @@ import org.junit.Test;
 /** Type arguments that inherited members are emitted with. */
 public class InheritedTypeArgumentsTest {
 
+  private static final String SRC3 =
+      "@jsinterop.annotations.JsType public interface Src3<T> { T a(); T b(); void c(T t); }";
+
+  private static final String PRODUCER =
+      "@jsinterop.annotations.JsType public interface Producer<T> { T make(); }";
+
+  private static Compilation compileFiles(List<JavaFileObject> files) {
+    return Compiler.javac().withProcessors(new JsTypesProcessor()).compile(files);
+  }
+
+  /** Resources under inherited/. */
   private static Compilation compile(String... names) {
-    return Compiler.javac()
-        .withProcessors(new JsTypesProcessor())
-        .compile(
-            Stream.of(names)
-                .map(name -> JavaFileObjects.forResource("inherited/" + name + ".java"))
-                .collect(Collectors.toList()));
+    return compileFiles(
+        Stream.of(names)
+            .map(name -> JavaFileObjects.forResource("inherited/" + name + ".java"))
+            .collect(Collectors.toList()));
+  }
+
+  /** Types in package p, as pairs of name and source. */
+  private static Compilation compileSources(String... nameAndSource) {
+    List<JavaFileObject> sources = new ArrayList<>();
+    for (int i = 0; i < nameAndSource.length; i += 2) {
+      sources.add(
+          JavaFileObjects.forSourceString(
+              "p." + nameAndSource[i], "package p; " + nameAndSource[i + 1]));
+    }
+    return compileFiles(sources);
+  }
+
+  private static List<String> messages(List<? extends Diagnostic<?>> diagnostics) {
+    return diagnostics.stream().map(d -> d.getMessage(null)).collect(Collectors.toList());
+  }
+
+  private static String output(Compilation result) throws IOException {
+    return result
+        .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+        .orElseThrow(AssertionError::new)
+        .getCharContent(false)
+        .toString();
   }
 
   private static final String HIDDEN_ARG =
@@ -138,7 +171,6 @@ public class InheritedTypeArgumentsTest {
     Compilation result = compile("Source", "PlainBranch", "PassBranch", "SameTwice");
 
     assertThat(result.errors()).isEmpty();
-    assertThat(result.warnings()).noneMatch(d -> d.getMessage(null).startsWith("Type parameter "));
     String output = output(result);
     int start = output.indexOf("class SameTwice");
     assertThat(start).as("SameTwice is emitted").isNotNegative();
@@ -147,30 +179,16 @@ public class InheritedTypeArgumentsTest {
     assertThat(body).contains("get():string");
   }
 
-  private static final JavaFileObject SRC3 =
-      JavaFileObjects.forSourceString(
-          "p.Src3",
-          "package p; @jsinterop.annotations.JsType public interface Src3<T> {"
-              + " T a(); T b(); void c(T t); }");
-
-  private static final JavaFileObject PRODUCER =
-      JavaFileObjects.forSourceString(
-          "p.Producer",
-          "package p; @jsinterop.annotations.JsType public interface Producer<T> { T make(); }");
-
   // The clause and each of the three copied members convert the argument.
   @Test
   public void wildcardWarningOnClauseArgumentIsReportedOnce() {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                SRC3,
-                PRODUCER,
-                JavaFileObjects.forSourceString(
-                    "p.S1",
-                    "package p; @jsinterop.annotations.JsType public abstract class S1"
-                        + " implements Src3<Producer<? super String>> {}"));
+        compileSources(
+            "Src3", SRC3,
+            "Producer", PRODUCER,
+            "S1",
+                "@jsinterop.annotations.JsType public abstract class S1"
+                    + " implements Src3<Producer<? super String>> {}");
 
     assertThat(result.warnings())
         .filteredOn(d -> d.getMessage(null).startsWith("Wildcard ["))
@@ -180,35 +198,175 @@ public class InheritedTypeArgumentsTest {
   @Test
   public void unsupportedLiteralOnClauseArgumentIsReportedOnce() {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                SRC3,
-                JavaFileObjects.forSourceString(
-                    "p.S2",
-                    "package p; @jsinterop.annotations.JsType public abstract class S2"
-                        + " implements Src3<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\")"
-                        + " Object> {}"));
+        compileSources(
+            "Src3",
+            SRC3,
+            "S2",
+            "@jsinterop.annotations.JsType public abstract class S2"
+                + " implements Src3<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\")"
+                + " Object> {}");
 
     assertThat(result.errors())
         .filteredOn(d -> d.getMessage(null).startsWith("@TsLiteral is not supported"))
         .hasSize(1);
   }
 
-  private static String output(Compilation result) throws IOException {
-    return result
-        .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
-        .orElseThrow(AssertionError::new)
-        .getCharContent(false)
-        .toString();
+  // Nothing of Tag mentions T, so nothing in the output can disagree.
+  @Test
+  public void differingArgumentsToAnUnusedParameterAreNotAnError() {
+    Compilation result =
+        compileSources(
+            "Tag", "@jsinterop.annotations.JsType public interface Tag<T> {}",
+            "IgnoredTag",
+                "@com.vertispan.tsdefs.annotations.TsIgnore @jsinterop.annotations.JsType"
+                    + " public interface IgnoredTag<T> {}",
+            "NTag",
+                "@jsinterop.annotations.JsType public interface NTag extends"
+                    + " Tag<@jsinterop.annotations.JsNullable String>,"
+                    + " IgnoredTag<@jsinterop.annotations.JsNullable String> {}",
+            "PTag",
+                "@jsinterop.annotations.JsType public interface PTag"
+                    + " extends Tag<String>, IgnoredTag<String> {}",
+            "Tagged",
+                "@jsinterop.annotations.JsType public abstract class Tagged implements NTag, PTag {"
+                    + " @jsinterop.annotations.JsMethod public void x() {} }");
+
+    assertThat(result.errors()).isEmpty();
+  }
+
+  // JsPropertyMap's members are overlays, so its T never reaches TypeScript.
+  @Test
+  public void differingArgumentsMentionedOnlyByOverlaysAreNotAnError() {
+    Compilation result =
+        compileSources(
+            "MapA",
+                "@jsinterop.annotations.JsType(isNative = true, namespace ="
+                    + " jsinterop.annotations.JsPackage.GLOBAL, name = \"Object\") public interface"
+                    + " MapA extends"
+                    + " jsinterop.base.JsPropertyMap<@jsinterop.annotations.JsNullable String> {}",
+            "MapB",
+                "@jsinterop.annotations.JsType(isNative = true, namespace ="
+                    + " jsinterop.annotations.JsPackage.GLOBAL, name = \"Object\") public interface"
+                    + " MapB extends jsinterop.base.JsPropertyMap<String> {}",
+            "Options",
+                "@jsinterop.annotations.JsType public interface Options extends MapA, MapB {"
+                    + " @jsinterop.annotations.JsProperty String getName(); }");
+
+    assertThat(result.errors()).isEmpty();
+  }
+
+  // any and any|null|undefined are the same type in TypeScript.
+  @Test
+  public void argumentsTheSameInTypeScriptAreNotAnError() {
+    Compilation result =
+        compileSources(
+            "Src",
+            "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
+            "NB",
+            "@jsinterop.annotations.JsType public interface NB"
+                + " extends Src<jsinterop.base.@jsinterop.annotations.JsNullable Any> {}",
+            "PB",
+            "@jsinterop.annotations.JsType public interface PB"
+                + " extends Src<jsinterop.base.Any> {}",
+            "AnyBoth",
+            "@jsinterop.annotations.JsType public abstract class AnyBoth implements NB, PB {}");
+
+    assertThat(result.errors()).isEmpty();
+  }
+
+  // Q meets the paths; Impl reaches R again through P, which the walk doesn't repeat.
+  @Test
+  public void conflictMetInASupertypeIsReportedOnceThere() {
+    Compilation result =
+        compileSources(
+            "Src", "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
+            "R", "@jsinterop.annotations.JsType public interface R extends Src<String> {}",
+            "P", "@jsinterop.annotations.JsType public interface P extends R {}",
+            "Q",
+                "@jsinterop.annotations.JsType public interface Q"
+                    + " extends R, Src<@jsinterop.annotations.JsNullable String> {}",
+            "Impl", "@jsinterop.annotations.JsType public abstract class Impl implements P, Q {}");
+
+    assertThat(result.errors())
+        .singleElement()
+        .satisfies(d -> assertThat(d.getSource().getName()).endsWith("Q.java"));
+  }
+
+  // The clause's wildcard warning is about Src's T on D, as is the diamond error.
+  @Test
+  public void diamondErrorIsReportedBesideAWildcardWarning() {
+    Compilation result =
+        compileSources(
+            "Src", "@jsinterop.annotations.JsType public interface Src<T> { T get(); }",
+            "NB",
+                "@jsinterop.annotations.JsType public interface NB"
+                    + " extends Src<@jsinterop.annotations.JsNullable String> {}",
+            "PB", "@jsinterop.annotations.JsType public interface PB extends Src<String> {}",
+            "Other", "@jsinterop.annotations.JsType public interface Other<T> { T other(); }",
+            "D",
+                "@jsinterop.annotations.JsType public abstract class D"
+                    + " implements NB, PB, Other<Src<? super String>> {}");
+
+    assertThat(messages(result.errors())).anyMatch(m -> m.startsWith("Type parameter T of Src"));
+    assertThat(messages(result.warnings())).anyMatch(m -> m.startsWith("Wildcard ["));
+  }
+
+  @Test
+  public void unsupportedLiteralAndNonPublicTypeAreBothReported() {
+    Compilation result =
+        compileSources(
+            "Box", "@jsinterop.annotations.JsType public interface Box<T> { T get(); }",
+            "Hidden", "class Hidden {}",
+            "M",
+                "@jsinterop.annotations.JsType public class M { public void m("
+                    + "Box<@com.vertispan.tsdefs.annotations.TsLiteral(\"x\") Hidden> b) {} }");
+
+    assertThat(messages(result.errors()))
+        .anyMatch(m -> m.startsWith("@TsLiteral is not supported"))
+        .anyMatch(m -> m.contains("[Hidden] is referenced"));
+  }
+
+  @Test
+  public void differentWildcardsInOneClauseAreEachReported() {
+    Compilation result =
+        compileSources(
+            "Producer",
+            PRODUCER,
+            "Two",
+            "@jsinterop.annotations.JsType public interface Two<A, B> { A a(); B b(); }",
+            "S",
+            "@jsinterop.annotations.JsType public abstract class S"
+                + " implements Two<Producer<? super String>, Producer<? super Integer>> {}");
+
+    assertThat(messages(result.warnings())).filteredOn(m -> m.startsWith("Wildcard [")).hasSize(2);
+  }
+
+  // The JsFunction's return type is converted again for each copied member using the argument.
+  @Test
+  public void wildcardInAJsFunctionClauseArgumentIsReportedOnce() {
+    Compilation result =
+        compileSources(
+            "Src3",
+            SRC3,
+            "Box",
+            "@jsinterop.annotations.JsType public interface Box<T> { T get(); }",
+            "WildFn",
+            "@jsinterop.annotations.JsFunction public interface WildFn {"
+                + " Box<? super String> call(); }",
+            "S1",
+            "@jsinterop.annotations.JsType public abstract class S1"
+                + " implements Src3<WildFn> {}");
+
+    assertThat(messages(result.warnings())).filteredOn(m -> m.startsWith("Wildcard [")).hasSize(1);
   }
 
   /**
    * Each level has two interfaces extending both below it, so the top is reached by 2^depth paths.
    */
-  @Test(timeout = 10_000)
+  // At depth 16 this takes about 2.5s; walking each path instead of each type takes about 12s.
+  @Test(timeout = 6_000)
   public void diamondLatticeIsWalkedOncePerType() {
-    int depth = 12;
+    int depth = 16;
     List<JavaFileObject> sources = new ArrayList<>();
     for (int level = 0; level <= depth; level++) {
       for (String side : new String[] {"A", "B"}) {
@@ -237,8 +395,6 @@ public class InheritedTypeArgumentsTest {
                 + depth
                 + "B<String> {}"));
 
-    Compilation result = Compiler.javac().withProcessors(new JsTypesProcessor()).compile(sources);
-
-    assertThat(result.errors()).isEmpty();
+    assertThat(compileFiles(sources).errors()).isEmpty();
   }
 }

@@ -68,7 +68,7 @@ public class RawTypesTest {
             + " e.g. GenericUnion<Any> (jsinterop.base.Any) or GenericUnion<?>.");
   }
 
-  // This and the next two: the raw supertype isn't emitted, but its members are merged in.
+  // The raw supertype isn't emitted, but its members are merged in.
   @Test
   public void rawTsIgnoredSuperclassShouldFail() {
     assertSingleErrorIn(
@@ -102,6 +102,47 @@ public class RawTypesTest {
         "errors/raw/ImplementsRawNativeMid.java");
   }
 
+  // Raw in Java, but nothing of the raw type reaches TypeScript.
+  @Test
+  public void rawPlainSuperclassWithoutJsMembersIsNotReported() {
+    assertThat(compile("errors/raw/PlainGeneric.java", "errors/raw/ExtendsRawPlain.java").errors())
+        .isEmpty();
+  }
+
+  // The plain class implements a native interface, but its interfaces don't reach its subclasses.
+  @Test
+  public void rawPlainSuperclassImplementingANativeInterfaceIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/NativeThen.java",
+                    "errors/raw/PlainThen.java",
+                    "errors/raw/ExtendsRawPlainThen.java")
+                .errors())
+        .isEmpty();
+  }
+
+  // A plain or @TsIgnore superclass's interfaces aren't carried into its subclasses.
+  @Test
+  public void rawInterfaceOfAPlainSuperclassIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/PlainRawImplements.java",
+                    "errors/raw/ExtendsPlainRawImplements.java")
+                .errors())
+        .isEmpty();
+  }
+
+  @Test
+  public void rawInterfaceOfATsIgnoredSuperclassIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/IgnoredRawImplements.java",
+                    "errors/raw/ExtendsIgnoredRawImplements.java")
+                .errors())
+        .isEmpty();
+  }
+
+  // The skipped class's own extends clause, which passes its T on, is emitted in its subclass.
   @Test
   public void rawSkippedGenericSuperclassShouldFail() {
     assertSingleErrorIn(
@@ -112,6 +153,7 @@ public class RawTypesTest {
         "errors/raw/RawExtendsGenericMid.java");
   }
 
+  // The raw superinterface isn't emitted, but its methods are copied in.
   @Test
   public void rawTsIgnoredSuperinterfaceShouldFail() {
     assertSingleErrorIn(

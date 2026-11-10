@@ -25,12 +25,16 @@ import com.vertispan.tsdefs.impl.model.TsMethod;
 import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
@@ -56,8 +60,38 @@ public class ClassMethodVisitor<T> extends TsElement {
   /** Visits a method inherited by {@code inheritedBy}. */
   public ClassMethodVisitor(
       Element element, TypeElement inheritedBy, boolean copyDocs, HasProcessorEnv env) {
-    this(
-        element, inheritedBy, copyDocs, TsElement.renamedTypeParameters(element, inheritedBy), env);
+    this(element, inheritedBy, copyDocs, renamedTypeParameters(element, inheritedBy), env);
+  }
+
+  /**
+   * New names for the type parameters of {@code method}, inherited by {@code inheritedBy}, that
+   * share a name with one of {@code inheritedBy}'s: substituted arguments can name those, and the
+   * method's own would capture them, e.g. {@code <U> U conv(T)} with {@code T} as {@code U[]}.
+   */
+  private static Map<Element, TsType> renamedTypeParameters(
+      Element method, TypeElement inheritedBy) {
+    if (!(method instanceof ExecutableElement)) {
+      return Collections.emptyMap();
+    }
+    List<? extends TypeParameterElement> parameters =
+        ((ExecutableElement) method).getTypeParameters();
+    Set<String> taken = new HashSet<>();
+    inheritedBy.getTypeParameters().forEach(p -> taken.add(p.getSimpleName().toString()));
+    parameters.forEach(p -> taken.add(p.getSimpleName().toString()));
+    Map<Element, TsType> renamed = new HashMap<>();
+    for (TypeParameterElement parameter : parameters) {
+      String name = parameter.getSimpleName().toString();
+      if (inheritedBy.getTypeParameters().stream()
+          .anyMatch(p -> p.getSimpleName().contentEquals(name))) {
+        int suffix = 1;
+        while (taken.contains(name + suffix)) {
+          suffix++;
+        }
+        taken.add(name + suffix);
+        renamed.put(parameter, TsType.of(name + suffix, ""));
+      }
+    }
+    return renamed;
   }
 
   private ClassMethodVisitor(
@@ -79,18 +113,17 @@ public class ClassMethodVisitor<T> extends TsElement {
     }
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
+      // A type's own declaration only: a copy is emitted next to the inherited member it overrides,
+      // which is copied too. TODO a follow-up copies only the most specific override.
       if (inheritedBy == null) {
         reportWidening();
-      }
-      if (narrowsBeyondTypeScript()) {
-        return;
-      }
-      // A copy into a subtype was already chosen as the most specific override.
-      TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
-      if (inheritedBy == null
-          && parentElement.isTsInterface()
-          && restatesInheritedMethods(parentElement)) {
-        return;
+        if (narrowsBeyondTypeScript()) {
+          return;
+        }
+        TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
+        if (parentElement.isTsInterface() && restatesInheritedMethods(parentElement)) {
+          return;
+        }
       }
       parent.addFunction(toTsMethod(copyDocs ? getDocs() : TsDoc.empty()));
     }
@@ -268,13 +301,5 @@ public class ClassMethodVisitor<T> extends TsElement {
   private boolean hasOwnDocs(ExecutableElement method) {
     String comment = env.elements().getDocComment(method);
     return nonNull(comment) && !comment.replace("{@inheritDoc}", "").trim().isEmpty();
-  }
-
-  /** Not when its type is a plain Java type or @TsIgnore, which TypeScript doesn't see. */
-  private boolean isEmittedInSupertype(ExecutableElement superMethod) {
-    TsElement superType = TsElement.of(superMethod.getEnclosingElement(), env);
-    return TsElement.of(superMethod, env).isExportable()
-        && superType.isExportable()
-        && !superType.isTsIgnored();
   }
 }

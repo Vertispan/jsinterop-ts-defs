@@ -62,8 +62,7 @@ public class InterfaceTypeVisitor extends TsElement {
       TypeArgumentsVisitor.<TsInterface.TsInterfaceBuilder>ofDeclaration(element.asType(), env)
           .visit(builder);
       new InterfacesVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
-      TypeArgumentsVisitor.reportRawHiddenSupertypes((TypeElement) element, env);
-      InheritedTypeArguments.of((TypeElement) element, env).reportConflicts(env);
+      InheritedTypeArguments.report((TypeElement) element, env);
 
       element.getEnclosedElements().forEach(e -> visit(builder, e));
       if (isTsInterface()) {

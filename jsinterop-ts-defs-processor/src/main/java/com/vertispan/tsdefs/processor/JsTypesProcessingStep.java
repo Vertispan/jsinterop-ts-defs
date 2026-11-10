@@ -56,7 +56,7 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
 
   private final ProcessingEnvironment processingEnv;
   private final ProcessorLogWrapper logWrapper;
-  private final Set<List<Element>> reported = new HashSet<>();
+  private final Set<List<Object>> reported = new HashSet<>();
 
   public JsTypesProcessingStep(ProcessingEnvironment processingEnv) {
     this.processingEnv = processingEnv;
@@ -212,7 +212,7 @@ public class JsTypesProcessingStep implements ProcessingStep, HasProcessorEnv {
   }
 
   @Override
-  public boolean firstReport(Element element, Element subject) {
-    return reported.add(Arrays.asList(element, subject));
+  public boolean firstReport(Element element, String message) {
+    return reported.add(Arrays.asList(element, message));
   }
 }

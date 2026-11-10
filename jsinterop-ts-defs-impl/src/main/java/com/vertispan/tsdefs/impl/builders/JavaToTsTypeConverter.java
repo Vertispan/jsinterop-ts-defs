@@ -53,11 +53,6 @@ public class JavaToTsTypeConverter {
   private final Map<Element, TsType> typeArguments;
   private final InheritedTypeArguments inherited;
   private final Element rawTypeElement;
-  /**
-   * Converts a supertype clause's arguments, which each copied member using them converts again
-   * with the same element and context, so its warnings are reported once.
-   */
-  private boolean clauseArguments;
 
   public JavaToTsTypeConverter(Element element, HasProcessorEnv env) {
     this(element, "", Collections.emptyMap(), env);
@@ -98,14 +93,9 @@ public class JavaToTsTypeConverter {
         env);
   }
 
-  /** Converts the type arguments in {@code subtype}'s extends and implements clauses. */
-  public static JavaToTsTypeConverter forSupertypesOf(TypeElement subtype, HasProcessorEnv env) {
-    return forSupertypesOf(subtype, InheritedTypeArguments.NONE, env);
-  }
-
   /**
-   * Converts the type arguments in {@code writer}'s clauses, as emitted in {@code emittedIn}, a
-   * subtype of a {@code writer} that is not emitted itself.
+   * Converts the type arguments in {@code writer}'s extends and implements clauses for {@code
+   * emittedIn}, which is {@code writer} or a subtype emitted in place of {@code writer}.
    */
   public static JavaToTsTypeConverter forSupertypesOf(
       TypeElement writer, TypeElement emittedIn, HasProcessorEnv env) {
@@ -117,19 +107,16 @@ public class JavaToTsTypeConverter {
         env);
   }
 
-  /** @param inherited what reached {@code subtype}, when it is itself a supertype */
+  /** @param inherited what reached {@code writer}, when it is itself a supertype */
   static JavaToTsTypeConverter forSupertypesOf(
-      TypeElement subtype, InheritedTypeArguments inherited, HasProcessorEnv env) {
-    JavaToTsTypeConverter converter =
-        new JavaToTsTypeConverter(
-            subtype,
-            " in the supertypes of " + subtype.getSimpleName(),
-            Collections.emptyMap(),
-            inherited,
-            subtype,
-            env);
-    converter.clauseArguments = true;
-    return converter;
+      TypeElement writer, InheritedTypeArguments inherited, HasProcessorEnv env) {
+    return new JavaToTsTypeConverter(
+        writer,
+        " in the supertypes of " + writer.getSimpleName(),
+        Collections.emptyMap(),
+        inherited,
+        writer,
+        env);
   }
 
   /**
@@ -413,12 +400,9 @@ public class JavaToTsTypeConverter {
   }
 
   private TsType reportRawType(DeclaredType type) {
-    if (env.firstReport(rawTypeElement, type.asElement())) {
-      env.messager()
-          .printMessage(
-              Diagnostic.Kind.ERROR,
-              rawTypeMessage(type, rawTypeElement, false, env),
-              rawTypeElement);
+    String message = rawTypeMessage(type, rawTypeElement, false, env);
+    if (env.firstReport(rawTypeElement, message)) {
+      env.messager().printMessage(Diagnostic.Kind.ERROR, message, rawTypeElement);
     }
     return TsType.of("any");
   }
@@ -561,14 +545,12 @@ public class JavaToTsTypeConverter {
 
   /** Once per element, however often it is emitted, e.g. into each subtype inheriting it. */
   private void reportNonPublic(DeclaredType declaredType) {
-    if (env.firstReport(element, declaredType.asElement())) {
-      env.messager()
-          .printMessage(
-              Diagnostic.Kind.ERROR,
-              "A none public type ["
-                  + declaredType.asElement().getSimpleName()
-                  + "] is referenced but it will not be exported.",
-              element);
+    String message =
+        "A none public type ["
+            + declaredType.asElement().getSimpleName()
+            + "] is referenced but it will not be exported.";
+    if (env.firstReport(element, message)) {
+      env.messager().printMessage(Diagnostic.Kind.ERROR, message, element);
     }
   }
 
@@ -638,29 +620,30 @@ public class JavaToTsTypeConverter {
             member ->
                 mentions(declaredProducedType(member), producedType(generic, member), parameter))
         .findFirst()
-        .filter(member -> !clauseArguments || env.firstReport(element, parameters.get(index)))
         .ifPresent(
-            member ->
-                env.messager()
-                    .printMessage(
-                        Diagnostic.Kind.WARNING,
-                        "Wildcard ["
-                            + argument
-                            + "] is emitted as ["
-                            + bound
-                            + "]"
-                            + emissionContext
-                            + ", but "
-                            + typeElement.getSimpleName()
-                            + "."
-                            + member.getSimpleName()
-                            + " produces its type parameter "
-                            + parameter
-                            + ", so TypeScript is shown "
-                            + bound
-                            + " where Java only promises a supertype of it."
-                            + " Annotate the wildcard with @TsTypeRef to choose the emitted type.",
-                        element));
+            member -> {
+              String message =
+                  "Wildcard ["
+                      + argument
+                      + "] is emitted as ["
+                      + bound
+                      + "]"
+                      + emissionContext
+                      + ", but "
+                      + typeElement.getSimpleName()
+                      + "."
+                      + member.getSimpleName()
+                      + " produces its type parameter "
+                      + parameter
+                      + ", so TypeScript is shown "
+                      + bound
+                      + " where Java only promises a supertype of it."
+                      + " Annotate the wildcard with @TsTypeRef to choose the emitted type.";
+              // A clause argument is converted again for each copied member using it.
+              if (env.firstReport(element, message)) {
+                env.messager().printMessage(Diagnostic.Kind.WARNING, message, element);
+              }
+            });
   }
 
   /** The type a member hands to callers: a method's return type or a field's type, else null. */
@@ -736,12 +719,7 @@ public class JavaToTsTypeConverter {
     }
   }
 
-  /** Converts one type argument of an extends or implements clause. */
-  TsType clauseArgument(TypeMirror typeArgument) {
-    return typeArgument(typeArgument);
-  }
-
-  private TsType typeArgument(TypeMirror typeArgument) {
+  TsType typeArgument(TypeMirror typeArgument) {
     Optional<TsType> literalType = TsElement.getLiteralTypeFromMirror(typeArgument, element, env);
     if (literalType.isPresent()) {
       return literalType.get();

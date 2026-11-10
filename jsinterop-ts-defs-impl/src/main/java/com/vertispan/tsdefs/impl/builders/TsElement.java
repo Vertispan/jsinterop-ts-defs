@@ -29,14 +29,10 @@ import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,6 +44,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import jsinterop.annotations.*;
+import jsinterop.base.Any;
+import jsinterop.base.JsPropertyMap;
 
 public class TsElement {
 
@@ -80,37 +78,6 @@ public class TsElement {
     this.env = env;
     this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, typeArguments, env);
     this.typeMirror = nonNull(element) ? element.asType() : null;
-  }
-
-  /**
-   * New names for the type parameters of {@code method}, inherited by {@code inheritedBy}, that
-   * share a name with one of {@code inheritedBy}'s: substituted arguments can name those, and the
-   * method's own would capture them, e.g. {@code <U> U conv(T)} with {@code T} as {@code U[]}.
-   */
-  public static Map<Element, TsType> renamedTypeParameters(
-      Element method, TypeElement inheritedBy) {
-    if (!(method instanceof ExecutableElement) || inheritedBy == null) {
-      return Collections.emptyMap();
-    }
-    List<? extends TypeParameterElement> parameters =
-        ((ExecutableElement) method).getTypeParameters();
-    Set<String> taken = new HashSet<>();
-    inheritedBy.getTypeParameters().forEach(p -> taken.add(p.getSimpleName().toString()));
-    parameters.forEach(p -> taken.add(p.getSimpleName().toString()));
-    Map<Element, TsType> renamed = new HashMap<>();
-    for (TypeParameterElement parameter : parameters) {
-      String name = parameter.getSimpleName().toString();
-      if (inheritedBy.getTypeParameters().stream()
-          .anyMatch(p -> p.getSimpleName().contentEquals(name))) {
-        int suffix = 1;
-        while (taken.contains(name + suffix)) {
-          suffix++;
-        }
-        taken.add(name + suffix);
-        renamed.put(parameter, TsType.of(name + suffix, ""));
-      }
-    }
-    return renamed;
   }
 
   /** @param typeArguments what each type parameter in scope is emitted as */
@@ -531,22 +498,18 @@ public class TsElement {
    * Resolves a literal type from a {@link TypeMirror}'s TYPE_USE annotations. This handles the case
    * where {@code @TsLiteral} is used as a type-use annotation on type arguments, e.g. {@code
    * Supertype<@TsLiteral("hello") String>}.
-   */
-  /**
+   *
    * @param where the element written with {@code typeMirror}; an unsupported literal is reported
-   *     once per element and type, however often it is converted
+   *     once per element, however often it is converted
    */
   public static Optional<TsType> getLiteralTypeFromMirror(
       TypeMirror typeMirror, Element where, HasProcessorEnv env) {
     for (AnnotationMirror am : typeMirror.getAnnotationMirrors()) {
       if (am.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral")) {
         if (!isSupportedLiteralType(typeMirror, env)) {
-          Element literalType = env.types().asElement(typeMirror);
-          if (literalType == null || env.firstReport(where, literalType)) {
-            env.messager()
-                .printMessage(
-                    Diagnostic.Kind.ERROR,
-                    String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror));
+          String message = String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror);
+          if (env.firstReport(where, message)) {
+            env.messager().printMessage(Diagnostic.Kind.ERROR, message);
           }
           return Optional.empty();
         }
@@ -720,23 +683,9 @@ public class TsElement {
   }
 
   /**
-   * Whether one of {@code others} that is emitted overrides {@code method}, as members of this
-   * type. One that isn't emitted leaves {@code method} to stand for it.
-   */
-  public boolean isOverriddenByAny(ExecutableElement method, Collection<ExecutableElement> others) {
-    return others.stream()
-        .anyMatch(
-            other ->
-                !other.equals(method)
-                    && env.elements().overrides(other, method, (TypeElement) element)
-                    && TsElement.of(other, env).isExportable()
-                    && !TsElement.of(other, env).narrowsBeyondTypeScript());
-  }
-
-  /**
-   * Whether this method overrides one whose return type TypeScript can't narrow to this one's: to a
-   * type it has no name for, or from Object, emitted as object, which excludes primitives. The
-   * inherited member is emitted in its place.
+   * Whether this method overrides one emitted in a supertype TypeScript sees, whose return type
+   * TypeScript can't narrow to this one's: to a type it has no name for, or from Object, emitted as
+   * object, to a type not known to be an object. The inherited member is emitted in its place.
    */
   public boolean narrowsBeyondTypeScript() {
     if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
@@ -748,6 +697,7 @@ public class TsElement {
     HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
     boolean unnamed = "unknown".equals(TsElement.of(element, quiet).getType().emit(""));
     return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
+        .filter(this::isEmittedInSupertype)
         .anyMatch(
             overridden -> {
               TypeMirror inherited =
@@ -755,7 +705,8 @@ public class TsElement {
                       .getReturnType();
               // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
               if (JavaToTsTypeConverter.isSameType(inherited, Object.class, env)
-                  && !JavaToTsTypeConverter.isSameType(returnType, Object.class, env)) {
+                  && !JavaToTsTypeConverter.isSameType(returnType, Object.class, env)
+                  && !isWithinObject(returnType)) {
                 return true;
               }
               return unnamed
@@ -765,20 +716,42 @@ public class TsElement {
   }
 
   /**
-   * Methods of the {@code @TsIgnore} and {@code @TsInterface} superclasses, whose members are
-   * merged into this class.
+   * Whether {@code returnType}, this method's, is known to emit as a type TypeScript's {@code
+   * object} includes: an array, or a reference to an emitted type, a JsFunction, a property map or
+   * {@code Any}, not nullable. Anything else may be a primitive, so isn't.
    */
-  public List<ExecutableElement> mergedSuperClassMethods() {
-    List<ExecutableElement> methods = new ArrayList<>();
-    Optional<TypeMirror> superclass = getJavaSuperClass();
-    while (superclass.isPresent()) {
-      TsElement superElement = TsElement.of(superclass.get(), env);
-      if (superElement.isTsIgnored() || superElement.isTsInterface()) {
-        methods.addAll(superElement.enclosedMethods());
-      }
-      superclass = superElement.getJavaSuperClass();
+  private boolean isWithinObject(TypeMirror returnType) {
+    if (isJsNullable()
+        || returnType.getAnnotationMirrors().stream()
+            .anyMatch(
+                a ->
+                    a.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral"))) {
+      return false;
     }
-    return methods;
+    if (TypeKind.ARRAY.equals(returnType.getKind())) {
+      return true;
+    }
+    if (!TypeKind.DECLARED.equals(returnType.getKind())) {
+      return false;
+    }
+    ProcessorType processorType = ProcessorType.of(returnType, env);
+    TsElement type = TsElement.of(returnType, env);
+    if (processorType.isUnionType() || type.isTsTypeDef()) {
+      return false;
+    }
+    return processorType.isJsFunction()
+        || processorType.isAssignableFrom(JsPropertyMap.class)
+        || JavaToTsTypeConverter.isSameType(returnType, Any.class, env)
+        || type.isJsType()
+        || type.isTsInterface();
+  }
+
+  /** Not when its type is a plain Java type or @TsIgnore, which TypeScript doesn't see. */
+  public boolean isEmittedInSupertype(ExecutableElement superMethod) {
+    TsElement superType = TsElement.of(superMethod.getEnclosingElement(), env);
+    return TsElement.of(superMethod, env).isExportable()
+        && superType.isExportable()
+        && !superType.isTsIgnored();
   }
 
   public boolean override(ExecutableElement method) {

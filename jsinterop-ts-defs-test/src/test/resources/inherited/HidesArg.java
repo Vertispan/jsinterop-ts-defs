@@ -17,6 +17,6 @@ package com.vertispan.tsdefs.tests.inherited;
 
 import jsinterop.annotations.JsType;
 
-/** Passes a non-public type to a superclass whose extends clause is never emitted. */
+/** Passes a non-public type to a @TsIgnore superclass, in an extends clause never emitted. */
 @JsType
 public abstract class HidesArg extends IgnoredBase<HiddenArg> {}

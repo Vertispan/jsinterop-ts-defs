@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
@@ -51,8 +50,7 @@ public class ClassTypeVisitor extends TsElement {
           .visit(builder);
       getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
-      TypeArgumentsVisitor.reportRawHiddenSupertypes((TypeElement) element, env);
-      InheritedTypeArguments.of((TypeElement) element, env).reportConflicts(env);
+      InheritedTypeArguments.report((TypeElement) element, env);
 
       element.getEnclosedElements().stream()
           .map(e -> TsElement.of(e, env))
@@ -113,14 +111,9 @@ public class ClassTypeVisitor extends TsElement {
     TsClass.TsClassBuilder superBuilder =
         TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
     TypeElement inheritedBy = (TypeElement) element;
-    // Overridden by this class or by a merged class below the one being merged.
-    List<ExecutableElement> overriders = enclosedMethods();
-    overriders.addAll(mergedSuperClassMethods());
-    superTsElement.element().getEnclosedElements().stream()
-        .filter(
-            e ->
-                !(e instanceof ExecutableElement)
-                    || !isOverriddenByAny((ExecutableElement) e, overriders))
+    superTsElement
+        .element()
+        .getEnclosedElements()
         .forEach(
             e -> {
               new ConstructorVisitor<TsClass.TsClassBuilder>(e, env).visit(superBuilder);
@@ -176,8 +169,9 @@ public class ClassTypeVisitor extends TsElement {
     new ClassMethodVisitor<TsClass.TsClassBuilder>(enclosedElement, env).visit(classBuilder);
   }
 
-  private Optional<TsClass> getSuperClass(Element element) {
-    TypeMirror superclass = ((TypeElement) element).getSuperclass();
+  /** @param writer this class, or a skipped superclass whose extends clause is emitted for it */
+  private Optional<TsClass> getSuperClass(Element writer) {
+    TypeMirror superclass = ((TypeElement) writer).getSuperclass();
 
     if (((TypeElement) env.types().asElement(superclass))
         .getSuperclass()
@@ -195,7 +189,7 @@ public class ClassTypeVisitor extends TsElement {
       TsClass.TsClassBuilder builder =
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
       new TypeArgumentsVisitor<TsClass.TsClassBuilder>(
-              superclass, (TypeElement) element, (TypeElement) this.element, env)
+              superclass, (TypeElement) writer, (TypeElement) element, env)
           .visit(builder);
       return Optional.of(builder.build());
     } else {

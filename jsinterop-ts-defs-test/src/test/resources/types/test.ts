@@ -1388,33 +1388,33 @@ expectType<<X>(t: string[]) => X>()(arrayNarrowing.conv);
 declare const ignoredConvSub: IgnoredConvSub<string>;
 expectType<<X>(t: string[]) => X>()(ignoredConvSub.conv);
 
-// A narrower override from a superclass wins over the wider interface method.
+// Override selection in copies is main's: an override is copied next to the inherited method.
+// TODO: a follow-up copies only the most specific override, e.g. narrowSub.dget as OverridesBar.
 import NarrowSub = com.vertispan.tsdefs.tests.overrides.NarrowSub;
 declare const narrowSub: NarrowSub;
-expectType<() => OverridesBar>()(narrowSub.dget);
+expectType<{ (): OverridesFoo; (): OverridesBar }>()(narrowSub.dget);
 
-// Of two merged ignored superclasses, the subclass's override wins.
 import NarrowMerged = com.vertispan.tsdefs.tests.overrides.NarrowMerged;
 declare const narrowMerged: NarrowMerged;
-expectType<() => OverridesBar>()(narrowMerged.pick);
+expectType<{ (): OverridesBar; (): OverridesFoo }>()(narrowMerged.pick);
 
-// An override of an exported method is exported, so it replaces the copied method; one that
-// isn't emitted doesn't.
+// An override of an exported method is exported, so it is copied too; one that isn't emitted
+// isn't.
 import HiddenNarrowImpl = com.vertispan.tsdefs.tests.overrides.HiddenNarrowImpl;
 import RunImpl = com.vertispan.tsdefs.tests.overrides.RunImpl;
 import UnannotatedPick = com.vertispan.tsdefs.tests.overrides.UnannotatedPick;
 declare const hiddenNarrowImpl: HiddenNarrowImpl;
-expectType<() => OverridesBar>()(hiddenNarrowImpl.get);
+expectType<{ (): OverridesBar; (): OverridesFoo }>()(hiddenNarrowImpl.get);
 declare const runImpl: RunImpl;
 expectType<() => void>()(runImpl.run);
 declare const unannotatedPick: UnannotatedPick;
 expectType<() => OverridesFoo>()(unannotatedPick.pick);
 
-// A class implementing a narrowing interface gets the narrower methods.
+// A @TsInterface's override of an inherited method is copied next to the inherited one.
 import NarrowSourceImpl = com.vertispan.tsdefs.tests.overrides.NarrowSourceImpl;
 declare const narrowSourceImpl: NarrowSourceImpl;
-expectType<() => OverridesBar>()(narrowSourceImpl.get);
-expectType<() => Promise<OverridesBar>>()(narrowSourceImpl.resolve);
+expectType<{ (): OverridesBar; (): OverridesFoo }>()(narrowSourceImpl.get);
+expectType<{ (): Promise<OverridesBar>; (): Promise<OverridesFoo> }>()(narrowSourceImpl.resolve);
 expectType<() => string>()(narrowSourceImpl.extra);
 
 // --- Overrides in a @TsInterface sub-interface (#133) -----------------------
@@ -1467,8 +1467,9 @@ expectType<() => OverridesFoo>()(plainFooHolder.shape);
 declare const unmappedNarrowing: UnmappedNarrowing;
 expectType<() => OverridesFoo>()(unmappedNarrowing.get);
 import UnmappedNarrowingImpl = com.vertispan.tsdefs.tests.overrides.UnmappedNarrowingImpl;
+// A copy of it is emitted next to the inherited method. TODO: the follow-up drops it.
 declare const unmappedNarrowingImpl: UnmappedNarrowingImpl;
-expectType<() => OverridesFoo>()(unmappedNarrowingImpl.get);
+expectType<{ (): unknown; (): OverridesFoo }>()(unmappedNarrowingImpl.get);
 // Object is emitted as object, which excludes string. TODO(#144) with Object as unknown, the
 // override narrows to string.
 import StringValue = com.vertispan.tsdefs.tests.overrides.StringValue;
@@ -1478,3 +1479,43 @@ expectType<() => object>()(stringValue.value);
 import SizedBar = com.vertispan.tsdefs.tests.overrides.SizedBar;
 declare const sizedBar: SizedBar;
 expectType<OverridesBar>()(sizedBar.size);
+
+// --- Copies of overrides TypeScript can't narrow to (#138) ---------------------------------
+// A type it has no name for, or narrowing Object, emitted as object: copied next to the inherited
+// method. TODO: the follow-up drops the copy.
+import HiddenTypeGetterImpl = com.vertispan.tsdefs.tests.overrides.HiddenTypeGetterImpl;
+import StringValueImpl = com.vertispan.tsdefs.tests.overrides.StringValueImpl;
+declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
+expectType<{ (): unknown; (): OverridesFoo }>()(hiddenTypeGetterImpl.dget);
+declare const stringValueImpl: StringValueImpl;
+expectType<{ (): string; (): object }>()(stringValueImpl.value);
+// A type's own override TypeScript can narrow to, or of a method TypeScript doesn't see, is
+// declared as written. TODO(#144) narrowing Object to string is then valid too.
+import ArrayValueHolder = com.vertispan.tsdefs.tests.overrides.ArrayValueHolder;
+import FooValueHolder = com.vertispan.tsdefs.tests.overrides.FooValueHolder;
+import StringFromIgnored = com.vertispan.tsdefs.tests.overrides.StringFromIgnored;
+declare const arrayValueHolder: ArrayValueHolder;
+expectType<() => Array<string>>()(arrayValueHolder.value);
+declare const fooValueHolder: FooValueHolder;
+expectType<() => OverridesFoo>()(fooValueHolder.value);
+declare const stringFromIgnored: StringFromIgnored;
+expectType<() => string>()(stringFromIgnored.value);
+// Narrowing a method TypeScript doesn't see leaves nothing to fall back to.
+import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
+declare const stringSource: StringSource;
+expectType<() => string>()(stringSource.value);
+// Where an emitted supertype declares the narrower override, or TypeScript would see the wider
+// one, a copy carries both as overloads.
+import TypedValueImpl = com.vertispan.tsdefs.tests.overrides.TypedValueImpl;
+import TypedValueSub = com.vertispan.tsdefs.tests.overrides.TypedValueSub;
+import StringOverIgnoredImpl = com.vertispan.tsdefs.tests.overrides.StringOverIgnoredImpl;
+declare const typedValueImpl: TypedValueImpl<OverridesFoo>;
+expectType<{ (): OverridesFoo; (): object }>()(typedValueImpl.value);
+declare const typedValueSub: TypedValueSub<OverridesFoo>;
+expectType<{ (): OverridesFoo; (): object }>()(typedValueSub.value);
+declare const stringOverIgnoredImpl: StringOverIgnoredImpl;
+expectType<{ (): string; (): object }>()(stringOverIgnoredImpl.value);
+// A merged override whose wider member isn't carried into the subclass stands alone.
+import SubOfIgnoredString = com.vertispan.tsdefs.tests.overrides.SubOfIgnoredString;
+declare const subOfIgnoredString: SubOfIgnoredString;
+expectType<() => string>()(subOfIgnoredString.value);

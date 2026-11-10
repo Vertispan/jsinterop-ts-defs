@@ -17,6 +17,6 @@ package com.vertispan.tsdefs.tests.inherited;
 
 import jsinterop.annotations.JsType;
 
-/** Passes a non-public type to an interface whose implements clause is never emitted. */
+/** Passes a non-public type to a @TsIgnore interface, in an implements clause never emitted. */
 @JsType
 public abstract class ImplementsIgnored implements IgnoredSource<HiddenArg> {}
