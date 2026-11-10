@@ -15,6 +15,8 @@
  */
 package com.vertispan.tsdefs.impl.model;
 
+import java.util.Objects;
+
 public class ArrayTsType extends TsType {
 
   private final TsType componentType;
@@ -46,6 +48,13 @@ public class ArrayTsType extends TsType {
 
   @Override
   public boolean equals(Object o) {
-    return (o instanceof ArrayTsType) && super.equals(o);
+    return (o instanceof ArrayTsType)
+        && super.equals(o)
+        && componentType.equals(((ArrayTsType) o).componentType);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), componentType);
   }
 }
