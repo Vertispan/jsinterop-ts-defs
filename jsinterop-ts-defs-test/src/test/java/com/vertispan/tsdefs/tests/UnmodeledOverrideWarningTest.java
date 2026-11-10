@@ -93,6 +93,60 @@ public class UnmodeledOverrideWarningTest {
     assertThat(output).contains("other():number").doesNotContain("foo()");
   }
 
+  // Any interface leaves them out, with one warning each, about the name.
+  @Test
+  public void interfaceOverridesOfRenamedMethodsWarnOnceAboutTheName() throws IOException {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("Item", "PlainItem", "RenamedPair", "RenamedPairSub", "TsRenamedPairSub")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(
+            result.warnings().stream()
+                .map(d -> d.getMessage(null))
+                .filter(message -> message.contains("RenamedPairSub.")))
+        .containsExactlyInAnyOrder(
+            renamedWarning("RenamedPairSub", "foo", "java.lang.String", "x"),
+            renamedWarning("RenamedPairSub", "bar", "warnings.overrides.PlainItem", "y"),
+            renamedWarning("TsRenamedPairSub", "foo", "java.lang.String", "x"),
+            renamedWarning("TsRenamedPairSub", "bar", "warnings.overrides.PlainItem", "y"));
+    String output =
+        result
+            .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+            .orElseThrow(AssertionError::new)
+            .getCharContent(false)
+            .toString();
+    for (String type : new String[] {"interface RenamedPairSub", "interface TsRenamedPairSub"}) {
+      String declaration = output.substring(output.indexOf(type));
+      declaration = declaration.substring(0, declaration.indexOf('}'));
+      assertThat(declaration).contains("other():number").doesNotContain("foo(", "bar(");
+    }
+  }
+
+  private static String renamedWarning(String type, String method, String returns, String name) {
+    String override = type + "." + method + "()";
+    String inherited = "RenamedPair." + method + "()";
+    return override
+        + " narrows the return type of "
+        + inherited
+        + " to "
+        + returns
+        + ", but is exported under "
+        + inherited
+        + "'s JS name, which isn't modeled, so the declaration keeps "
+        + inherited
+        + "'s type; annotate "
+        + override
+        + " with @JsMethod(name = \""
+        + name
+        + "\") to emit it under that name.";
+  }
+
   // Would not extend the overridden declaration in TypeScript: left out, with the fix.
   @Test
   public void interfaceOverrideTypeScriptCannotExtendIsLeftOutAndWarns() throws IOException {
