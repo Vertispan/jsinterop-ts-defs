@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -107,5 +108,21 @@ public class TsUnionType extends TsType {
                     ? "(" + tsType.emit(parentNamespace) + ")"
                     : tsType.emit(parentNamespace))
         .collect(Collectors.joining("|"));
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsUnionType)) return false;
+    if (!super.equals(o)) return false;
+    TsUnionType that = (TsUnionType) o;
+    return anonymous == that.anonymous
+        && tsTypes.equals(that.tsTypes)
+        && typeArguments.equals(that.typeArguments);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(super.hashCode(), tsTypes, typeArguments);
   }
 }
