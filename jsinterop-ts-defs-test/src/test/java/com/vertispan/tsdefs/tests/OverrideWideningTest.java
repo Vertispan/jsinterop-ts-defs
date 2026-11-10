@@ -48,6 +48,29 @@ public class OverrideWideningTest {
             });
   }
 
+  // any and unknown already include null and undefined.
+  @Test
+  public void nullableOverrideOfAnyOrUnknownIsNotAnError() {
+    assertThat(compile("PlainThing", "AnyBase", "AnyNull").errors()).isEmpty();
+  }
+
+  // Only string literals are checked; "1.0" is the same number as "1".
+  @Test
+  public void overrideRestatingANumberLiteralIsNotAnError() {
+    assertThat(compile("NumberLiteral", "SameNumberLiteral").errors()).isEmpty();
+  }
+
+  @Test
+  public void overrideDroppingANullableLiteralIsAnError() {
+    assertThat(compile("NullableLiteral", "DropsNullableLiteral").errors())
+        .singleElement()
+        .satisfies(
+            d -> {
+              assertThat(d.getMessage(null)).contains("DropsNullableLiteral.na()", "@TsLiteral");
+              assertThat(d.getSource().getName()).endsWith("DropsNullableLiteral.java");
+            });
+  }
+
   @Test
   public void overrideDroppingLiteralIsAnError() {
     assertThat(compile("LiteralBase", "DropsLiteral").errors())

@@ -65,6 +65,23 @@ public class JsNameInheritanceTest {
     }
   }
 
+  // @TsIgnore keeps a method out of TypeScript, not out of JS, so its name is still inherited.
+  @Test
+  public void overridesOfATsIgnoredMethodTakeItsName() throws IOException {
+    Compilation result =
+        compile(
+            "IgnoredRenamed",
+            "IgnoredRenamedSub",
+            "RenamedApi",
+            "IgnoredMiddle",
+            "IgnoredMiddleSub");
+
+    assertThat(result.errors()).isEmpty();
+    for (String sub : new String[] {"IgnoredRenamedSub", "IgnoredMiddleSub"}) {
+      assertThat(declaration(result, sub)).contains("bar():void;").doesNotContain("foo(");
+    }
+  }
+
   @Test
   public void interfaceOverridesOfAnIgnoredInterfaceTakeItsNames() throws IOException {
     Compilation result = compile("IgnoredNames", "NamesFromIgnored");
