@@ -1489,6 +1489,14 @@ declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
 expectType<{ (): unknown; (): OverridesFoo }>()(hiddenTypeGetterImpl.dget);
 declare const stringValueImpl: StringValueImpl;
 expectType<{ (): string; (): object }>()(stringValueImpl.value);
+// A class's own override is declared as written: implementing an interface inherits nothing in
+// TypeScript, and a class left without members isn't emitted.
+import TypedBox = com.vertispan.tsdefs.tests.overrides.TypedBox;
+import TypeVarValueImpl = com.vertispan.tsdefs.tests.overrides.TypeVarValueImpl;
+declare const typedBox: TypedBox<OverridesFoo>;
+expectType<() => OverridesFoo>()(typedBox.value);
+declare const typeVarValueImpl: TypeVarValueImpl<OverridesFoo>;
+expectType<() => OverridesFoo>()(typeVarValueImpl.value);
 // A type's own override TypeScript can narrow to, or of a method TypeScript doesn't see, is
 // declared as written. TODO(#144) narrowing Object to string is then valid too.
 import ArrayValueHolder = com.vertispan.tsdefs.tests.overrides.ArrayValueHolder;
