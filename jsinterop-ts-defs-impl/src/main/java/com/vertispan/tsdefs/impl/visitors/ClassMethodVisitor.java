@@ -24,7 +24,6 @@ import com.vertispan.tsdefs.impl.model.TsDoc;
 import com.vertispan.tsdefs.impl.model.TsMethod;
 import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -189,8 +188,9 @@ public class ClassMethodVisitor<T> extends TsElement {
 
   /**
    * Whether this interface method would not extend a method it overrides, emitted in a supertype
-   * TypeScript sees: it returns unknown where that doesn't, or declares other parameter types. The
-   * inherited declaration stands in its place. Warns with the fix.
+   * TypeScript sees: it returns unknown where that doesn't, or one of them takes a rest parameter
+   * where the other takes an array. Other parameter differences are fine, since TypeScript method
+   * parameters are bivariant. The inherited declaration stands in its place. Warns with the fix.
    */
   // TODO a follow-up: where several such declarations disagree, leaving this out is still TS2320.
   private boolean isLeftOutOfInterface() {
@@ -198,18 +198,12 @@ public class ClassMethodVisitor<T> extends TsElement {
     TypeElement declaring = (TypeElement) method.getEnclosingElement();
     HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
     String ownReturn = TsElement.of(method, quiet).getType().emit("");
-    List<String> ownParameters =
-        parameterTypes(new ClassMethodVisitor<T>(method, quiet).toTsMethod(TsDoc.empty()));
     String override = declaring.getSimpleName() + "." + method.getSimpleName() + "()";
     for (ExecutableElement superMethod : TsElement.of(declaring, env).overriddenMethods(method)) {
       if (!isEmittedInSupertype(superMethod)) {
         continue;
       }
       String inheritedReturn = TsElement.of(superMethod, declaring, quiet).getType().emit("");
-      List<String> inheritedParameters =
-          parameterTypes(
-              new ClassMethodVisitor<T>(superMethod, declaring, false, quiet)
-                  .toTsMethod(TsDoc.empty()));
       String overridden =
           superMethod.getEnclosingElement().getSimpleName()
               + "."
@@ -228,7 +222,7 @@ public class ClassMethodVisitor<T> extends TsElement {
                 + "'s declaration stands; return a type TypeScript can see, or annotate "
                 + override
                 + " with @TsTypeRef to choose the emitted type.";
-      } else if (!ownParameters.equals(inheritedParameters)) {
+      } else if (method.isVarArgs() != superMethod.isVarArgs()) {
         fix =
             override
                 + " declares its parameters differently from "
@@ -245,56 +239,6 @@ public class ClassMethodVisitor<T> extends TsElement {
       return true;
     }
     return false;
-  }
-
-  /**
-   * The parameter types of {@code method} as emitted, each with its ..., without names. Not ?: a
-   * method may make a parameter optional or required in TypeScript.
-   */
-  private static List<String> parameterTypes(TsMethod method) {
-    String emitted = method.emit("", "");
-    int start = 0;
-    int angles = 0;
-    while (start < emitted.length() && (emitted.charAt(start) != '(' || angles > 0)) {
-      char c = emitted.charAt(start);
-      if (c == '<') {
-        angles++;
-      } else if (c == '>' && emitted.charAt(start - 1) != '=') {
-        angles--;
-      }
-      start++;
-    }
-    List<String> types = new ArrayList<>();
-    int depth = 0;
-    int from = start + 1;
-    for (int i = start + 1; i < emitted.length(); i++) {
-      char c = emitted.charAt(i);
-      if (c == '(' || c == '[' || c == '{' || c == '<') {
-        depth++;
-      } else if ((c == '>' && emitted.charAt(i - 1) == '=')) {
-        continue;
-      } else if (c == ')' || c == ']' || c == '}' || c == '>') {
-        if (depth == 0) {
-          addParameterType(types, emitted.substring(from, i));
-          break;
-        }
-        depth--;
-      } else if (c == ',' && depth == 0) {
-        addParameterType(types, emitted.substring(from, i));
-        from = i + 1;
-      }
-    }
-    return types;
-  }
-
-  private static void addParameterType(List<String> types, String parameter) {
-    String trimmed = parameter.trim();
-    if (trimmed.isEmpty()) {
-      return;
-    }
-    int colon = trimmed.indexOf(':');
-    String name = trimmed.substring(0, colon);
-    types.add((name.startsWith("...") ? "..." : "") + trimmed.substring(colon + 1));
   }
 
   /**

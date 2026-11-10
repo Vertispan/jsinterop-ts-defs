@@ -1529,8 +1529,9 @@ declare const typedValueImpl: TypedValueImpl<OverridesFoo>;
 expectType<{ (): OverridesFoo; (): object }>()(typedValueImpl.value);
 declare const typedValueSub: TypedValueSub<OverridesFoo>;
 expectType<{ (): OverridesFoo; (): object }>()(typedValueSub.value);
+// IgnoredObjectSource's value(), which TypeScript doesn't see, is covered by StringOverIgnored's.
 declare const stringOverIgnoredImpl: StringOverIgnoredImpl;
-expectType<{ (): string; (): object }>()(stringOverIgnoredImpl.value);
+expectType<() => string>()(stringOverIgnoredImpl.value);
 // A merged override whose wider member isn't carried into the subclass stands alone.
 import SubOfIgnoredString = com.vertispan.tsdefs.tests.overrides.SubOfIgnoredString;
 declare const subOfIgnoredString: SubOfIgnoredString;

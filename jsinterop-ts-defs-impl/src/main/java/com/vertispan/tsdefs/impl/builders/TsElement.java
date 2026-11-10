@@ -740,12 +740,19 @@ public class TsElement {
         || type.isTsInterface();
   }
 
-  /** Not when its type is a plain Java type or @TsIgnore, which TypeScript doesn't see. */
+  /**
+   * Not when its type is a plain Java type, @TsIgnore, or native and not a TsInterface, which
+   * TypeScript doesn't see.
+   */
   public boolean isEmittedInSupertype(ExecutableElement superMethod) {
     TsElement superType = TsElement.of(superMethod.getEnclosingElement(), env);
+    JsType jsType = superType.element().getAnnotation(JsType.class);
+    // A native JsType is emitted only as a TsInterface.
+    boolean nativeOnly = jsType != null && jsType.isNative() && !superType.isTsInterface();
     return TsElement.of(superMethod, env).isExportable()
         && superType.isExportable()
-        && !superType.isTsIgnored();
+        && !superType.isTsIgnored()
+        && !nativeOnly;
   }
 
   public boolean override(ExecutableElement method) {

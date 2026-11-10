@@ -34,10 +34,23 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     // Listed once per path to it; emitted once.
     Set<ExecutableElement> nonOverriddenMethods =
         new LinkedHashSet<>(allNotOverriddenInterfacesMethods());
-    nonOverriddenMethods.forEach(
-        executableElement -> {
-          new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
-              .visit(parent);
-        });
+    // One overridden by another copy is left out where TypeScript doesn't see it, so nothing
+    // requires it; where it does, both are copied as overloads.
+    nonOverriddenMethods.stream()
+        .filter(method -> !isCoveredByAny(method, nonOverriddenMethods))
+        .forEach(
+            executableElement -> {
+              new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
+                  .visit(parent);
+            });
+  }
+
+  private boolean isCoveredByAny(ExecutableElement method, Set<ExecutableElement> copies) {
+    return !isEmittedInSupertype(method)
+        && copies.stream()
+            .anyMatch(
+                other ->
+                    !other.equals(method)
+                        && env.elements().overrides(other, method, (TypeElement) element));
   }
 }
