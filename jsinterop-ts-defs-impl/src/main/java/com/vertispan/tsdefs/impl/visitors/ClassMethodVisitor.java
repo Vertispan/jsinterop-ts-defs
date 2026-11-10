@@ -24,6 +24,7 @@ import com.vertispan.tsdefs.impl.model.TsDoc;
 import com.vertispan.tsdefs.impl.model.TsMethod;
 import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +46,8 @@ import jsinterop.annotations.JsProperty;
 public class ClassMethodVisitor<T> extends TsElement {
   /** A string, number or boolean literal type, as emitted. */
   private static final Pattern LITERAL = Pattern.compile("\".*\"|-?[0-9.]+|true|false");
+
+  private static final Pattern UNKNOWN = Pattern.compile("\\bunknown\\b");
 
   private final boolean copyDocs;
   private final TypeElement inheritedBy;
@@ -121,7 +124,7 @@ public class ClassMethodVisitor<T> extends TsElement {
         // An interface inherits the wider declaration; a class that implements one inherits
         // nothing, and one left without members isn't emitted.
         if ((parentElement.isInterface() || parentElement.isTsInterface())
-            && narrowsBeyondTypeScript()) {
+            && (narrowsBeyondTypeScript() || isLeftOutOfInterface())) {
           return;
         }
         if (parentElement.isTsInterface()
@@ -182,6 +185,116 @@ public class ClassMethodVisitor<T> extends TsElement {
                         new ClassMethodVisitor<T>(superMethod, declaringType, false, quiet)
                             .toTsMethod(TsDoc.empty())
                             .emit("", "")));
+  }
+
+  /**
+   * Whether this interface method would not extend a method it overrides, emitted in a supertype
+   * TypeScript sees: it returns unknown where that doesn't, or declares other parameter types. The
+   * inherited declaration stands in its place. Warns with the fix.
+   */
+  // TODO a follow-up: where several such declarations disagree, leaving this out is still TS2320.
+  private boolean isLeftOutOfInterface() {
+    ExecutableElement method = (ExecutableElement) element;
+    TypeElement declaring = (TypeElement) method.getEnclosingElement();
+    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
+    String ownReturn = TsElement.of(method, quiet).getType().emit("");
+    List<String> ownParameters =
+        parameterTypes(new ClassMethodVisitor<T>(method, quiet).toTsMethod(TsDoc.empty()));
+    String override = declaring.getSimpleName() + "." + method.getSimpleName() + "()";
+    for (ExecutableElement superMethod : TsElement.of(declaring, env).overriddenMethods(method)) {
+      if (!isEmittedInSupertype(superMethod)) {
+        continue;
+      }
+      String inheritedReturn = TsElement.of(superMethod, declaring, quiet).getType().emit("");
+      List<String> inheritedParameters =
+          parameterTypes(
+              new ClassMethodVisitor<T>(superMethod, declaring, false, quiet)
+                  .toTsMethod(TsDoc.empty()));
+      String overridden =
+          superMethod.getEnclosingElement().getSimpleName()
+              + "."
+              + superMethod.getSimpleName()
+              + "()";
+      String fix;
+      if (UNKNOWN.matcher(ownReturn).find() && !UNKNOWN.matcher(inheritedReturn).find()) {
+        fix =
+            override
+                + " returns "
+                + method.getReturnType()
+                + ", which TypeScript sees as "
+                + ownReturn
+                + ", so it is left out and "
+                + overridden
+                + "'s declaration stands; return a type TypeScript can see, or annotate "
+                + override
+                + " with @TsTypeRef to choose the emitted type.";
+      } else if (!ownParameters.equals(inheritedParameters)) {
+        fix =
+            override
+                + " declares its parameters differently from "
+                + overridden
+                + " in TypeScript, so it is left out and "
+                + overridden
+                + "'s declaration stands; declare them as "
+                + overridden
+                + " does.";
+      } else {
+        continue;
+      }
+      env.messager().printMessage(Diagnostic.Kind.WARNING, fix, method);
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * The parameter types of {@code method} as emitted, each with its ..., without names. Not ?: a
+   * method may make a parameter optional or required in TypeScript.
+   */
+  private static List<String> parameterTypes(TsMethod method) {
+    String emitted = method.emit("", "");
+    int start = 0;
+    int angles = 0;
+    while (start < emitted.length() && (emitted.charAt(start) != '(' || angles > 0)) {
+      char c = emitted.charAt(start);
+      if (c == '<') {
+        angles++;
+      } else if (c == '>' && emitted.charAt(start - 1) != '=') {
+        angles--;
+      }
+      start++;
+    }
+    List<String> types = new ArrayList<>();
+    int depth = 0;
+    int from = start + 1;
+    for (int i = start + 1; i < emitted.length(); i++) {
+      char c = emitted.charAt(i);
+      if (c == '(' || c == '[' || c == '{' || c == '<') {
+        depth++;
+      } else if ((c == '>' && emitted.charAt(i - 1) == '=')) {
+        continue;
+      } else if (c == ')' || c == ']' || c == '}' || c == '>') {
+        if (depth == 0) {
+          addParameterType(types, emitted.substring(from, i));
+          break;
+        }
+        depth--;
+      } else if (c == ',' && depth == 0) {
+        addParameterType(types, emitted.substring(from, i));
+        from = i + 1;
+      }
+    }
+    return types;
+  }
+
+  private static void addParameterType(List<String> types, String parameter) {
+    String trimmed = parameter.trim();
+    if (trimmed.isEmpty()) {
+      return;
+    }
+    int colon = trimmed.indexOf(':');
+    String name = trimmed.substring(0, colon);
+    types.add((name.startsWith("...") ? "..." : "") + trimmed.substring(colon + 1));
   }
 
   /**
