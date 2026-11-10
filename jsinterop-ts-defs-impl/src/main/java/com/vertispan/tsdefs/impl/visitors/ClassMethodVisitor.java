@@ -124,7 +124,8 @@ public class ClassMethodVisitor<T> extends TsElement {
             && narrowsBeyondTypeScript()) {
           return;
         }
-        if (parentElement.isTsInterface() && restatesInheritedMethods(parentElement)) {
+        if (parentElement.isTsInterface()
+            && (restatesInheritedMethods(parentElement) || isExportedUnderAnotherName())) {
           return;
         }
       }
@@ -184,6 +185,22 @@ public class ClassMethodVisitor<T> extends TsElement {
   }
 
   /**
+   * Whether JsInterop exports this unannotated override under the JS name of an exported method it
+   * overrides, which differs from its own; this emitter would name it wrongly.
+   */
+  private boolean isExportedUnderAnotherName() {
+    ExecutableElement method = (ExecutableElement) element;
+    if (nonNull(method.getAnnotation(JsMethod.class))
+        || nonNull(method.getAnnotation(JsProperty.class))) {
+      return false;
+    }
+    return TsElement.of(method.getEnclosingElement(), env).overriddenMethods(method).stream()
+        .map(superMethod -> TsElement.of(superMethod, env))
+        .anyMatch(
+            overridden -> overridden.isExportable() && !overridden.getName().equals(getName()));
+  }
+
+  /**
    * JsInterop exports an unannotated override of a renamed method or a property accessor under the
    * overridden member's JS name, which this emitter doesn't model: TypeScript sees only the
    * inherited declaration, so a narrower return type is lost. Warns with the annotation that emits
@@ -191,12 +208,14 @@ public class ClassMethodVisitor<T> extends TsElement {
    */
   private void warnIfNarrowingIsLost() {
     ExecutableElement method = (ExecutableElement) element;
+    TsElement declaring = TsElement.of(method.getEnclosingElement(), env);
+    // A TsInterface leaves such an override out (isExportedUnderAnotherName); elsewhere an
+    // exported one is emitted under its Java name. TODO a follow-up emits it under the JS name.
     if (nonNull(method.getAnnotation(JsMethod.class))
         || nonNull(method.getAnnotation(JsProperty.class))
-        || isExportable()) {
+        || (isExportable() && !declaring.isTsInterface())) {
       return;
     }
-    TsElement declaring = TsElement.of(method.getEnclosingElement(), env);
     DeclaredType declaringType = (DeclaredType) declaring.element().asType();
     List<ExecutableElement> overriddenMethods = declaring.overriddenMethods(method);
     // Nothing is lost when a supertype in between already emits the narrower type.
