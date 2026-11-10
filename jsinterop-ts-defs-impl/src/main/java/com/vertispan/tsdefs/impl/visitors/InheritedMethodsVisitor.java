@@ -51,6 +51,7 @@ public class InheritedMethodsVisitor<T> extends TsElement {
             .anyMatch(
                 other ->
                     !other.equals(method)
+                        && TsElement.of(other, env).isExportable()
                         && env.elements().overrides(other, method, (TypeElement) element));
   }
 }
