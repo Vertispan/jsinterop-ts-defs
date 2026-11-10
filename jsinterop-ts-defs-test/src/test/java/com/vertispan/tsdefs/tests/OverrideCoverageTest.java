@@ -68,6 +68,24 @@ public class OverrideCoverageTest {
     assertThat(impl).contains("get():Foo|null|undefined;").doesNotContain("get():Foo;");
   }
 
+  // Only an override that is emitted stands for the method it overrides.
+  @Test
+  public void methodOverriddenOnlyByAnIgnoredOverrideIsCopied() throws IOException {
+    Compilation result = compile("IgnoredValue", "IgnoredOverride", "IgnoredOverrideImpl");
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(declaration(result, "IgnoredOverrideImpl")).contains("v():object;");
+  }
+
+  // A native supertype is seen by TypeScript through its own declaration.
+  @Test
+  public void overrideOfANativeRestParameterIsLeftOutAndWarns() throws IOException {
+    Compilation result = compile("NativeRest", "ArrayAdder");
+
+    assertThat(leftOutWarnings(result)).isOne();
+    assertThat(declaration(result, "ArrayAdder")).doesNotContain("add(");
+  }
+
   // Type variables are compared by position, not by name.
   @Test
   public void overrideRenamingItsTypeVariableIsEmittedWithoutAWarning() throws IOException {
