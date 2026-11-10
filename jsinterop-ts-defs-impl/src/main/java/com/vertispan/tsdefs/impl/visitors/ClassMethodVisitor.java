@@ -36,11 +36,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.ExecutableType;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic;
-import jsinterop.annotations.JsMethod;
-import jsinterop.annotations.JsProperty;
 
 public class ClassMethodVisitor<T> extends TsElement {
   /** A string, number or boolean literal type, as emitted. */
@@ -110,9 +106,6 @@ public class ClassMethodVisitor<T> extends TsElement {
 
   public void visit(HasFunctions<T> parent) {
 
-    if (isMethod() && inheritedBy == null) {
-      warnIfNarrowingIsLost();
-    }
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
       // A type's own declaration only: a copy is emitted next to the inherited member it overrides,
@@ -121,12 +114,9 @@ public class ClassMethodVisitor<T> extends TsElement {
         reportWidening();
         TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
         // An interface inherits the wider declaration; a class that implements one inherits
-        // nothing, and one left without members isn't emitted. Under another JS name the other
-        // checks would compare it with a declaration it doesn't replace in TypeScript.
+        // nothing, and one left without members isn't emitted.
         if ((parentElement.isInterface() || parentElement.isTsInterface())
-            && (isExportedUnderAnotherName()
-                || narrowsBeyondTypeScript()
-                || isLeftOutOfInterface())) {
+            && (narrowsBeyondTypeScript() || isLeftOutOfInterface())) {
           return;
         }
         if (parentElement.isTsInterface() && restatesInheritedMethods(parentElement)) {
@@ -241,94 +231,6 @@ public class ClassMethodVisitor<T> extends TsElement {
       return true;
     }
     return false;
-  }
-
-  /**
-   * Whether JsInterop exports this unannotated override under the JS name of an exported method it
-   * overrides, which differs from its own; this emitter would name it wrongly.
-   */
-  private boolean isExportedUnderAnotherName() {
-    ExecutableElement method = (ExecutableElement) element;
-    if (nonNull(method.getAnnotation(JsMethod.class))
-        || nonNull(method.getAnnotation(JsProperty.class))) {
-      return false;
-    }
-    return TsElement.of(method.getEnclosingElement(), env).overriddenMethods(method).stream()
-        .map(superMethod -> TsElement.of(superMethod, env))
-        .anyMatch(
-            overridden -> overridden.isExportable() && !overridden.getName().equals(getName()));
-  }
-
-  /**
-   * JsInterop exports an unannotated override of a renamed method or a property accessor under the
-   * overridden member's JS name, which this emitter doesn't model: TypeScript sees only the
-   * inherited declaration, so a narrower return type is lost. Warns with the annotation that emits
-   * it.
-   */
-  private void warnIfNarrowingIsLost() {
-    ExecutableElement method = (ExecutableElement) element;
-    TsElement declaring = TsElement.of(method.getEnclosingElement(), env);
-    // An interface leaves such an override out (isExportedUnderAnotherName); a class emits an
-    // exported one under its Java name. TODO a follow-up emits it under the JS name.
-    if (nonNull(method.getAnnotation(JsMethod.class))
-        || nonNull(method.getAnnotation(JsProperty.class))
-        || (isExportable() && !declaring.isInterface() && !declaring.isTsInterface())) {
-      return;
-    }
-    DeclaredType declaringType = (DeclaredType) declaring.element().asType();
-    List<ExecutableElement> overriddenMethods = declaring.overriddenMethods(method);
-    // Nothing is lost when a supertype in between already emits the narrower type.
-    if (overriddenMethods.stream()
-        .anyMatch(
-            superMethod ->
-                TsElement.of(superMethod, env).isExportable()
-                    && env.types()
-                        .isSameType(
-                            method.getReturnType(),
-                            ((ExecutableType) env.types().asMemberOf(declaringType, superMethod))
-                                .getReturnType()))) {
-      return;
-    }
-    for (ExecutableElement superMethod : overriddenMethods) {
-      TsElement overridden = TsElement.of(superMethod, env);
-      if (!overridden.isExportable() || overridden.getName().equals(getName())) {
-        continue;
-      }
-      TypeMirror inheritedReturn =
-          ((ExecutableType) env.types().asMemberOf(declaringType, superMethod)).getReturnType();
-      if (env.types().isSameType(method.getReturnType(), inheritedReturn)) {
-        continue;
-      }
-      boolean property = overridden.isJsProperty();
-      String jsName = property ? overridden.nonGetSetName() : overridden.getName();
-      String override = declaring.element().getSimpleName() + "." + method.getSimpleName() + "()";
-      String inherited =
-          superMethod.getEnclosingElement().getSimpleName()
-              + "."
-              + superMethod.getSimpleName()
-              + "()";
-      env.messager()
-          .printMessage(
-              Diagnostic.Kind.WARNING,
-              override
-                  + " narrows the return type of "
-                  + inherited
-                  + " to "
-                  + method.getReturnType()
-                  + ", but is exported under "
-                  + inherited
-                  + "'s JS name, which isn't modeled, so the declaration keeps "
-                  + inherited
-                  + "'s type; annotate "
-                  + override
-                  + " with "
-                  + (property ? "@JsProperty" : "@JsMethod")
-                  + "(name = \""
-                  + jsName
-                  + "\") to emit it under that name.",
-              method);
-      return;
-    }
   }
 
   /**
