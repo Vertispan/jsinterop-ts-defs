@@ -48,17 +48,17 @@ public class UnmodeledOverrideWarningTest {
     assertThat(
             result.warnings().stream()
                 .map(d -> d.getMessage(null))
-                .filter(message -> message.contains("to emit the narrower type")))
+                .filter(message -> message.contains("to emit it under that name")))
         .containsExactlyInAnyOrder(
             "NarrowCircle.getSize() narrows the return type of Shape.getSize() to"
                 + " java.lang.Double, but is exported under Shape.getSize()'s JS name, which isn't"
                 + " modeled, so the declaration keeps Shape.getSize()'s type; annotate"
-                + " NarrowCircle.getSize() with @JsProperty(name = \"size\") to emit the narrower"
-                + " type.",
+                + " NarrowCircle.getSize() with @JsProperty(name = \"size\") to emit it under that"
+                + " name.",
             "NarrowCircle.text() narrows the return type of Shape.text() to java.lang.String,"
                 + " but is exported under Shape.text()'s JS name, which isn't modeled, so the"
                 + " declaration keeps Shape.text()'s type; annotate NarrowCircle.text() with"
-                + " @JsMethod(name = \"describe\") to emit the narrower type.");
+                + " @JsMethod(name = \"describe\") to emit it under that name.");
   }
 
   // Exported, but under the overridden method's JS name: left out, with the fix.
@@ -77,13 +77,13 @@ public class UnmodeledOverrideWarningTest {
     assertThat(
             result.warnings().stream()
                 .map(d -> d.getMessage(null))
-                .filter(message -> message.contains("to emit the narrower type")))
+                .filter(message -> message.contains("to emit it under that name")))
         .containsExactly(
             "RenamedNarrowing.foo() narrows the return type of RenamedSource.foo() to"
                 + " warnings.overrides.RenamedNarrowing, but is exported under"
                 + " RenamedSource.foo()'s JS name, which isn't modeled, so the declaration keeps"
                 + " RenamedSource.foo()'s type; annotate RenamedNarrowing.foo() with"
-                + " @JsMethod(name = \"x\") to emit the narrower type.");
+                + " @JsMethod(name = \"x\") to emit it under that name.");
     String output =
         result
             .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
@@ -201,7 +201,7 @@ public class UnmodeledOverrideWarningTest {
 
     assertThat(result.errors()).isEmpty();
     assertThat(result.warnings())
-        .filteredOn(d -> d.getMessage(null).contains("to emit the narrower type"))
+        .filteredOn(d -> d.getMessage(null).contains("to emit it under that name"))
         .isEmpty();
   }
 }

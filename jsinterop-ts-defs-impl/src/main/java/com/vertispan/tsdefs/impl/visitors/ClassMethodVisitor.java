@@ -121,13 +121,15 @@ public class ClassMethodVisitor<T> extends TsElement {
         reportWidening();
         TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
         // An interface inherits the wider declaration; a class that implements one inherits
-        // nothing, and one left without members isn't emitted.
+        // nothing, and one left without members isn't emitted. Under another JS name the other
+        // checks would compare it with a declaration it doesn't replace in TypeScript.
         if ((parentElement.isInterface() || parentElement.isTsInterface())
-            && (narrowsBeyondTypeScript() || isLeftOutOfInterface())) {
+            && (isExportedUnderAnotherName()
+                || narrowsBeyondTypeScript()
+                || isLeftOutOfInterface())) {
           return;
         }
-        if (parentElement.isTsInterface()
-            && (restatesInheritedMethods(parentElement) || isExportedUnderAnotherName())) {
+        if (parentElement.isTsInterface() && restatesInheritedMethods(parentElement)) {
           return;
         }
       }
@@ -266,11 +268,11 @@ public class ClassMethodVisitor<T> extends TsElement {
   private void warnIfNarrowingIsLost() {
     ExecutableElement method = (ExecutableElement) element;
     TsElement declaring = TsElement.of(method.getEnclosingElement(), env);
-    // A TsInterface leaves such an override out (isExportedUnderAnotherName); elsewhere an
-    // exported one is emitted under its Java name. TODO a follow-up emits it under the JS name.
+    // An interface leaves such an override out (isExportedUnderAnotherName); a class emits an
+    // exported one under its Java name. TODO a follow-up emits it under the JS name.
     if (nonNull(method.getAnnotation(JsMethod.class))
         || nonNull(method.getAnnotation(JsProperty.class))
-        || (isExportable() && !declaring.isTsInterface())) {
+        || (isExportable() && !declaring.isInterface() && !declaring.isTsInterface())) {
       return;
     }
     DeclaredType declaringType = (DeclaredType) declaring.element().asType();
@@ -323,7 +325,7 @@ public class ClassMethodVisitor<T> extends TsElement {
                   + (property ? "@JsProperty" : "@JsMethod")
                   + "(name = \""
                   + jsName
-                  + "\") to emit the narrower type.",
+                  + "\") to emit it under that name.",
               method);
       return;
     }
