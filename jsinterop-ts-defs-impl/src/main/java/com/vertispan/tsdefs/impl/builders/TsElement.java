@@ -273,7 +273,7 @@ public class TsElement {
     }
     return parent().overriddenMethods((ExecutableElement) element).stream()
         .map(superMethod -> TsElement.of(superMethod, env))
-        .filter(TsElement::isExportable)
+        .filter(TsElement::isJsExportedMethod)
         .map(TsElement::getDeclaredJsName)
         .flatMap(name -> name.map(Stream::of).orElseGet(Stream::empty))
         .findFirst();
@@ -812,6 +812,17 @@ public class TsElement {
             || (isConstructor() && isExportableConstructor())
             || (isInterface() && isExportableInterface())
             || (isClass() && isExportableClass()));
+  }
+
+  /** Whether JsInterop exports this method, whether or not it is emitted: @TsIgnore is ours. */
+  private boolean isJsExportedMethod() {
+    return !isIgnored()
+        && !isOverlay()
+        && isMethod()
+        && (isJsMethod()
+            || isJsProperty()
+            || (isPublic() && parent().isJsType())
+            || overridesExportedMethod());
   }
 
   private boolean isExportableClass() {

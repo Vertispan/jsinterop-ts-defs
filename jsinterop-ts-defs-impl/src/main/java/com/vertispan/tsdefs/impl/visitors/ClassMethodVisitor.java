@@ -40,7 +40,8 @@ import javax.tools.Diagnostic;
 
 public class ClassMethodVisitor<T> extends TsElement {
   /** A string, number or boolean literal type, as emitted. */
-  private static final Pattern LITERAL = Pattern.compile("\".*\"|-?[0-9.]+|true|false");
+  /** A string literal type, as emitted. TODO numbers and booleans aren't checked. */
+  private static final Pattern STRING_LITERAL = Pattern.compile("\".*\"");
 
   private static final Pattern UNKNOWN = Pattern.compile("\\bunknown\\b");
 
@@ -235,7 +236,8 @@ public class ClassMethodVisitor<T> extends TsElement {
 
   /**
    * Reports an override whose return type is wider in TypeScript than the one it overrides, which
-   * TypeScript rejects: nullable where that isn't, or the full type where that is a literal.
+   * TypeScript rejects: nullable where that isn't (nor any or unknown), or another type where that
+   * is a string literal.
    */
   private void reportWidening() {
     ExecutableElement method = (ExecutableElement) element;
@@ -247,12 +249,20 @@ public class ClassMethodVisitor<T> extends TsElement {
         continue;
       }
       TsType inherited = TsElement.of(overridden, declaring, quiet).getType();
+      String inheritedText = withoutNull(inherited.emit(""));
       String widening;
-      if (own instanceof TsNullableType && !(inherited instanceof TsNullableType)) {
+      String inheritedIs;
+      // any and unknown already take null and undefined.
+      if (own instanceof TsNullableType
+          && !(inherited instanceof TsNullableType)
+          && !"any".equals(inheritedText)
+          && !"unknown".equals(inheritedText)) {
         widening = "is @JsNullable, but ";
-      } else if (LITERAL.matcher(inherited.emit("")).matches()
-          && !own.emit("").equals(inherited.emit(""))) {
+        inheritedIs = "is not";
+      } else if (STRING_LITERAL.matcher(inheritedText).matches()
+          && !withoutNull(own.emit("")).equals(inheritedText)) {
         widening = "returns " + own.emit("") + ", but ";
+        inheritedIs = "returns the @TsLiteral " + inheritedText;
       } else {
         continue;
       }
@@ -271,13 +281,16 @@ public class ClassMethodVisitor<T> extends TsElement {
                   + widening
                   + overriddenName
                   + ", which it overrides, "
-                  + (own instanceof TsNullableType
-                      ? "is not"
-                      : "returns the @TsLiteral " + inherited.emit(""))
+                  + inheritedIs
                   + "; TypeScript rejects an override with a wider return type.",
               method);
       return;
     }
+  }
+
+  /** {@code emitted} without a trailing null or undefined, as a nullable type emits. */
+  private static String withoutNull(String emitted) {
+    return emitted.replaceFirst("(\\|null)?(\\|undefined)?$", "");
   }
 
   /** A blank comment, or one that only inherits, says nothing of its own. */
