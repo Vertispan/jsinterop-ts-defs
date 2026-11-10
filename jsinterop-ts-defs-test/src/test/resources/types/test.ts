@@ -1490,6 +1490,13 @@ declare const hiddenTypeGetterImpl: HiddenTypeGetterImpl;
 expectType<{ (): unknown; (): OverridesFoo }>()(hiddenTypeGetterImpl.dget);
 declare const stringValueImpl: StringValueImpl;
 expectType<{ (): string; (): object }>()(stringValueImpl.value);
+// Copies that differ only in nullability or array element type are distinct overloads.
+import MaybeFirstImpl = com.vertispan.tsdefs.tests.overrides.MaybeFirstImpl;
+import FooArrayFirstImpl = com.vertispan.tsdefs.tests.overrides.FooArrayFirstImpl;
+declare const maybeFirstImpl: MaybeFirstImpl;
+expectType<{ (): OverridesFoo | null | undefined; (): OverridesFoo }>()(maybeFirstImpl.find);
+declare const fooArrayFirstImpl: FooArrayFirstImpl;
+expectType<{ (): OverridesFoo[]; (): OverridesBar[] }>()(fooArrayFirstImpl.list);
 // A class's own override is declared as written: implementing an interface inherits nothing in
 // TypeScript, and a class left without members isn't emitted.
 import TypedBox = com.vertispan.tsdefs.tests.overrides.TypedBox;
