@@ -21,8 +21,10 @@ import com.google.testing.compile.Compilation;
 import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import com.vertispan.tsdefs.processor.JsTypesProcessor;
+import java.io.IOException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.tools.StandardLocation;
 import org.junit.Test;
 
 /**
@@ -57,6 +59,38 @@ public class UnmodeledOverrideWarningTest {
                 + " but is exported under Shape.text()'s JS name, which isn't modeled, so the"
                 + " declaration keeps Shape.text()'s type; annotate NarrowCircle.text() with"
                 + " @JsMethod(name = \"describe\") to emit the narrower type.");
+  }
+
+  // Exported, but under the overridden method's JS name: left out, with the fix.
+  @Test
+  public void exportedOverrideOfARenamedMethodIsLeftOutAndWarns() throws IOException {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("RenamedSource", "RenamedNarrowing")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(
+            result.warnings().stream()
+                .map(d -> d.getMessage(null))
+                .filter(message -> message.contains("to emit the narrower type")))
+        .containsExactly(
+            "RenamedNarrowing.foo() narrows the return type of RenamedSource.foo() to"
+                + " warnings.overrides.RenamedNarrowing, but is exported under"
+                + " RenamedSource.foo()'s JS name, which isn't modeled, so the declaration keeps"
+                + " RenamedSource.foo()'s type; annotate RenamedNarrowing.foo() with"
+                + " @JsMethod(name = \"x\") to emit the narrower type.");
+    String output =
+        result
+            .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+            .orElseThrow(AssertionError::new)
+            .getCharContent(false)
+            .toString();
+    assertThat(output).contains("other():number").doesNotContain("foo()");
   }
 
   // A supertype between them already emits the narrower type under the JS name.
