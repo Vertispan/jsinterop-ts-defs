@@ -93,6 +93,46 @@ public class UnmodeledOverrideWarningTest {
     assertThat(output).contains("other():number").doesNotContain("foo()");
   }
 
+  // Would not extend the overridden declaration in TypeScript: left out, with the fix.
+  @Test
+  public void interfaceOverrideTypeScriptCannotExtendIsLeftOutAndWarns() throws IOException {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("Item", "PlainItem", "ItemSource", "PlainItemSource")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(
+            result.warnings().stream()
+                .map(d -> d.getMessage(null))
+                .filter(message -> message.contains("is left out")))
+        .containsExactlyInAnyOrder(
+            "PlainItemSource.one() returns warnings.overrides.PlainItem, which TypeScript sees as"
+                + " unknown, so it is left out and ItemSource.one()'s declaration stands; return a"
+                + " type TypeScript can see, or annotate PlainItemSource.one() with @TsTypeRef to"
+                + " choose the emitted type.",
+            "PlainItemSource.all() returns warnings.overrides.PlainItem[], which TypeScript sees"
+                + " as unknown[], so it is left out and ItemSource.all()'s declaration stands;"
+                + " return a type TypeScript can see, or annotate PlainItemSource.all() with"
+                + " @TsTypeRef to choose the emitted type.",
+            "PlainItemSource.add() declares its parameters differently from ItemSource.add() in"
+                + " TypeScript, so it is left out and ItemSource.add()'s declaration stands;"
+                + " declare them as ItemSource.add() does.");
+    String output =
+        result
+            .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+            .orElseThrow(AssertionError::new)
+            .getCharContent(false)
+            .toString();
+    String narrow = output.substring(output.indexOf("interface PlainItemSource"), output.length());
+    narrow = narrow.substring(0, narrow.indexOf('}'));
+    assertThat(narrow).contains("other():number").doesNotContain("one(", "all(", "add(");
+  }
+
   // A supertype between them already emits the narrower type under the JS name.
   @Test
   public void overrideOfANarrowingOverrideDoesNotWarn() {
