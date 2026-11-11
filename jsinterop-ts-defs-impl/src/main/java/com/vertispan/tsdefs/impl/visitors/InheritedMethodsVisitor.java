@@ -25,9 +25,19 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 public class InheritedMethodsVisitor<T> extends TsElement {
+  private final boolean onlyUnseen;
 
   public InheritedMethodsVisitor(Element element, HasProcessorEnv env) {
+    this(element, false, env);
+  }
+
+  /**
+   * @param onlyUnseen copy only methods of supertypes TypeScript doesn't see, for a TsInterface,
+   *     which extends the others
+   */
+  public InheritedMethodsVisitor(Element element, boolean onlyUnseen, HasProcessorEnv env) {
     super(element, env);
+    this.onlyUnseen = onlyUnseen;
   }
 
   public void visit(HasMembers<T> parent) {
@@ -37,6 +47,7 @@ public class InheritedMethodsVisitor<T> extends TsElement {
     // One overridden by another copy is left out where TypeScript doesn't see it, so nothing
     // requires it; where it does, both are copied as overloads.
     nonOverriddenMethods.stream()
+        .filter(method -> !onlyUnseen || !isEmittedInSupertype(method))
         .filter(method -> !isCoveredByAny(method, nonOverriddenMethods))
         .forEach(
             executableElement -> {
