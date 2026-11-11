@@ -16,6 +16,7 @@
 package com.vertispan.tsdefs.impl.builders;
 
 import com.vertispan.tsdefs.annotations.TsInterface;
+import com.vertispan.tsdefs.annotations.TsTypeRef;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.ArrayType;
@@ -232,11 +234,39 @@ public class InheritedTypeArguments {
     // Overlays and ignored members never reach TypeScript.
     return owner.getEnclosedElements().stream()
             .filter(member -> TsElement.of(member, env).isExportable())
-            .anyMatch(member -> mentions(member.asType(), typeParameter))
+            .anyMatch(member -> emittedTypeMentions(member, typeParameter))
         || supertypeClauses(owner).stream().anyMatch(clause -> mentions(clause, typeParameter));
   }
 
+  /** Not where @TsTypeRef replaces the type, on the member or one of its parameters. */
+  private static boolean emittedTypeMentions(Element member, Element typeParameter) {
+    if (member instanceof ExecutableElement) {
+      ExecutableElement method = (ExecutableElement) member;
+      return (method.getAnnotation(TsTypeRef.class) == null
+              && mentions(method.getReturnType(), typeParameter))
+          || method.getParameters().stream()
+              .anyMatch(
+                  parameter ->
+                      parameter.getAnnotation(TsTypeRef.class) == null
+                          && mentions(parameter.asType(), typeParameter))
+          || method.getTypeParameters().stream()
+              .flatMap(variable -> variable.getBounds().stream())
+              .anyMatch(bound -> mentions(bound, typeParameter));
+    }
+    return member.getAnnotation(TsTypeRef.class) == null
+        && mentions(member.asType(), typeParameter);
+  }
+
+  /** Not inside a type use @TsTypeRef replaces. */
   private static boolean mentions(TypeMirror type, Element typeParameter) {
+    if (type.getAnnotationMirrors().stream()
+        .anyMatch(
+            annotation ->
+                ((TypeElement) annotation.getAnnotationType().asElement())
+                    .getQualifiedName()
+                    .contentEquals(TsTypeRef.class.getCanonicalName()))) {
+      return false;
+    }
     switch (type.getKind()) {
       case TYPEVAR:
         // Not its bound, which can mention itself; bounds are checked where they are declared.
