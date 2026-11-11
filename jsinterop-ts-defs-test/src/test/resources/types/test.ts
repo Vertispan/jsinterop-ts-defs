@@ -1520,6 +1520,10 @@ expectType<() => string>()(stringFromIgnored.value);
 import StringSource = com.vertispan.tsdefs.tests.overrides.StringSource;
 declare const stringSource: StringSource;
 expectType<() => string>()(stringSource.value);
+// Copies that substitution leaves differing only in nullability are both declared.
+import SubstFirst = com.vertispan.tsdefs.tests.overrides.SubstFirst;
+declare const substFirst: SubstFirst;
+expectType<{ (): OverridesFoo | null | undefined; (): OverridesFoo }>()(substFirst.get);
 // Where an emitted supertype declares the narrower override, or TypeScript would see the wider
 // one, a copy carries both as overloads.
 import TypedValueImpl = com.vertispan.tsdefs.tests.overrides.TypedValueImpl;
