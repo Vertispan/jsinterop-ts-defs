@@ -21,7 +21,9 @@ import com.vertispan.tsdefs.impl.builders.HasTypeArguments;
 import com.vertispan.tsdefs.impl.builders.JavaToTsTypeConverter;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsType;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
@@ -39,17 +41,28 @@ import javax.tools.Diagnostic;
  */
 public class TypeArgumentsVisitor<T> extends TsElement {
   private final TypeMirror type;
-  private final TypeElement subtype;
+  private final TypeElement writer;
+  private final TypeElement emittedIn;
 
   /**
    * Visits the type arguments of a type in a usage position, such as a superclass or implemented
-   * interface of {@code subtype}. Bounds are never emitted here, only on the declaring type's own
-   * type parameters.
+   * interface written by {@code writer}. Bounds are never emitted here, only on the declaring
+   * type's own type parameters.
    */
-  public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
+  public TypeArgumentsVisitor(TypeMirror typeMirror, TypeElement writer, HasProcessorEnv env) {
+    this(typeMirror, writer, writer, env);
+  }
+
+  /**
+   * As above, for a clause of a skipped {@code writer} emitted in its subtype {@code emittedIn},
+   * which passes the arguments.
+   */
+  public TypeArgumentsVisitor(
+      TypeMirror typeMirror, TypeElement writer, TypeElement emittedIn, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
-    this.subtype = subtype;
+    this.writer = writer;
+    this.emittedIn = emittedIn;
   }
 
   /**
@@ -58,28 +71,25 @@ public class TypeArgumentsVisitor<T> extends TsElement {
    */
   public static <T> TypeArgumentsVisitor<T> ofDeclaration(
       TypeMirror typeMirror, HasProcessorEnv env) {
-    return new TypeArgumentsVisitor<>(typeMirror, null, env);
+    return new TypeArgumentsVisitor<>(typeMirror, null, null, env);
   }
 
   public void visit(HasTypeArguments<T> builder) {
     DeclaredType classDeclaredType = (DeclaredType) type;
-    if (subtype != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
-      if (env.firstReport(subtype, classDeclaredType.asElement())) {
-        env.messager()
-            .printMessage(
-                Diagnostic.Kind.ERROR,
-                JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, subtype, true, env),
-                subtype);
+    if (writer != null && JavaToTsTypeConverter.isRaw(classDeclaredType)) {
+      String message = JavaToTsTypeConverter.rawTypeMessage(classDeclaredType, writer, true, env);
+      if (env.firstReport(writer, message)) {
+        env.messager().printMessage(Diagnostic.Kind.ERROR, message, writer);
       }
       return;
     }
     if (classDeclaredType.getTypeArguments().isEmpty()) {
       return;
     }
-    if (subtype == null) {
+    if (writer == null) {
       declaredTypeParameters(classDeclaredType, env).forEach(builder::addTypeArgument);
     } else {
-      JavaToTsTypeConverter.forSupertypesOf(subtype, env)
+      JavaToTsTypeConverter.forSupertypesOf(writer, emittedIn, env)
           .asTypeWithArgument(classDeclaredType)
           .forEach(builder::addTypeArgument);
     }
@@ -96,7 +106,8 @@ public class TypeArgumentsVisitor<T> extends TsElement {
     TsType type = TsElement.of(typeMirror, env).getType();
     Element typeElement = env.types().asElement(typeMirror);
     if (typeElement.getKind().equals(ElementKind.TYPE_PARAMETER)) {
-      addBoundsAndDefault(type, (TypeParameterElement) typeElement, env);
+      addBoundsAndDefault(
+          type, (TypeParameterElement) typeElement, null, Collections.emptyMap(), env);
     }
     return type;
   }
@@ -104,12 +115,20 @@ public class TypeArgumentsVisitor<T> extends TsElement {
   /**
    * Adds a type parameter's bounds and {@code @TsDefault} to its declaration, e.g. {@code T extends
    * Item = Item}. Reports an error for a default TypeScript would reject.
+   *
+   * @param inheritedBy the subtype a method with this type parameter is inherited by, or null
+   * @param renamed the method's type parameters emitted under another name
    */
   static void addBoundsAndDefault(
-      TsType type, TypeParameterElement parameter, HasProcessorEnv env) {
+      TsType type,
+      TypeParameterElement parameter,
+      TypeElement inheritedBy,
+      Map<Element, TsType> renamed,
+      HasProcessorEnv env) {
     // Convert the bound mirror itself, so Box<Item> keeps its argument instead of emitting the
     // bound type's own declared parameter.
-    JavaToTsTypeConverter converter = new JavaToTsTypeConverter(parameter, env);
+    JavaToTsTypeConverter converter =
+        new JavaToTsTypeConverter(parameter, inheritedBy, renamed, env);
     parameter.getBounds().stream()
         .filter(boundType -> !JavaToTsTypeConverter.isSameType(boundType, Object.class, env))
         .map(converter::toTsType)

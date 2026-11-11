@@ -18,7 +18,8 @@ package com.vertispan.tsdefs.impl.visitors;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.HasMembers;
 import com.vertispan.tsdefs.impl.builders.TsElement;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -30,7 +31,9 @@ public class InheritedMethodsVisitor<T> extends TsElement {
   }
 
   public void visit(HasMembers<T> parent) {
-    List<ExecutableElement> nonOverriddenMethods = allNotOverriddenInterfacesMethods();
+    // Listed once per path to it; emitted once.
+    Set<ExecutableElement> nonOverriddenMethods =
+        new LinkedHashSet<>(allNotOverriddenInterfacesMethods());
     nonOverriddenMethods.forEach(
         executableElement -> {
           new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)

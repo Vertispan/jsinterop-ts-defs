@@ -148,6 +148,6 @@ public class SetterGetterMethodsVisitor<T> extends TsElement {
   private TsType getTypeFromSetterArg(TsElement setter) {
     ExecutableElement execElement = (ExecutableElement) setter.element();
     VariableElement variableElement = execElement.getParameters().get(0);
-    return TsElement.of(variableElement, env).getType();
+    return TsElement.of(variableElement, (TypeElement) element, env).getType();
   }
 }

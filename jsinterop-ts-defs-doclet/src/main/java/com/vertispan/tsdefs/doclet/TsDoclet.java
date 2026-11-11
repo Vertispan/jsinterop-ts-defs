@@ -55,7 +55,7 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
   private DocletEnvironment env;
   private Messager messager;
   private DocletLogWrapper logWrapper;
-  private final Set<List<Element>> reported = new HashSet<>();
+  private final Set<List<Object>> reported = new HashSet<>();
 
   public static final String TSOUT_DIR = "-d";
 
@@ -273,7 +273,7 @@ public class TsDoclet implements Doclet, HasProcessorEnv {
   }
 
   @Override
-  public boolean firstReport(Element element, Element subject) {
-    return reported.add(Arrays.asList(element, subject));
+  public boolean firstReport(Element element, String message) {
+    return reported.add(Arrays.asList(element, message));
   }
 }

@@ -18,6 +18,7 @@ package com.vertispan.tsdefs.impl.visitors;
 import static java.util.stream.Collectors.groupingBy;
 
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
+import com.vertispan.tsdefs.impl.builders.InheritedTypeArguments;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsClass;
 import com.vertispan.tsdefs.impl.model.TsModifier;
@@ -49,6 +50,7 @@ public class ClassTypeVisitor extends TsElement {
           .visit(builder);
       getSuperClass(element).ifPresent(builder::superClass);
       new InterfacesVisitor<TsClass.TsClassBuilder>(element, env).visit(builder);
+      InheritedTypeArguments.report((TypeElement) element, env);
 
       element.getEnclosedElements().stream()
           .map(e -> TsElement.of(e, env))
@@ -167,8 +169,9 @@ public class ClassTypeVisitor extends TsElement {
     new ClassMethodVisitor<TsClass.TsClassBuilder>(enclosedElement, env).visit(classBuilder);
   }
 
-  private Optional<TsClass> getSuperClass(Element element) {
-    TypeMirror superclass = ((TypeElement) element).getSuperclass();
+  /** @param writer this class, or a skipped superclass whose extends clause is emitted for it */
+  private Optional<TsClass> getSuperClass(Element writer) {
+    TypeMirror superclass = ((TypeElement) writer).getSuperclass();
 
     if (((TypeElement) env.types().asElement(superclass))
         .getSuperclass()
@@ -185,7 +188,8 @@ public class ClassTypeVisitor extends TsElement {
 
       TsClass.TsClassBuilder builder =
           TsClass.builder(superTsElement.getName(), superTsElement.getNamespace());
-      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(superclass, (TypeElement) element, env)
+      new TypeArgumentsVisitor<TsClass.TsClassBuilder>(
+              superclass, (TypeElement) writer, (TypeElement) element, env)
           .visit(builder);
       return Optional.of(builder.build());
     } else {

@@ -16,9 +16,11 @@
 package com.vertispan.tsdefs.impl;
 
 import com.vertispan.tsdefs.impl.model.TsDoc;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 
 public interface HasProcessorEnv {
 
@@ -31,11 +33,52 @@ public interface HasProcessorEnv {
   TsDoc getDocs(Element element);
 
   /**
-   * Whether a diagnostic about {@code subject} on {@code element} is reported for the first time;
-   * false for every later call with the same pair, so one diagnostic per pair however often the
-   * element is emitted. The default reports every time.
+   * Whether {@code message} on {@code element} is reported for the first time; false for every
+   * later call with the same pair, so a diagnostic is reported once however often the element is
+   * emitted, and different diagnostics on one element are each reported. The default reports every
+   * time.
    */
-  default boolean firstReport(Element element, Element subject) {
+  default boolean firstReport(Element element, String message) {
     return true;
+  }
+
+  /**
+   * {@code env} with its diagnostics discarded, for conversions made only to compare results.
+   * Claims no reports, so the conversion that emits still reports.
+   */
+  static HasProcessorEnv quiet(HasProcessorEnv env) {
+    LogWrapper discard =
+        new LogWrapper() {
+          @Override
+          public void printMessage(Diagnostic.Kind kind, CharSequence msg) {}
+
+          @Override
+          public void printMessage(Diagnostic.Kind kind, CharSequence msg, Element e) {}
+
+          @Override
+          public void printMessage(
+              Diagnostic.Kind kind, CharSequence msg, Element e, AnnotationMirror a) {}
+        };
+    return new HasProcessorEnv() {
+      @Override
+      public Types types() {
+        return env.types();
+      }
+
+      @Override
+      public Elements elements() {
+        return env.elements();
+      }
+
+      @Override
+      public LogWrapper messager() {
+        return discard;
+      }
+
+      @Override
+      public TsDoc getDocs(Element element) {
+        return env.getDocs(element);
+      }
+    };
   }
 }

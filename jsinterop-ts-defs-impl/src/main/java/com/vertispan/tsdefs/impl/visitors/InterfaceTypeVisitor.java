@@ -16,6 +16,7 @@
 package com.vertispan.tsdefs.impl.visitors;
 
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
+import com.vertispan.tsdefs.impl.builders.InheritedTypeArguments;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import com.vertispan.tsdefs.impl.model.TsInterface;
 import com.vertispan.tsdefs.impl.model.TsMethod;
@@ -61,6 +62,7 @@ public class InterfaceTypeVisitor extends TsElement {
       TypeArgumentsVisitor.<TsInterface.TsInterfaceBuilder>ofDeclaration(element.asType(), env)
           .visit(builder);
       new InterfacesVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
+      InheritedTypeArguments.report((TypeElement) element, env);
 
       element.getEnclosedElements().forEach(e -> visit(builder, e));
       if (isTsInterface()) {

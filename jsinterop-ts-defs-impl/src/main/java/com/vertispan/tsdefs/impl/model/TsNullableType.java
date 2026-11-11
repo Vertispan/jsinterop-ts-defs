@@ -15,6 +15,8 @@
  */
 package com.vertispan.tsdefs.impl.model;
 
+import java.util.Objects;
+
 public class TsNullableType extends TsType implements IsNullableTsType {
 
   private final TsType type;
@@ -44,5 +46,19 @@ public class TsNullableType extends TsType implements IsNullableTsType {
   @Override
   public void setUndefined(boolean undefined) {
     this.undefined = undefined;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof TsNullableType)) return false;
+    TsNullableType that = (TsNullableType) o;
+    return type.equals(that.type) && undefined == that.undefined;
+  }
+
+  /** Not undefined, which can change while this is in a set. */
+  @Override
+  public int hashCode() {
+    return Objects.hash(TsNullableType.class, type);
   }
 }

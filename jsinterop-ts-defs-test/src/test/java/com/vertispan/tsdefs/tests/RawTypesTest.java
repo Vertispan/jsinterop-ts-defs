@@ -68,6 +68,103 @@ public class RawTypesTest {
             + " e.g. GenericUnion<Any> (jsinterop.base.Any) or GenericUnion<?>.");
   }
 
+  // The raw supertype isn't emitted, but its members are merged in.
+  @Test
+  public void rawTsIgnoredSuperclassShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsIgnored.java",
+        "Raw type IgnoredGenericBase in the supertypes of RawExtendsIgnored is not supported;"
+            + " give its type arguments, e.g. IgnoredGenericBase<Any> (jsinterop.base.Any).",
+        "errors/raw/IgnoredGenericBase.java",
+        "errors/raw/RawExtendsIgnored.java");
+  }
+
+  // Reported though no emitted member uses T, as for an emitted raw clause.
+  @Test
+  public void rawTsIgnoredSuperclassWithUnusedParameterShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsUnused.java",
+        "Raw type UnusedParamBase in the supertypes of RawExtendsUnused is not supported;"
+            + " give its type arguments, e.g. UnusedParamBase<Any> (jsinterop.base.Any).",
+        "errors/raw/UnusedParamBase.java",
+        "errors/raw/RawExtendsUnused.java");
+  }
+
+  // A native JsType is not emitted either, so its clauses are checked from the subtype.
+  @Test
+  public void rawClauseOfNativeSuperinterfaceShouldFail() {
+    assertSingleErrorIn(
+        "RawNativeMid.java",
+        "Raw type NativeSource in the supertypes of RawNativeMid is not supported;"
+            + " give its type arguments, e.g. NativeSource<Any> (jsinterop.base.Any).",
+        "errors/raw/NativeSource.java",
+        "errors/raw/RawNativeMid.java",
+        "errors/raw/ImplementsRawNativeMid.java");
+  }
+
+  // Raw in Java, but nothing of the raw type reaches TypeScript.
+  @Test
+  public void rawPlainSuperclassWithoutJsMembersIsNotReported() {
+    assertThat(compile("errors/raw/PlainGeneric.java", "errors/raw/ExtendsRawPlain.java").errors())
+        .isEmpty();
+  }
+
+  // The plain class implements a native interface, but its interfaces don't reach its subclasses.
+  @Test
+  public void rawPlainSuperclassImplementingANativeInterfaceIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/NativeThen.java",
+                    "errors/raw/PlainThen.java",
+                    "errors/raw/ExtendsRawPlainThen.java")
+                .errors())
+        .isEmpty();
+  }
+
+  // A plain or @TsIgnore superclass's interfaces aren't carried into its subclasses.
+  @Test
+  public void rawInterfaceOfAPlainSuperclassIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/PlainRawImplements.java",
+                    "errors/raw/ExtendsPlainRawImplements.java")
+                .errors())
+        .isEmpty();
+  }
+
+  @Test
+  public void rawInterfaceOfATsIgnoredSuperclassIsNotReported() {
+    assertThat(
+            compile(
+                    "errors/raw/IgnoredRawImplements.java",
+                    "errors/raw/ExtendsIgnoredRawImplements.java")
+                .errors())
+        .isEmpty();
+  }
+
+  // The skipped class's own extends clause, which passes its T on, is emitted in its subclass.
+  @Test
+  public void rawSkippedGenericSuperclassShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsGenericMid.java",
+        "Raw type GenericMid in the supertypes of RawExtendsGenericMid is not supported;"
+            + " give its type arguments, e.g. GenericMid<Any> (jsinterop.base.Any).",
+        "errors/raw/GenericMid.java",
+        "errors/raw/RawExtendsGenericMid.java");
+  }
+
+  // The raw superinterface isn't emitted, but its methods are copied in.
+  @Test
+  public void rawTsIgnoredSuperinterfaceShouldFail() {
+    assertSingleErrorIn(
+        "RawExtendsIgnoredInterface.java",
+        "Raw type IgnoredContainer in the supertypes of RawExtendsIgnoredInterface is not"
+            + " supported; give its type arguments,"
+            + " e.g. IgnoredContainer<Any> (jsinterop.base.Any).",
+        "errors/raw/IgnoredContainer.java",
+        "errors/raw/RawExtendsIgnoredInterface.java");
+  }
+
   @Test
   public void rawMemberTypeShouldFail() {
     assertSingleError(
@@ -265,6 +362,16 @@ public class RawTypesTest {
         .extracting(e -> e.getMessage(Locale.getDefault()))
         .as("errors in %s", resource)
         .containsExactly(message);
+  }
+
+  private static void assertSingleErrorIn(String file, String message, String... resources) {
+    assertThat(compile(resources).errors())
+        .extracting(
+            e ->
+                e.getSource().getName().replaceAll(".*/", "")
+                    + ": "
+                    + e.getMessage(Locale.getDefault()))
+        .containsExactly(file + ": " + message);
   }
 
   private static void assertErrorsOnlyIn(int count, String file, String... resources) {

@@ -29,6 +29,7 @@ import com.vertispan.tsdefs.impl.model.TsNullableType;
 import com.vertispan.tsdefs.impl.model.TsType;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -61,9 +62,18 @@ public class TsElement {
 
   /** @param emittedIn the subtype this inherited element is being emitted into, or null */
   public TsElement(Element element, TypeElement emittedIn, HasProcessorEnv env) {
+    this(element, emittedIn, Collections.emptyMap(), env);
+  }
+
+  /** @param typeArguments what each type parameter in scope is emitted as */
+  protected TsElement(
+      Element element,
+      TypeElement emittedIn,
+      Map<Element, TsType> typeArguments,
+      HasProcessorEnv env) {
     this.element = element;
     this.env = env;
-    this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, env);
+    this.typeConverter = new JavaToTsTypeConverter(element, emittedIn, typeArguments, env);
     this.typeMirror = nonNull(element) ? element.asType() : null;
   }
 
@@ -485,16 +495,19 @@ public class TsElement {
    * Resolves a literal type from a {@link TypeMirror}'s TYPE_USE annotations. This handles the case
    * where {@code @TsLiteral} is used as a type-use annotation on type arguments, e.g. {@code
    * Supertype<@TsLiteral("hello") String>}.
+   *
+   * @param where the element written with {@code typeMirror}; an unsupported literal is reported
+   *     once per element, however often it is converted
    */
   public static Optional<TsType> getLiteralTypeFromMirror(
-      TypeMirror typeMirror, HasProcessorEnv env) {
+      TypeMirror typeMirror, Element where, HasProcessorEnv env) {
     for (AnnotationMirror am : typeMirror.getAnnotationMirrors()) {
       if (am.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral")) {
         if (!isSupportedLiteralType(typeMirror, env)) {
-          env.messager()
-              .printMessage(
-                  Diagnostic.Kind.ERROR,
-                  String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror));
+          String message = String.format(UNSUPPORTED_LITERAL_TYPE_MESSAGE, typeMirror);
+          if (env.firstReport(where, message)) {
+            env.messager().printMessage(Diagnostic.Kind.ERROR, message);
+          }
           return Optional.empty();
         }
         for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :

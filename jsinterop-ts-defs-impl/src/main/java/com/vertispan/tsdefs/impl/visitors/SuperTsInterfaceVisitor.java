@@ -26,14 +26,21 @@ import javax.lang.model.type.TypeMirror;
 public class SuperTsInterfaceVisitor<T> extends TsElement {
   private final TypeMirror type;
   private final TypeElement subtype;
+  private final TypeElement emittedIn;
 
   /**
    * Walks up from {@code typeMirror}, a superclass of {@code subtype}, to the first TsInterface.
    */
   public SuperTsInterfaceVisitor(TypeMirror typeMirror, TypeElement subtype, HasProcessorEnv env) {
+    this(typeMirror, subtype, subtype, env);
+  }
+
+  private SuperTsInterfaceVisitor(
+      TypeMirror typeMirror, TypeElement subtype, TypeElement emittedIn, HasProcessorEnv env) {
     super(typeMirror, env);
     this.type = typeMirror;
     this.subtype = subtype;
+    this.emittedIn = emittedIn;
   }
 
   public void visit(IsClassBuilder<T> builder) {
@@ -44,7 +51,7 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
           .ifPresent(
               typeMirror -> {
                 // The skipped class's own extends clause holds typeMirror and its arguments.
-                new SuperTsInterfaceVisitor<T>(typeMirror, (TypeElement) element, env)
+                new SuperTsInterfaceVisitor<T>(typeMirror, (TypeElement) element, emittedIn, env)
                     .visit(builder);
               });
     }
@@ -55,7 +62,7 @@ public class SuperTsInterfaceVisitor<T> extends TsElement {
     if (!tsElement.isTsIgnored()) {
       TsInterface.TsInterfaceBuilder interfaceBuilder =
           TsInterface.builder(tsElement.getName(), tsElement.getNamespace());
-      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(typeMirror, subtype, env)
+      new TypeArgumentsVisitor<TsInterface.TsInterfaceBuilder>(typeMirror, subtype, emittedIn, env)
           .visit(interfaceBuilder);
       builder.addInterface(interfaceBuilder.build());
     }
