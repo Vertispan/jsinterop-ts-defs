@@ -86,6 +86,27 @@ public class OverrideCoverageTest {
     assertThat(declaration(result, "ArrayAdder")).doesNotContain("add(");
   }
 
+  // A TsInterface declares the methods of a supertype TypeScript doesn't see, as it does accessors.
+  @Test
+  public void tsInterfaceDeclaresMethodsOfAnIgnoredSuperinterface() throws IOException {
+    Compilation result = compile("IgnoredMembers", "TsFromIgnored");
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(declaration(result, "TsFromIgnored"))
+        .contains("other():number;", "get p():string;", "m():string;");
+  }
+
+  // It extends one TypeScript sees, so doesn't repeat its methods.
+  @Test
+  public void tsInterfaceDoesNotRepeatMethodsOfAnEmittedSuperinterface() throws IOException {
+    Compilation result = compile("EmittedMembers", "TsFromEmitted");
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(declaration(result, "TsFromEmitted"))
+        .contains("extends EmittedMembers", "other():number;")
+        .doesNotContain("e()");
+  }
+
   // A namespace named object or unknown is not TypeScript's object or unknown.
   @Test
   public void narrowingBetweenTypesInObjectAndUnknownNamespacesIsEmitted() throws IOException {
