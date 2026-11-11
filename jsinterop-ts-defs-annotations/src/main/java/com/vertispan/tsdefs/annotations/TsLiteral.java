@@ -34,6 +34,8 @@ public @interface TsLiteral {
   /**
    * The literal value to emit in the TypeScript definition. If empty, the Java constant value of
    * the annotated field will be used instead.
+   *
+   * @return the literal, or empty to use the field's constant value
    */
   String value() default "";
 }
