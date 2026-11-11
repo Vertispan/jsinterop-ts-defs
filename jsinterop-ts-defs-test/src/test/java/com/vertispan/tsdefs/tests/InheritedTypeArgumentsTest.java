@@ -234,6 +234,41 @@ public class InheritedTypeArgumentsTest {
     assertThat(result.errors()).isEmpty();
   }
 
+  /** A diamond reaching Source with T as nullable and plain String; {@code member} uses T. */
+  private static Compilation diamondOver(String member) {
+    return compileSources(
+        "Box", "@jsinterop.annotations.JsType public interface Box<U> { U get(); }",
+        "Source",
+            "import com.vertispan.tsdefs.annotations.TsTypeRef;"
+                + " @jsinterop.annotations.JsType public interface Source<T> { "
+                + member
+                + " }",
+        "NullableBranch",
+            "@jsinterop.annotations.JsType public interface NullableBranch"
+                + " extends Source<@jsinterop.annotations.JsNullable String> {}",
+        "PlainBranch",
+            "@jsinterop.annotations.JsType public interface PlainBranch extends Source<String> {}",
+        "Combined",
+            "@jsinterop.annotations.JsType public interface Combined"
+                + " extends NullableBranch, PlainBranch {}");
+  }
+
+  // @TsTypeRef replaces the type that mentions T, so the arguments can't disagree in TypeScript.
+  @Test
+  public void differingArgumentsInATsTypeRefReturnAreNotAnError() {
+    assertThat(diamondOver("@TsTypeRef(String.class) T get();").errors()).isEmpty();
+  }
+
+  @Test
+  public void differingArgumentsInATsTypeRefParameterAreNotAnError() {
+    assertThat(diamondOver("void put(@TsTypeRef(String.class) T value);").errors()).isEmpty();
+  }
+
+  @Test
+  public void differingArgumentsInATsTypeRefTypeArgumentAreNotAnError() {
+    assertThat(diamondOver("Box<@TsTypeRef(String.class) T> box();").errors()).isEmpty();
+  }
+
   // JsPropertyMap's members are overlays, so its T never reaches TypeScript.
   @Test
   public void differingArgumentsMentionedOnlyByOverlaysAreNotAnError() {
