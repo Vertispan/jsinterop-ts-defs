@@ -86,6 +86,26 @@ public class OverrideCoverageTest {
     assertThat(declaration(result, "ArrayAdder")).doesNotContain("add(");
   }
 
+  // A namespace named object or unknown is not TypeScript's object or unknown.
+  @Test
+  public void narrowingBetweenTypesInObjectAndUnknownNamespacesIsEmitted() throws IOException {
+    Compilation result =
+        compile("ObjectSpaceThing", "ObjectSpaceSubThing", "ThingSource", "SubThingSource");
+
+    assertThat(leftOutWarnings(result)).isZero();
+    assertThat(declaration(result, "SubThingSource"))
+        .contains("get():unknown.ObjectSpaceSubThing;", "other():number;");
+  }
+
+  // Nor is the string literal "unknown".
+  @Test
+  public void narrowingToTheStringLiteralUnknownIsEmitted() throws IOException {
+    Compilation result = compile("StatusSource", "UnknownStatus");
+
+    assertThat(leftOutWarnings(result)).isZero();
+    assertThat(declaration(result, "UnknownStatus")).contains("status():\"unknown\";");
+  }
+
   // Type variables are compared by position, not by name.
   @Test
   public void overrideRenamingItsTypeVariableIsEmittedWithoutAWarning() throws IOException {
