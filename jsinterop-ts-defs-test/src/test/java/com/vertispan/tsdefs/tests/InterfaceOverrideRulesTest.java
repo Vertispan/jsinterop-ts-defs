@@ -28,10 +28,19 @@ import javax.tools.StandardLocation;
 import org.junit.Test;
 
 /**
- * An unannotated override of a renamed method or a property accessor is exported under the
- * inherited JS name, which the emitter doesn't model; a narrower type there warns.
+ * An interface's own override is emitted under its JS name, unless TypeScript couldn't take it in
+ * place of what it overrides; then the inherited declaration stands, with a warning naming the fix.
  */
-public class UnmodeledOverrideWarningTest {
+public class InterfaceOverrideRulesTest {
+
+  private static Compilation compile(String... names) {
+    return Compiler.javac()
+        .withProcessors(new JsTypesProcessor())
+        .compile(
+            Stream.of(names)
+                .map(name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
+                .collect(Collectors.toList()));
+  }
 
   private static String output(Compilation result) throws IOException {
     return result
@@ -41,38 +50,31 @@ public class UnmodeledOverrideWarningTest {
         .toString();
   }
 
-  // Unannotated overrides take the renamed members' JS names, size and describe; text() narrows
-  // describe's object to string, which TypeScript can't take, so it is left out. TODO(#144)
+  /** The declaration of {@code type} in the generated d.ts, up to its closing brace. */
+  private static String declaration(String output, String type) {
+    int start = output.indexOf(type);
+    assertThat(start).as("%s is emitted", type).isNotNegative();
+    return output.substring(start, output.indexOf('}', start));
+  }
+
+  // Unannotated overrides take the renamed members' JS names, size and describe. The getter is
+  // emitted; text() narrows describe's object to string, which TypeScript can't take, so it is left
+  // out. TODO(#144)
   @Test
   public void unannotatedOverridesOfRenamedMembersTakeTheirNames() throws IOException {
-    Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                Stream.of("Shape", "NarrowCircle", "SameCircle", "AnnotatedCircle")
-                    .map(
-                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
-                    .collect(Collectors.toList()));
+    Compilation result = compile("Shape", "NarrowCircle", "SameCircle", "AnnotatedCircle");
 
     assertThat(result.errors()).isEmpty();
     assertThat(result.warnings()).filteredOn(d -> d.getMessage(null).contains("Circle.")).isEmpty();
-    String output = output(result);
-    String circle = output.substring(output.indexOf("interface NarrowCircle"));
-    circle = circle.substring(0, circle.indexOf('}'));
-    assertThat(circle).contains("radius():number").doesNotContain("text(", "getSize(");
+    assertThat(declaration(output(result), "interface NarrowCircle"))
+        .contains("radius():number", "get size():number")
+        .doesNotContain("describe(");
   }
 
   // Exported under the overridden method's JS name, x.
   @Test
   public void exportedOverrideOfARenamedMethodTakesItsName() throws IOException {
-    Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                Stream.of("RenamedSource", "RenamedNarrowing")
-                    .map(
-                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
-                    .collect(Collectors.toList()));
+    Compilation result = compile("RenamedSource", "RenamedNarrowing");
 
     assertThat(result.errors()).isEmpty();
     assertThat(result.warnings())
@@ -83,18 +85,12 @@ public class UnmodeledOverrideWarningTest {
         .doesNotContain("foo()");
   }
 
-  // Judged as x and y: foo() narrows x's object to string, left out silently (TODO(#144)); bar()
-  // returns a type TypeScript sees as unknown, left out with the fix.
+  // The skip rules apply to renamed overrides too: foo() narrows x's object to string, left out
+  // silently (TODO(#144)); bar() returns a type TypeScript sees as unknown, left out with the fix.
   @Test
-  public void interfaceOverridesOfRenamedMethodsAreJudgedUnderTheirJsNames() throws IOException {
+  public void interfaceOverridesOfRenamedMethodsFollowTheSkipRules() throws IOException {
     Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                Stream.of("Item", "PlainItem", "RenamedPair", "RenamedPairSub", "TsRenamedPairSub")
-                    .map(
-                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
-                    .collect(Collectors.toList()));
+        compile("Item", "PlainItem", "RenamedPair", "RenamedPairSub", "TsRenamedPairSub");
 
     assertThat(result.errors()).isEmpty();
     assertThat(
@@ -105,9 +101,9 @@ public class UnmodeledOverrideWarningTest {
             unknownWarning("RenamedPairSub"), unknownWarning("TsRenamedPairSub"));
     String output = output(result);
     for (String type : new String[] {"interface RenamedPairSub", "interface TsRenamedPairSub"}) {
-      String declaration = output.substring(output.indexOf(type));
-      declaration = declaration.substring(0, declaration.indexOf('}'));
-      assertThat(declaration).contains("other():number").doesNotContain("foo(", "bar(", "x(", "y(");
+      assertThat(declaration(output, type))
+          .contains("other():number")
+          .doesNotContain("foo(", "bar(", "x(", "y(");
     }
   }
 
@@ -124,14 +120,7 @@ public class UnmodeledOverrideWarningTest {
   // Would not extend the overridden declaration in TypeScript: left out, with the fix.
   @Test
   public void interfaceOverrideTypeScriptCannotExtendIsLeftOutAndWarns() throws IOException {
-    Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                Stream.of("Item", "PlainItem", "ItemSource", "PlainItemSource")
-                    .map(
-                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
-                    .collect(Collectors.toList()));
+    Compilation result = compile("Item", "PlainItem", "ItemSource", "PlainItemSource");
 
     assertThat(result.errors()).isEmpty();
     assertThat(
@@ -150,28 +139,15 @@ public class UnmodeledOverrideWarningTest {
             "PlainItemSource.add() declares its parameters differently from ItemSource.add() in"
                 + " TypeScript, so it is left out and ItemSource.add()'s declaration stands;"
                 + " declare them as ItemSource.add() does.");
-    String output =
-        result
-            .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
-            .orElseThrow(AssertionError::new)
-            .getCharContent(false)
-            .toString();
-    String narrow = output.substring(output.indexOf("interface PlainItemSource"), output.length());
-    narrow = narrow.substring(0, narrow.indexOf('}'));
-    assertThat(narrow).contains("other():number").doesNotContain("one(", "all(", "add(");
+    assertThat(declaration(output(result), "interface PlainItemSource"))
+        .contains("other():number")
+        .doesNotContain("one(", "all(", "add(");
   }
 
   // A supertype between them already emits the narrower type under the JS name.
   @Test
   public void overrideOfANarrowingOverrideDoesNotWarn() {
-    Compilation result =
-        Compiler.javac()
-            .withProcessors(new JsTypesProcessor())
-            .compile(
-                Stream.of("RenamedText", "NarrowedText", "RestatedText", "BothTexts")
-                    .map(
-                        name -> JavaFileObjects.forResource("warnings/overrides/" + name + ".java"))
-                    .collect(Collectors.toList()));
+    Compilation result = compile("RenamedText", "NarrowedText", "RestatedText", "BothTexts");
 
     assertThat(result.errors()).isEmpty();
     assertThat(result.warnings()).filteredOn(d -> d.getMessage(null).contains("Text.")).isEmpty();

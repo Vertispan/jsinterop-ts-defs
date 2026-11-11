@@ -617,12 +617,6 @@ public class TsElement {
         .collect(Collectors.toList());
   }
 
-  public boolean isInheritedMethod(ExecutableElement method) {
-    List<ExecutableElement> superMethods = superMethods();
-    superMethods.addAll(allSuperInterfacesMethods());
-    return overridesOneOf(method, superMethods);
-  }
-
   /** The supertype methods that {@code method}, declared in this type, overrides. */
   public List<ExecutableElement> overriddenMethods(ExecutableElement method) {
     List<ExecutableElement> superMethods = superMethods();
@@ -631,12 +625,6 @@ public class TsElement {
         .filter(superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element))
         .distinct()
         .collect(Collectors.toList());
-  }
-
-  private boolean overridesOneOf(ExecutableElement method, List<ExecutableElement> superMethods) {
-    return superMethods.stream()
-        .anyMatch(
-            superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element));
   }
 
   public List<ExecutableElement> superMethods() {
@@ -705,7 +693,7 @@ public class TsElement {
    * Whether this method overrides one emitted in a supertype TypeScript sees, whose return type
    * mentions object (Object), with a different return type that TypeScript may not take in its
    * place, since object excludes primitives: anything but a known object type in place of object
-   * itself. The inherited member is emitted in its place.
+   * itself. The inherited declaration stands in its place.
    */
   // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
   public boolean narrowsBeyondTypeScript() {
@@ -758,8 +746,8 @@ public class TsElement {
   }
 
   /**
-   * Not when its type is a plain Java type or @TsIgnore, which TypeScript doesn't see. A native
-   * type is seen through its own declaration.
+   * Whether {@code superMethod} is declared in a supertype TypeScript sees: not a plain Java type
+   * or a @TsIgnore one. A native type is seen through its own declaration.
    */
   public boolean isEmittedInSupertype(ExecutableElement superMethod) {
     TsElement superType = TsElement.of(superMethod.getEnclosingElement(), env);

@@ -38,7 +38,10 @@ public class DocletTest {
     Matcher matcher =
         Pattern.compile("export " + kindAndName + "\\b.*?\n\t}", Pattern.DOTALL)
             .matcher(definitions);
-    return matcher.find() ? matcher.group() : "";
+    if (!matcher.find()) {
+      throw new AssertionError(kindAndName + " is not emitted");
+    }
+    return matcher.group();
   }
 
   private void testDocs(String subpackage) throws IOException {

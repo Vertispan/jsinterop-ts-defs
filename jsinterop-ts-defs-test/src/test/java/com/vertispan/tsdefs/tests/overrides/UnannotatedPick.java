@@ -17,12 +17,15 @@ package com.vertispan.tsdefs.tests.overrides;
 
 import jsinterop.annotations.JsProperty;
 
-/** Not a JsType, so its unannotated override of pick() isn't emitted; the merged one is. */
+/**
+ * Not a JsType, but its unannotated pick() overrides an exported method, so it is exported and
+ * emitted, narrower, next to the merged one.
+ */
 public class UnannotatedPick extends IgnoredPickBase {
   @JsProperty public String name;
 
   @Override
-  public Foo pick() {
+  public Bar pick() {
     return null;
   }
 }

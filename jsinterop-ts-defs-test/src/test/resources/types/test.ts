@@ -1398,8 +1398,8 @@ import NarrowMerged = com.vertispan.tsdefs.tests.overrides.NarrowMerged;
 declare const narrowMerged: NarrowMerged;
 expectType<{ (): OverridesBar; (): OverridesFoo }>()(narrowMerged.pick);
 
-// An override of an exported method is exported, so it is copied too; one that isn't emitted
-// isn't.
+// An override of an exported method is exported, so it is emitted too; one of a method that
+// isn't exported (RunImpl's merged run()) isn't.
 import HiddenNarrowImpl = com.vertispan.tsdefs.tests.overrides.HiddenNarrowImpl;
 import RunImpl = com.vertispan.tsdefs.tests.overrides.RunImpl;
 import UnannotatedPick = com.vertispan.tsdefs.tests.overrides.UnannotatedPick;
@@ -1408,7 +1408,7 @@ expectType<{ (): OverridesBar; (): OverridesFoo }>()(hiddenNarrowImpl.get);
 declare const runImpl: RunImpl;
 expectType<() => void>()(runImpl.run);
 declare const unannotatedPick: UnannotatedPick;
-expectType<() => OverridesFoo>()(unannotatedPick.pick);
+expectType<{ (): OverridesBar; (): OverridesFoo }>()(unannotatedPick.pick);
 
 // A @TsInterface's override of an inherited method is copied next to the inherited one.
 import NarrowSourceImpl = com.vertispan.tsdefs.tests.overrides.NarrowSourceImpl;
@@ -1481,7 +1481,7 @@ import SizedBar = com.vertispan.tsdefs.tests.overrides.SizedBar;
 declare const sizedBar: SizedBar;
 expectType<OverridesBar>()(sizedBar.size);
 
-// --- Copies of overrides TypeScript can't narrow to (#138) ---------------------------------
+// --- Copies of overrides TypeScript can't narrow to (#133) ---------------------------------
 // A type it has no name for, or narrowing Object, emitted as object: copied next to the inherited
 // method. TODO: the follow-up drops the copy.
 import HiddenTypeGetterImpl = com.vertispan.tsdefs.tests.overrides.HiddenTypeGetterImpl;

@@ -4,7 +4,7 @@ import com.vertispan.tsdefs.annotations.TsInterface;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsProperty;
 
-/** Annotated as the warning suggests, so the narrower types are emitted. */
+/** Restates Shape's JS names explicitly; the same as NarrowCircle, which inherits them. */
 @TsInterface
 public interface AnnotatedCircle extends Shape {
   @Override

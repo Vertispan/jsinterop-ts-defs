@@ -17,6 +17,6 @@ package com.vertispan.tsdefs.tests.overrides;
 
 import jsinterop.annotations.JsType;
 
-/** Copies Baz.get(), not UnmappedNarrowing's, whose type TypeScript can't name. */
+/** Copies UnmappedNarrowing.get(), whose type TypeScript can't name, next to Baz's. */
 @JsType
 public abstract class UnmappedNarrowingImpl implements UnmappedNarrowing {}

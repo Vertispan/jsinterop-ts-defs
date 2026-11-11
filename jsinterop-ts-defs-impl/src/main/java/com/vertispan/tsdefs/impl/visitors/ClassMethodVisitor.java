@@ -39,7 +39,6 @@ import javax.lang.model.type.DeclaredType;
 import javax.tools.Diagnostic;
 
 public class ClassMethodVisitor<T> extends TsElement {
-  /** A string, number or boolean literal type, as emitted. */
   /** A string literal type, as emitted. TODO numbers and booleans aren't checked. */
   private static final Pattern STRING_LITERAL = Pattern.compile("\".*\"");
 
@@ -110,8 +109,9 @@ public class ClassMethodVisitor<T> extends TsElement {
 
     if (isMethod() && !isJsProperty() && isExportable() && !isGetter() && !isSetter()) {
 
-      // A type's own declaration only: a copy is emitted next to the inherited member it overrides,
-      // which is copied too. TODO a follow-up copies only the most specific override.
+      // A type's own declaration only: a copy is emitted next to the inherited member it overrides
+      // unless that is covered (InheritedMethodsVisitor). TODO a follow-up copies only the most
+      // specific override.
       if (inheritedBy == null) {
         reportWidening();
         TsElement parentElement = TsElement.of(element.getEnclosingElement(), env);
