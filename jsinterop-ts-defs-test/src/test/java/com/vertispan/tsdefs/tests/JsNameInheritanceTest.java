@@ -22,8 +22,11 @@ import com.google.testing.compile.Compiler;
 import com.google.testing.compile.JavaFileObjects;
 import com.vertispan.tsdefs.processor.JsTypesProcessor;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 import org.junit.Test;
 
@@ -50,6 +53,37 @@ public class JsNameInheritanceTest {
     int start = output.indexOf(" " + type + " ");
     assertThat(start).as("%s is emitted", type).isNotNegative();
     return output.substring(start, output.indexOf('}', start));
+  }
+
+  // Twice as deep as realistic hierarchies get. TODO the lookup isn't memoized, so it grows about
+  //  3.5x per level; ten levels take seconds.
+  @Test(timeout = 30_000)
+  public void deepChainOfUnannotatedOverridesTakesItsName() throws IOException {
+    int depth = 10;
+    List<JavaFileObject> sources = new ArrayList<>();
+    sources.add(
+        JavaFileObjects.forSourceString(
+            "p.Level0",
+            "package p; @jsinterop.annotations.JsType public interface Level0 {"
+                + " @jsinterop.annotations.JsMethod(name = \"bar\") Level0 foo(); }"));
+    for (int i = 1; i <= depth; i++) {
+      sources.add(
+          JavaFileObjects.forSourceString(
+              "p.Level" + i,
+              "package p; @com.vertispan.tsdefs.annotations.TsInterface public interface Level"
+                  + i
+                  + " extends Level"
+                  + (i - 1)
+                  + " { @Override Level"
+                  + i
+                  + " foo(); @jsinterop.annotations.JsMethod int other"
+                  + i
+                  + "(); }"));
+    }
+    Compilation result = Compiler.javac().withProcessors(new JsTypesProcessor()).compile(sources);
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(declaration(result, "Level" + depth)).contains("bar():Level" + depth + ";");
   }
 
   // GWT's JsInteropRestrictionCheckerTest.testOverrideNoNameSucceeds.
