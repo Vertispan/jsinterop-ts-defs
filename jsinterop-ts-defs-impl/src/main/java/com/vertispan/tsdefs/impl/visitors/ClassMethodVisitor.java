@@ -43,7 +43,8 @@ public class ClassMethodVisitor<T> extends TsElement {
   /** A string literal type, as emitted. TODO numbers and booleans aren't checked. */
   private static final Pattern STRING_LITERAL = Pattern.compile("\".*\"");
 
-  private static final Pattern UNKNOWN = Pattern.compile("\\bunknown\\b");
+  /** The type unknown, not a namespace segment, member or string literal with that name. */
+  private static final Pattern UNKNOWN = Pattern.compile("(?<![\\w$.\"'])unknown(?![\\w$.\"'])");
 
   private final boolean copyDocs;
   private final TypeElement inheritedBy;

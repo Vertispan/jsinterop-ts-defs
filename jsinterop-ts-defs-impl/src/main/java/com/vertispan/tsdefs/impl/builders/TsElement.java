@@ -698,7 +698,8 @@ public class TsElement {
     return methods;
   }
 
-  private static final Pattern OBJECT = Pattern.compile("\\bobject\\b");
+  /** The type object, not a namespace segment, member or string literal with that name. */
+  private static final Pattern OBJECT = Pattern.compile("(?<![\\w$.\"'])object(?![\\w$.\"'])");
 
   /**
    * Whether this method overrides one emitted in a supertype TypeScript sees, whose return type
