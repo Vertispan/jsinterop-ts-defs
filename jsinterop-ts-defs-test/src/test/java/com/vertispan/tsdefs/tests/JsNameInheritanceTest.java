@@ -55,8 +55,8 @@ public class JsNameInheritanceTest {
     return output.substring(start, output.indexOf('}', start));
   }
 
-  // Twice as deep as realistic hierarchies get. TODO the lookup isn't memoized, so it grows about
-  //  3.5x per level; ten levels take seconds.
+  // Twice as deep as realistic hierarchies get. TODO(#149) the lookup isn't memoized, so it grows
+  //  about 3.5x per level; ten levels take seconds. Tighten once it is.
   @Test(timeout = 30_000)
   public void deepChainOfUnannotatedOverridesTakesItsName() throws IOException {
     int depth = 10;

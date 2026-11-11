@@ -267,6 +267,7 @@ public class TsElement {
    * JsInterop exports an override of an exported method, with or without its own annotation, under
    * the overridden method's JS name.
    */
+  // TODO(#149) Recomputed up the chain on every getName(); memoize per method per round.
   private Optional<String> inheritedJsName() {
     if (!isMethod() || isStatic() || !(element.getEnclosingElement() instanceof TypeElement)) {
       return Optional.empty();
