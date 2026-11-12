@@ -16,10 +16,14 @@
 package com.vertispan.tsdefs.tests.overrides;
 
 import com.vertispan.tsdefs.annotations.TsInterface;
+import elemental2.promise.Promise;
 import jsinterop.annotations.JsMethod;
 
 @TsInterface
-public interface FooGetter {
+public interface Baz {
   @JsMethod
   Foo get();
+
+  @JsMethod
+  Promise<? extends Foo> resolve();
 }

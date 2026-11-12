@@ -17,7 +17,7 @@ package com.vertispan.tsdefs.tests.overrides;
 
 import jsinterop.annotations.JsType;
 
-/** Gets dget() from NarrowSuper and again from WideGetter; only the narrower one applies. */
+/** Gets dget() from NarrowSuper and a copy of WideGetter's; both are declared. */
 @JsType
 public class NarrowSub extends NarrowSuper implements WideGetter {
   public String name;

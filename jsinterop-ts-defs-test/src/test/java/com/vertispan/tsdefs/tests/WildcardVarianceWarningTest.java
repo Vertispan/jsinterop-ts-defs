@@ -126,6 +126,26 @@ public class WildcardVarianceWarningTest {
         .satisfies(d -> assertThat(d.getSource().getName()).endsWith("WildSuper.java"));
   }
 
+  @Test
+  public void overrideWarnsOnlyWhereEmitted() {
+    Compilation result =
+        Compiler.javac()
+            .withProcessors(new JsTypesProcessor())
+            .compile(
+                Stream.of("Item", "Producer", "OverrideBase", "OverrideSame", "OverrideDocumented")
+                    .map(
+                        name -> JavaFileObjects.forResource("warnings/wildcards/" + name + ".java"))
+                    .collect(Collectors.toList()));
+
+    assertThat(result.errors()).isEmpty();
+    // One warning per emitted declaration; OverrideSame's restated method is not emitted.
+    assertThat(
+            result.warnings().stream()
+                .filter(d -> d.getMessage(null).startsWith("Wildcard ["))
+                .map(d -> d.getSource().getName().replaceAll(".*/", "")))
+        .containsExactlyInAnyOrder("OverrideBase.java", "OverrideDocumented.java");
+  }
+
   // Walking through a skipped class up to a @TsInterface: the skipped class's clause holds it.
   @Test
   public void wildcardInSkippedClassClauseWarnsOnThatClass() {

@@ -13,9 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.tests.overrides;
+package com.vertispan.tsdefs.tests.tsdocs.doclet.overrides;
 
 import jsinterop.annotations.JsType;
 
+/** Overrides a library method, whose docs the doclet can't read. */
 @JsType
-public abstract class NullableFooGetterImpl implements NullableFooGetter {}
+public abstract class RunnableImpl implements Runnable {
+  @Override
+  public abstract void run();
+}

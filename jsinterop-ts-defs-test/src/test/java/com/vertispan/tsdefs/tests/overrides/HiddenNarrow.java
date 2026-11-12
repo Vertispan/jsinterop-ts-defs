@@ -15,7 +15,7 @@
  */
 package com.vertispan.tsdefs.tests.overrides;
 
-/** Not a JsType, so its override isn't emitted, though GWT exports it as WideApi's. */
+/** Not a JsType, but GWT exports its override as WideApi's get(), so it is copied with it. */
 public interface HiddenNarrow extends WideApi {
   @Override
   Bar get();

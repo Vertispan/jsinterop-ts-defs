@@ -89,9 +89,9 @@ public class InterfaceTypeVisitor extends TsElement {
                   }
                 });
       }
-      if (!isTsInterface()) {
-        new InheritedMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
-      }
+      // A TsInterface extends the supertypes TypeScript sees; it declares only the others' methods.
+      new InheritedMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, isTsInterface(), env)
+          .visit(builder);
       new SetterGetterMethodsVisitor<TsInterface.TsInterfaceBuilder>(element, env).visit(builder);
 
       moduleBuilder.addInterface(builder.build());

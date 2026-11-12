@@ -17,6 +17,6 @@ package com.vertispan.tsdefs.tests.overrides;
 
 import jsinterop.annotations.JsType;
 
-/** Copies WideGetter.dget(), not HiddenTypeGetter's, whose type TypeScript can't name. */
+/** Copies HiddenTypeGetter.dget(), whose type TypeScript can't name, next to WideGetter's. */
 @JsType
 public abstract class HiddenTypeGetterImpl implements HiddenTypeGetter {}

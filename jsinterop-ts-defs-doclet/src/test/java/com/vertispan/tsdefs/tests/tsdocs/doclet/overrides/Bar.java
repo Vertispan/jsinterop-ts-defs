@@ -13,20 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.vertispan.tsdefs.tests.overrides;
+package com.vertispan.tsdefs.tests.tsdocs.doclet.overrides;
 
 import com.vertispan.tsdefs.annotations.TsInterface;
 import jsinterop.annotations.JsMethod;
-import jsinterop.annotations.JsNullable;
 
-/** Its own declaration leaves out get(), so TypeScript sees FooGetter's non-null one. */
 @TsInterface
-public interface NullableFooGetter extends FooGetter {
+public interface Bar extends Foo {
+  /** Returns the name, as documented on the sub-interface. */
   @Override
   @JsMethod
-  @JsNullable
-  Foo get();
+  String name();
 
   @JsMethod
-  int other();
+  String bar();
 }

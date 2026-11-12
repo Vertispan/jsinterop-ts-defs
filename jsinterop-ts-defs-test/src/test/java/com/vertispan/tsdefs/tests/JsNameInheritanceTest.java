@@ -1,0 +1,131 @@
+/*
+ * Copyright © 2026 Vertispan
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.vertispan.tsdefs.tests;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import com.google.testing.compile.Compilation;
+import com.google.testing.compile.Compiler;
+import com.google.testing.compile.JavaFileObjects;
+import com.vertispan.tsdefs.processor.JsTypesProcessor;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardLocation;
+import org.junit.Test;
+
+/** An override without a JS name of its own is exported under the overridden method's. */
+public class JsNameInheritanceTest {
+
+  private static Compilation compile(String... names) {
+    return Compiler.javac()
+        .withProcessors(new JsTypesProcessor())
+        .compile(
+            Stream.of(names)
+                .map(name -> JavaFileObjects.forResource("names/" + name + ".java"))
+                .collect(Collectors.toList()));
+  }
+
+  /** The declaration of {@code type} in the generated d.ts, up to its closing brace. */
+  private static String declaration(Compilation result, String type) throws IOException {
+    String output =
+        result
+            .generatedFile(StandardLocation.CLASS_OUTPUT, "", "types.d.ts")
+            .orElseThrow(AssertionError::new)
+            .getCharContent(false)
+            .toString();
+    int start = output.indexOf(" " + type + " ");
+    assertThat(start).as("%s is emitted", type).isNotNegative();
+    return output.substring(start, output.indexOf('}', start));
+  }
+
+  // Twice as deep as realistic hierarchies get. TODO(#149) the lookup isn't memoized, so it grows
+  //  about 3.5x per level; ten levels take seconds. Tighten once it is.
+  @Test(timeout = 30_000)
+  public void deepChainOfUnannotatedOverridesTakesItsName() throws IOException {
+    int depth = 10;
+    List<JavaFileObject> sources = new ArrayList<>();
+    sources.add(
+        JavaFileObjects.forSourceString(
+            "p.Level0",
+            "package p; @jsinterop.annotations.JsType public interface Level0 {"
+                + " @jsinterop.annotations.JsMethod(name = \"bar\") Level0 foo(); }"));
+    for (int i = 1; i <= depth; i++) {
+      sources.add(
+          JavaFileObjects.forSourceString(
+              "p.Level" + i,
+              "package p; @com.vertispan.tsdefs.annotations.TsInterface public interface Level"
+                  + i
+                  + " extends Level"
+                  + (i - 1)
+                  + " { @Override Level"
+                  + i
+                  + " foo(); @jsinterop.annotations.JsMethod int other"
+                  + i
+                  + "(); }"));
+    }
+    Compilation result = Compiler.javac().withProcessors(new JsTypesProcessor()).compile(sources);
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(declaration(result, "Level" + depth)).contains("bar():Level" + depth + ";");
+  }
+
+  // GWT's JsInteropRestrictionCheckerTest.testOverrideNoNameSucceeds.
+  @Test
+  public void classOverridesTakeTheOverriddenName() throws IOException {
+    Compilation result = compile("Parent", "Child1", "Child2");
+
+    assertThat(result.errors()).isEmpty();
+    for (String child : new String[] {"Child1", "Child2"}) {
+      assertThat(declaration(result, child))
+          .contains("a():void;", "b():void;")
+          .doesNotContain("ma(", "mb(");
+    }
+  }
+
+  // @TsIgnore keeps a method out of TypeScript, not out of JS, so its name is still inherited.
+  @Test
+  public void overridesOfATsIgnoredMethodTakeItsName() throws IOException {
+    Compilation result =
+        compile(
+            "IgnoredRenamed",
+            "IgnoredRenamedSub",
+            "RenamedApi",
+            "IgnoredMiddle",
+            "IgnoredMiddleSub");
+
+    assertThat(result.errors()).isEmpty();
+    for (String sub : new String[] {"IgnoredRenamedSub", "IgnoredMiddleSub"}) {
+      assertThat(declaration(result, sub)).contains("bar():void;").doesNotContain("foo(");
+    }
+  }
+
+  @Test
+  public void interfaceOverridesOfAnIgnoredInterfaceTakeItsNames() throws IOException {
+    Compilation result = compile("IgnoredNames", "NamesFromIgnored");
+
+    assertThat(result.errors()).isEmpty();
+    assertThat(result.warnings())
+        .filteredOn(d -> d.getMessage(null).contains("NamesFromIgnored"))
+        .isEmpty();
+    assertThat(declaration(result, "NamesFromIgnored"))
+        .contains("x():string;", "y():string;", "other():number;")
+        .doesNotContain("foo(", "same(");
+  }
+}

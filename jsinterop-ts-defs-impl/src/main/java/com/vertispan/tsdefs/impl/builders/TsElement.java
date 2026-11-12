@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.lang.model.element.*;
@@ -43,6 +44,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.tools.Diagnostic;
 import jsinterop.annotations.*;
+import jsinterop.base.Any;
+import jsinterop.base.JsPropertyMap;
 
 public class TsElement {
 
@@ -257,7 +260,24 @@ public class TsElement {
         && !"<auto>".equals(jsMethodAnnotation.name())) {
       return Optional.of(jsMethodAnnotation.name());
     }
-    return Optional.empty();
+    return inheritedJsName();
+  }
+
+  /**
+   * JsInterop exports an override of an exported method, with or without its own annotation, under
+   * the overridden method's JS name.
+   */
+  // TODO(#149) Recomputed up the chain on every getName(); memoize per method per round.
+  private Optional<String> inheritedJsName() {
+    if (!isMethod() || isStatic() || !(element.getEnclosingElement() instanceof TypeElement)) {
+      return Optional.empty();
+    }
+    return parent().overriddenMethods((ExecutableElement) element).stream()
+        .map(superMethod -> TsElement.of(superMethod, env))
+        .filter(TsElement::isJsExportedMethod)
+        .map(TsElement::getDeclaredJsName)
+        .flatMap(name -> name.map(Stream::of).orElseGet(Stream::empty))
+        .findFirst();
   }
 
   /**
@@ -598,16 +618,14 @@ public class TsElement {
         .collect(Collectors.toList());
   }
 
-  public boolean isInheritedMethod(ExecutableElement method) {
+  /** The supertype methods that {@code method}, declared in this type, overrides. */
+  public List<ExecutableElement> overriddenMethods(ExecutableElement method) {
     List<ExecutableElement> superMethods = superMethods();
     superMethods.addAll(allSuperInterfacesMethods());
-    return overridesOneOf(method, superMethods);
-  }
-
-  private boolean overridesOneOf(ExecutableElement method, List<ExecutableElement> superMethods) {
     return superMethods.stream()
-        .anyMatch(
-            superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element));
+        .filter(superMethod -> env.elements().overrides(method, superMethod, (TypeElement) element))
+        .distinct()
+        .collect(Collectors.toList());
   }
 
   public List<ExecutableElement> superMethods() {
@@ -669,6 +687,76 @@ public class TsElement {
     return methods;
   }
 
+  /** The type object, not a namespace segment, member or string literal with that name. */
+  private static final Pattern OBJECT = Pattern.compile("(?<![\\w$.\"'])object(?![\\w$.\"'])");
+
+  /**
+   * Whether this method overrides one emitted in a supertype TypeScript sees, whose return type
+   * mentions object (Object), with a different return type that TypeScript may not take in its
+   * place, since object excludes primitives: anything but a known object type in place of object
+   * itself. The inherited declaration stands in its place.
+   */
+  // TODO(#144) With Object emitted as unknown, any narrowing of it is valid.
+  public boolean narrowsBeyondTypeScript() {
+    if (!isMethod() || !(element.getEnclosingElement() instanceof TypeElement)) {
+      return false;
+    }
+    TypeElement declaring = (TypeElement) element.getEnclosingElement();
+    TypeMirror returnType = ((ExecutableElement) element).getReturnType();
+    HasProcessorEnv quiet = HasProcessorEnv.quiet(env);
+    String own = TsElement.of(element, quiet).getType().emit("");
+    return TsElement.of(declaring, env).overriddenMethods((ExecutableElement) element).stream()
+        .filter(this::isEmittedInSupertype)
+        .map(overridden -> TsElement.of(overridden, declaring, quiet).getType().emit(""))
+        .anyMatch(
+            inherited ->
+                OBJECT.matcher(inherited).find()
+                    && !own.equals(inherited)
+                    && !("object".equals(inherited) && isWithinObject(returnType)));
+  }
+
+  /**
+   * Whether {@code returnType}, this method's, is known to emit as a type TypeScript's {@code
+   * object} includes: an array, or a reference to an emitted type, a JsFunction, a property map or
+   * {@code Any}, not nullable. Anything else may be a primitive, so isn't.
+   */
+  private boolean isWithinObject(TypeMirror returnType) {
+    if (isJsNullable()
+        || returnType.getAnnotationMirrors().stream()
+            .anyMatch(
+                a ->
+                    a.getAnnotationType().asElement().getSimpleName().contentEquals("TsLiteral"))) {
+      return false;
+    }
+    if (TypeKind.ARRAY.equals(returnType.getKind())) {
+      return true;
+    }
+    if (!TypeKind.DECLARED.equals(returnType.getKind())) {
+      return false;
+    }
+    ProcessorType processorType = ProcessorType.of(returnType, env);
+    TsElement type = TsElement.of(returnType, env);
+    if (processorType.isUnionType() || type.isTsTypeDef()) {
+      return false;
+    }
+    return processorType.isJsFunction()
+        || processorType.isAssignableFrom(JsPropertyMap.class)
+        || JavaToTsTypeConverter.isSameType(returnType, Any.class, env)
+        || type.isJsType()
+        || type.isTsInterface();
+  }
+
+  /**
+   * Whether {@code superMethod} is declared in a supertype TypeScript sees: not a plain Java type
+   * or a @TsIgnore one. A native type is seen through its own declaration.
+   */
+  public boolean isEmittedInSupertype(ExecutableElement superMethod) {
+    TsElement superType = TsElement.of(superMethod.getEnclosingElement(), env);
+    return TsElement.of(superMethod, env).isExportable()
+        && superType.isExportable()
+        && !superType.isTsIgnored();
+  }
+
   public boolean override(ExecutableElement method) {
     return allMethodsAndSuperClassesMethods().stream()
         .anyMatch(
@@ -716,6 +804,17 @@ public class TsElement {
             || (isClass() && isExportableClass()));
   }
 
+  /** Whether JsInterop exports this method, whether or not it is emitted: @TsIgnore is ours. */
+  private boolean isJsExportedMethod() {
+    return !isIgnored()
+        && !isOverlay()
+        && isMethod()
+        && (isJsMethod()
+            || isJsProperty()
+            || (isPublic() && parent().isJsType())
+            || overridesExportedMethod());
+  }
+
   private boolean isExportableClass() {
     return isJsType() || hasJsMembers();
   }
@@ -729,9 +828,26 @@ public class TsElement {
   }
 
   private boolean isExportableMethod() {
-    return ((isJsMethod() || isJsProperty()) || (isPublic() && parent().isJsType()))
+    return ((isJsMethod() || isJsProperty())
+            || (isPublic() && parent().isJsType())
+            || overridesExportedMethod())
         && !disallowedStatic()
         && !isTsIgnored();
+  }
+
+  /**
+   * JsInterop exports an override of an exported method, with or without its own annotation, under
+   * the overridden method's JS name, which getName() inherits. One that names itself differently is
+   * rejected by GWT, so isn't counted.
+   */
+  private boolean overridesExportedMethod() {
+    return !isStatic()
+        && element.getEnclosingElement() instanceof TypeElement
+        && parent().overriddenMethods((ExecutableElement) element).stream()
+            .map(superMethod -> TsElement.of(superMethod, env))
+            .anyMatch(
+                superMethod ->
+                    superMethod.isExportable() && superMethod.getName().equals(getName()));
   }
 
   private boolean isExportableField() {

@@ -17,6 +17,6 @@ package com.vertispan.tsdefs.tests.overrides;
 
 import jsinterop.annotations.JsType;
 
-/** Copies ObjectBase.value(), not StringValue's, which TypeScript's object excludes. */
+/** Copies StringValue.value(), a string TypeScript's object excludes, next to ObjectBase's. */
 @JsType
 public abstract class StringValueImpl implements StringValue {}

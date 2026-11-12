@@ -25,19 +25,44 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 public class InheritedMethodsVisitor<T> extends TsElement {
+  private final boolean onlyUnseen;
 
   public InheritedMethodsVisitor(Element element, HasProcessorEnv env) {
+    this(element, false, env);
+  }
+
+  /**
+   * @param onlyUnseen copy only methods of supertypes TypeScript doesn't see, for a TsInterface,
+   *     which extends the others
+   */
+  public InheritedMethodsVisitor(Element element, boolean onlyUnseen, HasProcessorEnv env) {
     super(element, env);
+    this.onlyUnseen = onlyUnseen;
   }
 
   public void visit(HasMembers<T> parent) {
     // Listed once per path to it; emitted once.
     Set<ExecutableElement> nonOverriddenMethods =
         new LinkedHashSet<>(allNotOverriddenInterfacesMethods());
-    nonOverriddenMethods.forEach(
-        executableElement -> {
-          new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
-              .visit(parent);
-        });
+    // One overridden by another copy is left out where TypeScript doesn't see it, so nothing
+    // requires it; where it does, both are copied as overloads.
+    nonOverriddenMethods.stream()
+        .filter(method -> !onlyUnseen || !isEmittedInSupertype(method))
+        .filter(method -> !isCoveredByAny(method, nonOverriddenMethods))
+        .forEach(
+            executableElement -> {
+              new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
+                  .visit(parent);
+            });
+  }
+
+  private boolean isCoveredByAny(ExecutableElement method, Set<ExecutableElement> copies) {
+    return !isEmittedInSupertype(method)
+        && copies.stream()
+            .anyMatch(
+                other ->
+                    !other.equals(method)
+                        && TsElement.of(other, env).isExportable()
+                        && env.elements().overrides(other, method, (TypeElement) element));
   }
 }

@@ -24,11 +24,25 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.tools.DocumentationTool;
 import javax.tools.ToolProvider;
+import org.assertj.core.api.SoftAssertions;
 import org.junit.Test;
 
 public class DocletTest {
+
+  /** A type's declaration, e.g. {@code "interface Foo"}, with its members and their docs. */
+  private static String declaration(String definitions, String kindAndName) {
+    Matcher matcher =
+        Pattern.compile("export " + kindAndName + "\\b.*?\n\t}", Pattern.DOTALL)
+            .matcher(definitions);
+    if (!matcher.find()) {
+      throw new AssertionError(kindAndName + " is not emitted");
+    }
+    return matcher.group();
+  }
 
   private void testDocs(String subpackage) throws IOException {
     DocumentationTool systemDocumentationTool = ToolProvider.getSystemDocumentationTool();
@@ -94,6 +108,61 @@ public class DocletTest {
   @Test
   public void testIssue117() throws IOException {
     testDocs("docs.issue117");
+  }
+
+  @Test
+  public void testInterfaceOverrides() throws IOException {
+    testDocs("overrides");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/overrides/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly.assertThat(definitions).as("covariant override in Qux").contains("get():Bar;");
+    softly
+        .assertThat(definitions)
+        .as("javadoc of same-signature override in Bar")
+        .contains("Returns the name, as documented on the sub-interface.");
+    softly
+        .assertThat(definitions)
+        .as("undocumented same-signature override in Plain is not redeclared")
+        .contains("\texport interface Plain extends Foo {\n\t\tplain():string;\n\t}");
+    softly
+        .assertThat(definitions)
+        .as("override under a blank comment in BlankDoc is not redeclared")
+        .contains("\texport interface BlankDoc extends Foo {\n\t\tblank():string;\n\t}");
+    softly
+        .assertThat(definitions)
+        .as("override under an {@inheritDoc}-only comment in InheritDocOnly is not redeclared")
+        .contains("\texport interface InheritDocOnly extends Foo {\n\t\tinherit():string;\n\t}");
+    // An undocumented override copies the inherited docs, which typedoc keeps with @deprecated.
+    softly
+        .assertThat(declaration(definitions, "interface DeprecatedNoDoc"))
+        .as("undocumented deprecated override in DeprecatedNoDoc")
+        .contains("Returns the name, as declared on the super-interface.")
+        .contains("@deprecated")
+        .doesNotContain("@inheritDoc");
+    softly
+        .assertThat(declaration(definitions, "abstract class NamedImpl"))
+        .as("undocumented class override in NamedImpl")
+        .contains("Returns the name, as declared on the super-interface.")
+        .doesNotContain("@inheritDoc");
+    // As javadoc does: the superclass's docs before an interface's.
+    softly
+        .assertThat(declaration(definitions, "abstract class NamedMulti"))
+        .as("override of a superclass and an interface method in NamedMulti")
+        .contains("Returns the name, as documented on the superclass.")
+        .doesNotContain("as declared on the super-interface");
+    softly
+        .assertThat(declaration(definitions, "interface Qux"))
+        .as("override of an undocumented method in Qux has nothing to inherit")
+        .doesNotContain("@inheritDoc");
+    softly
+        .assertThat(declaration(definitions, "abstract class RunnableImpl"))
+        .as("override of a library method in RunnableImpl, whose docs can't be read")
+        .contains("@inheritDoc");
+    softly.assertAll();
   }
 
   @Test

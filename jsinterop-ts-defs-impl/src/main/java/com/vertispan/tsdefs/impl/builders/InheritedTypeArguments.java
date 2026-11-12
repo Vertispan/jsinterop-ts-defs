@@ -67,6 +67,7 @@ public class InheritedTypeArguments {
    * The type arguments {@code subtype} passes up, directly or through other supertypes. The
    * hierarchy is walked on the first lookup.
    */
+  // TODO(#149) Walked again for each converter that asks; cache one per subtype per round.
   public static InheritedTypeArguments of(TypeElement subtype, HasProcessorEnv env) {
     return new InheritedTypeArguments(
         () -> {

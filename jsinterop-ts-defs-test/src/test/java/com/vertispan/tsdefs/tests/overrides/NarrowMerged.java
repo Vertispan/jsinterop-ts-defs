@@ -17,7 +17,7 @@ package com.vertispan.tsdefs.tests.overrides;
 
 import jsinterop.annotations.JsType;
 
-/** Merges both ignored superclasses; only IgnoredNarrow's pick() applies. */
+/** Merges both ignored superclasses, so both pick() methods are declared. */
 @JsType
 public class NarrowMerged extends IgnoredNarrow {
   public String name;
