@@ -18,9 +18,14 @@ package com.vertispan.tsdefs.annotations;
 import java.lang.annotation.*;
 import javax.validation.constraints.NotNull;
 
+/**
+ * Deprecated, use {@link TsUnion} with {@link TsLiteral} instead to build unions of literals. Will
+ * be removed in a future release.
+ */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
 @Documented
+@Deprecated
 public @interface TsTypeDef {
   String name() default "<auto>";
 
