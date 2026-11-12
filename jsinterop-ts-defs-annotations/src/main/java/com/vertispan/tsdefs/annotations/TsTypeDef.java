@@ -19,8 +19,8 @@ import java.lang.annotation.*;
 import javax.validation.constraints.NotNull;
 
 /**
- * Deprecated, use {@link TsUnion} with {@link TsLiteral} instead to build unions of literals. Will be removed
- * in a future release.
+ * Deprecated, use {@link TsUnion} with {@link TsLiteral} instead to build unions of literals. Will
+ * be removed in a future release.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})
