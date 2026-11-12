@@ -23,9 +23,9 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a method or field as a member of a union type defined by {@link TsUnion}. When applied to a
- * {@link jsinterop.annotations.JsOverlay} method, the method's return type becomes a member of the
- * union. When applied to a {@code @JsOverlay} constant field annotated with {@link TsLiteral}, the
- * field's literal value becomes a member of the union.
+ * {@code @JsOverlay} method, the method's return type becomes a member of the union. When applied
+ * to a {@code @JsOverlay} constant field annotated with {@link TsLiteral}, the field's literal
+ * value becomes a member of the union.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
