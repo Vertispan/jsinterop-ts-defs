@@ -37,6 +37,8 @@ public @interface TsUnion {
    * anonymous and the generated TypeScript type is the union of all {@link TsUnionMember} types.
    * Set this to {@code false} to emit a named TypeScript type definition that can be referenced by
    * name. A name or namespace must not be specified for an anonymous union.
+   *
+   * @return whether the union is emitted inline, anonymously, false to emit a named type
    */
   boolean anonymous() default true;
 
@@ -44,6 +46,8 @@ public @interface TsUnion {
    * The TypeScript name to use when {@link #anonymous()} is {@code false}. The default derives the
    * name from the Java type, ignoring {@code @JsType(name = ...)}. {@code @TsName} remains
    * supported as a backwards-compatible override.
+   *
+   * @return the TypeScript name, or {@code "<auto>"} to derive it from the Java type name
    */
   String name() default "<auto>";
 
@@ -51,6 +55,8 @@ public @interface TsUnion {
    * The TypeScript namespace to use when {@link #anonymous()} is {@code false}. The default uses
    * the Java package namespace, ignoring {@code @JsType(namespace = ...)}. Use {@code
    * JsPackage.GLOBAL} for the global namespace.
+   *
+   * @return the TypeScript namespace, or {@code "<auto>"} to use the Java package
    */
   String namespace() default "<auto>";
 }
