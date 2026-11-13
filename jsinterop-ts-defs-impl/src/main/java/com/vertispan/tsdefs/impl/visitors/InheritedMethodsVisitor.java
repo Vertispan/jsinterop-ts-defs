@@ -51,7 +51,12 @@ public class InheritedMethodsVisitor<T> extends TsElement {
         .filter(method -> !isCoveredByAny(method, nonOverriddenMethods))
         .forEach(
             executableElement -> {
-              new ClassMethodVisitor<T>(executableElement, (TypeElement) element, false, env)
+              // Docs stay on a declaration TypeScript sees (#78), and come along otherwise.
+              new ClassMethodVisitor<T>(
+                      executableElement,
+                      (TypeElement) element,
+                      !isEmittedInSupertype(executableElement),
+                      env)
                   .visit(parent);
             });
   }
