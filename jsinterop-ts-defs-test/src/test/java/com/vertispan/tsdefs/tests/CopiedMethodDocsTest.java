@@ -37,7 +37,13 @@ public class CopiedMethodDocsTest {
         Compiler.javac()
             .withProcessors(new JsTypesProcessor())
             .compile(
-                Stream.of("DocsSource", "DocsView", "DocsJsView", "DocsAbstract")
+                Stream.of(
+                        "DocsSource",
+                        "DocsView",
+                        "DocsJsView",
+                        "DocsAbstract",
+                        "DocsShown",
+                        "DocsShownImpl")
                     .map(name -> JavaFileObjects.forResource("copieddocs/" + name + ".java"))
                     .collect(Collectors.toList()));
     assertThat(result.errors()).isEmpty();
@@ -73,5 +79,13 @@ public class CopiedMethodDocsTest {
   public void methodCopiedIntoAClassKeepsItsDocs() throws IOException {
     assertThat(declaration(definitions(), "abstract class DocsAbstract"))
         .containsPattern("Doc for close\\.\\s*\\*/\\s*close\\(\\):void;");
+  }
+
+  /** The supertype's own declaration carries the doc in TypeScript (#78). */
+  @Test
+  public void methodCopiedFromAnEmittedSupertypeHasNoDocs() throws IOException {
+    assertThat(declaration(definitions(), "class DocsShownImpl"))
+        .contains("open():void;")
+        .doesNotContain("Doc for open");
   }
 }
