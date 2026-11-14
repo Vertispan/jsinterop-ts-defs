@@ -111,6 +111,76 @@ public class DocletTest {
   }
 
   @Test
+  public void testIssue136() throws IOException {
+    testDocs("links.issue136");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue136/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(declaration(definitions, "class Foo"))
+        .as("links from Foo to its own fields")
+        .contains("{@link probe.Foo.BAR}")
+        .contains("{@link probe.Foo.BAZ}");
+    softly
+        .assertThat(declaration(definitions, "class Bar"))
+        .as("links from Bar to Foo's fields")
+        .contains("{@link probe.Foo.BAR}")
+        .contains("{@link probe.Foo.BAZ}");
+    softly.assertAll();
+  }
+
+  @Test
+  public void testIssue139() throws IOException {
+    testDocs("links.issue139");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue139/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(declaration(definitions, "class Foo"))
+        .as("links from Foo to its own methods")
+        .contains("{@link probe.Foo.baz}")
+        .contains("{@link probe.Foo.scale}")
+        .contains("{@link probe.Foo.BAR}")
+        .contains("{@link probe.Bar}");
+    softly
+        .assertThat(declaration(definitions, "class Bar"))
+        .as("links from Bar to Foo's methods")
+        .contains("{@link probe.Foo.baz}")
+        .contains("{@link probe.Foo.BAR}")
+        .contains("{@link probe.Foo}");
+    softly.assertAll();
+  }
+
+  @Test
+  public void testIssue158() throws IOException {
+    testDocs("links.issue158");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue158/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(definitions)
+        .as("links from the global class probe to Target")
+        .contains("{@link probe.Target.go}")
+        .contains("{@link probe.Target.BAR}")
+        .contains("{@link probe.Target}");
+    softly
+        .assertThat(definitions)
+        .as("links from Target to the global class probe")
+        .contains("{@link probe.all}")
+        .contains("{@link probe}");
+    softly.assertAll();
+  }
+
+  @Test
   public void testInterfaceOverrides() throws IOException {
     testDocs("overrides");
 
