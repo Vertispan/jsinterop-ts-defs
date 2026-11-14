@@ -21,7 +21,6 @@ import com.sun.source.doctree.*;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.SimpleDocTreeVisitor;
-import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.TsElement;
 import java.util.List;
@@ -97,9 +96,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
   }
 
   private static String memberName(TsElement member) {
-    return member.isSetter() || member.isGetter()
-        ? Formatting.nonGetSetName(member.getName())
-        : member.getName();
+    return member.isSetter() || member.isGetter() ? member.nonGetSetName() : member.getName();
   }
 
   /** The JS path a member hangs from: its own namespace if it declares one, else its type's. */
