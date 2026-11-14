@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import jdk.javadoc.doclet.DocletEnvironment;
+import jsinterop.annotations.JsType;
 
 public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
@@ -53,11 +54,28 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   /** A TSDoc link to the reference, with the given label or else a default one. */
   private String formatLink(ReferenceTree reference, String label, Element element) {
+    // typedoc shows an unresolved link's whole body as text, so only label what it can resolve.
     String text =
         label.trim().isEmpty()
-            ? getElementFromReference(reference, element).map(this::defaultLabel).orElse("")
+            ? getElementFromReference(reference, element)
+                .filter(this::isEmitted)
+                .map(this::defaultLabel)
+                .orElse("")
             : label;
     return "{@link " + visit(reference, element) + formatLabel(text) + "}";
+  }
+
+  /** Whether this doclet run emits the referenced type, or the member and its type. */
+  private boolean isEmitted(Element referencedElement) {
+    Element type =
+        isMember(referencedElement) ? referencedElement.getEnclosingElement() : referencedElement;
+    TsElement tsType = TsElement.of(type, env);
+    JsType jsType = type.getAnnotation(JsType.class);
+    boolean skippedNative = nonNull(jsType) && jsType.isNative() && !tsType.isTsInterface();
+    return docletEnv.isIncluded(type)
+        && tsType.isExportable()
+        && !skippedNative
+        && (!isMember(referencedElement) || TsElement.of(referencedElement, env).isExportable());
   }
 
   @Override
