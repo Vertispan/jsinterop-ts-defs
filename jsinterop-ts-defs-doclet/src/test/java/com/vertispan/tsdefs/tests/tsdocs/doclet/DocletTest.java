@@ -122,13 +122,13 @@ public class DocletTest {
     softly
         .assertThat(declaration(definitions, "class Foo"))
         .as("links from Foo to its own fields")
-        .contains("{@link probe.Foo.BAR}")
-        .contains("{@link probe.Foo.BAZ}");
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Foo.BAZ | Foo.BAZ}");
     softly
         .assertThat(declaration(definitions, "class Bar"))
         .as("links from Bar to Foo's fields")
-        .contains("{@link probe.Foo.BAR}")
-        .contains("{@link probe.Foo.BAZ}");
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Foo.BAZ | Foo.BAZ}");
     softly.assertAll();
   }
 
@@ -144,16 +144,16 @@ public class DocletTest {
     softly
         .assertThat(declaration(definitions, "class Foo"))
         .as("links from Foo to its own methods")
-        .contains("{@link probe.Foo.baz}")
-        .contains("{@link probe.Foo.scale}")
-        .contains("{@link probe.Foo.BAR}")
-        .contains("{@link probe.Bar}");
+        .contains("{@link probe.Foo.baz | Foo.baz()}")
+        .contains("{@link probe.Foo.scale | Foo.scale()}")
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Bar | Bar}");
     softly
         .assertThat(declaration(definitions, "class Bar"))
         .as("links from Bar to Foo's methods")
-        .contains("{@link probe.Foo.baz}")
-        .contains("{@link probe.Foo.BAR}")
-        .contains("{@link probe.Foo}");
+        .contains("{@link probe.Foo.baz | Foo.baz()}")
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Foo | Foo}");
     softly.assertAll();
   }
 
@@ -196,14 +196,14 @@ public class DocletTest {
     softly
         .assertThat(definitions)
         .as("links from the global class probe to Target")
-        .contains("{@link probe.Target.go}")
-        .contains("{@link probe.Target.BAR}")
-        .contains("{@link probe.Target}");
+        .contains("{@link probe.Target.go | Target.go()}")
+        .contains("{@link probe.Target.BAR | Target.BAR}")
+        .contains("{@link probe.Target | Target}");
     softly
         .assertThat(definitions)
         .as("links from Target to the global class probe")
-        .contains("{@link probe.all}")
-        .contains("{@link probe}");
+        .contains("{@link probe.all | probe.all()}")
+        .contains("{@link probe | probe}");
     softly.assertAll();
   }
 

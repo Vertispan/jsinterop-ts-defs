@@ -47,10 +47,13 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitLink(LinkTree node, Element element) {
-    return "{@link "
-        + visit(node.getReference(), element)
-        + (node.getLabel().isEmpty() ? "" : formatLabel(String.valueOf(node.getLabel().get(0))))
-        + "}";
+    String label =
+        node.getLabel().isEmpty()
+            ? getElementFromReference(node.getReference(), element)
+                .map(this::defaultLabel)
+                .orElse("")
+            : String.valueOf(node.getLabel().get(0));
+    return "{@link " + visit(node.getReference(), element) + formatLabel(label) + "}";
   }
 
   @Override
@@ -58,26 +61,51 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     return getElementFromReference(node, element)
         .map(
             referencedElement -> {
-              ElementKind kind = referencedElement.getKind();
-              if (ElementKind.METHOD == kind || ElementKind.FIELD == kind) {
-                return formatMemberName(TsElement.of(referencedElement, env));
+              if (isMember(referencedElement)) {
+                TsElement member = TsElement.of(referencedElement, env);
+                String owner = memberOwner(member);
+                return owner.isEmpty() ? memberName(member) : (owner + "." + memberName(member));
               }
               return formatName(TsElement.of(referencedElement, env));
             })
         .orElse(node.getSignature());
   }
 
-  /** The member's JS path: its own namespace if it declares one, otherwise its type's path. */
-  private String formatMemberName(TsElement member) {
-    String name =
-        member.isSetter() || member.isGetter()
-            ? Formatting.nonGetSetName(member.getName())
-            : member.getName();
-    String owner =
-        member
-            .getDeclaredNamespace()
-            .orElseGet(() -> formatName(TsElement.of(member.element().getEnclosingElement(), env)));
+  /** The type's JS name, or for a member its type's JS name and its own, e.g. "Foo.bar()". */
+  private String defaultLabel(Element referencedElement) {
+    if (!isMember(referencedElement)) {
+      return lastSegment(formatName(TsElement.of(referencedElement, env)));
+    }
+    TsElement member = TsElement.of(referencedElement, env);
+    String name = memberName(member);
+    if (ElementKind.METHOD == referencedElement.getKind()
+        && !member.isGetter()
+        && !member.isSetter()) {
+      name += "()";
+    }
+    String owner = lastSegment(memberOwner(member));
     return owner.isEmpty() ? name : (owner + "." + name);
+  }
+
+  private static boolean isMember(Element element) {
+    return ElementKind.METHOD == element.getKind() || ElementKind.FIELD == element.getKind();
+  }
+
+  private static String memberName(TsElement member) {
+    return member.isSetter() || member.isGetter()
+        ? Formatting.nonGetSetName(member.getName())
+        : member.getName();
+  }
+
+  /** The JS path a member hangs from: its own namespace if it declares one, else its type's. */
+  private String memberOwner(TsElement member) {
+    return member
+        .getDeclaredNamespace()
+        .orElseGet(() -> formatName(TsElement.of(member.element().getEnclosingElement(), env)));
+  }
+
+  private static String lastSegment(String path) {
+    return path.substring(path.lastIndexOf('.') + 1);
   }
 
   private Optional<Element> getElementFromReference(DocTree node, Element element) {
