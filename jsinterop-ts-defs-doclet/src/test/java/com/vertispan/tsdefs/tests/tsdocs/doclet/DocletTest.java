@@ -158,6 +158,33 @@ public class DocletTest {
   }
 
   @Test
+  public void testDefaultLinkLabels() throws IOException {
+    testDocs("links.labels");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/labels/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(declaration(definitions, "class Source"))
+        .as("unlabeled links from Source get the JS type and member name")
+        .contains("{@link probe.Target.go | Target.go()}")
+        .contains("{@link probe.scale | probe.scale()}")
+        .contains("{@link probe.Target.BAR | Target.BAR}")
+        .contains("{@link probe.Target.size | Target.size}")
+        .contains("{@link probe.Target | Target}")
+        .contains("{@link probe.all | probe.all()}")
+        .contains("{@link probe.Target.go | the starter}");
+    softly
+        .assertThat(declaration(definitions, "class Target"))
+        .as("unlabeled links within Target keep the type name")
+        .contains("{@link probe.Target.go | Target.go()}")
+        .contains("{@link probe.Target.BAR | Target.BAR}");
+    softly.assertAll();
+  }
+
+  @Test
   public void testIssue158() throws IOException {
     testDocs("links.issue158");
 
