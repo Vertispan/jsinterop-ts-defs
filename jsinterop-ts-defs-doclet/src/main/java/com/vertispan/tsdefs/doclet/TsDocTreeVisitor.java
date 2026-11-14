@@ -128,13 +128,15 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     return path.substring(path.lastIndexOf('.') + 1);
   }
 
+  /** The referenced element; a constructor resolves to its type, which TSDoc links to. */
   private Optional<Element> getElementFromReference(DocTree node, Element element) {
     DocTrees trees = docletEnv.getDocTrees();
     final Element referencedElement =
         trees.getElement(
             new DocTreePath(
                 new DocTreePath(trees.getPath(element), trees.getDocCommentTree(element)), node));
-    return Optional.ofNullable(referencedElement);
+    return Optional.ofNullable(referencedElement)
+        .map(e -> ElementKind.CONSTRUCTOR == e.getKind() ? e.getEnclosingElement() : e);
   }
 
   public String formatName(TsElement tsElement) {
