@@ -40,6 +40,10 @@ public class Source {
   @JsMethod
   public void notEmitted() {}
 
+  /** Constructor: {@link JsTarget#JsTarget()}. */
+  @JsMethod
+  public void constructorLink() {}
+
   /**
    * See tags.
    *

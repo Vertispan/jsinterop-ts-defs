@@ -181,6 +181,10 @@ public class DocletTest {
         .as("a link to an accessor with a declared name uses that name as written")
         .contains(
             "Accessor with a declared name: {@link probe.Target.settings | Target.settings}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a constructor links to its type")
+        .contains("Constructor: {@link probe.Target | Target}.");
     // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)

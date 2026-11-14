@@ -23,6 +23,8 @@ import jsinterop.annotations.JsType;
 public class JsTarget {
   public static final double BAR = -2;
 
+  public JsTarget() {}
+
   @JsMethod(name = "go")
   public void start() {}
 
