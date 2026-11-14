@@ -48,6 +48,10 @@ public class Source {
   @JsMethod
   public void ignoredLinks() {}
 
+  /** HTML label: {@link JsTarget#start() <b>bold</b> start}. */
+  @JsMethod
+  public void htmlLabel() {}
+
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod
   public void constructorLink() {}

@@ -185,6 +185,10 @@ public class DocletTest {
         .assertThat(definitions)
         .as("a link to a constructor links to its type")
         .contains("Constructor: {@link probe.Target | Target}.");
+    softly
+        .assertThat(definitions)
+        .as("a label containing HTML is kept whole")
+        .contains("HTML label: {@link probe.Target.go | <b>bold</b> start}.");
     // typedoc ends a link's text at a line break.
     softly
         .assertThat(definitions)
