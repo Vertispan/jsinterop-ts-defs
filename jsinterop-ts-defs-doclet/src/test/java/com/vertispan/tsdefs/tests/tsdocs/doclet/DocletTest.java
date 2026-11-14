@@ -185,6 +185,13 @@ public class DocletTest {
         .assertThat(definitions)
         .as("a link to a constructor links to its type")
         .contains("Constructor: {@link probe.Target | Target}.");
+    // typedoc ends a link's text at a line break.
+    softly
+        .assertThat(definitions)
+        .as("a label wrapped across javadoc lines is emitted on one line")
+        .contains(
+            "Wrapped label: {@link probe.Target.go | a label long enough that the formatter"
+                + " wraps it onto the next line}.");
     // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)
@@ -206,7 +213,10 @@ public class DocletTest {
         .contains("@see {@link probe.Target.go | the starter}")
         .contains("@see \"a quoted string\"")
         .contains("@see <a href=\"https://example.com\">an html link</a>")
-        .contains("@see Missing#thing the missing label");
+        .contains("@see Missing#thing the missing label")
+        .contains(
+            "@see {@link probe.Target.go | a see label that is long enough that the formatter"
+                + " has to wrap it onto the next line}");
     softly.assertAll();
   }
 

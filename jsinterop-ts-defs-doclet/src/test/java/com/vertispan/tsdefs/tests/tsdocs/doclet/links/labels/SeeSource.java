@@ -31,6 +31,8 @@ public class SeeSource {
    * @see "a quoted string"
    * @see <a href="https://example.com">an html link</a>
    * @see Missing#thing the missing label
+   * @see JsTarget#start() a see label that is long enough that the formatter has to wrap it onto
+   *     the next line
    */
   @JsMethod
   public void seeTags() {}

@@ -43,4 +43,11 @@ public class Source {
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod
   public void constructorLink() {}
+
+  /**
+   * Wrapped label: {@link JsTarget#start() a label long enough that the formatter wraps it onto the
+   * next line}.
+   */
+  @JsMethod
+  public void wrappedLabel() {}
 }
