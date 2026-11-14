@@ -64,7 +64,8 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
       Optional<Element> target,
       List<? extends DocTree> labelParts,
       Element element) {
-    String label = visitAll(labelParts, element);
+    // typedoc ends a link's text at a line break, so a wrapped label goes on one line.
+    String label = visitAll(labelParts, element).replaceAll("\\s+", " ").trim();
     // typedoc shows an unresolved link's whole body as text, so only label what it can resolve.
     if (label.trim().isEmpty()) {
       label = target.filter(this::isEmitted).map(this::defaultLabel).orElse("");
