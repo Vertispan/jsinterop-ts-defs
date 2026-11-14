@@ -44,6 +44,10 @@ public class Source {
   @JsMethod
   public void nestedLinks() {}
 
+  /** Ignored: {@link Ignored}, {@link Ignored#inherited()}. */
+  @JsMethod
+  public void ignoredLinks() {}
+
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod
   public void constructorLink() {}

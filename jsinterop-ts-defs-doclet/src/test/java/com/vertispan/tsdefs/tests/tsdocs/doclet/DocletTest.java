@@ -196,6 +196,10 @@ public class DocletTest {
         .assertThat(definitions)
         .as("links to a nested type, emitted elsewhere than the link points, get no label")
         .contains("Nested: {@link probe.Target.Inner}, {@link probe.Target.Inner.go}.");
+    softly
+        .assertThat(definitions)
+        .as("links to a @TsIgnore type and its members get no label")
+        .contains("Ignored: {@link probe.Ignored}, {@link probe.Ignored.inherited}.");
     // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)
