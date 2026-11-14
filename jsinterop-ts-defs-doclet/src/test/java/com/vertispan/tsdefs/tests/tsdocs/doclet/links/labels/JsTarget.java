@@ -37,6 +37,8 @@ public class JsTarget {
     return 0;
   }
 
+  private void hidden() {}
+
   /** Same class: method {@link #start()}, field {@link #BAR}. */
   @JsMethod
   public void self() {}

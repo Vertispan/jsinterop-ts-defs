@@ -15,6 +15,7 @@
  */
 package com.vertispan.tsdefs.tests.tsdocs.doclet.links.labels;
 
+import elemental2.promise.Promise;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
@@ -31,6 +32,13 @@ public class Source {
   /** Accessor with a declared name: {@link JsTarget#getSettings()}. */
   @JsMethod
   public void declaredAccessor() {}
+
+  /**
+   * Not emitted: {@link String}, {@link java.util.List#size()}, {@link Promise}, {@link
+   * JsTarget#hidden()}.
+   */
+  @JsMethod
+  public void notEmitted() {}
 
   /**
    * See tags.

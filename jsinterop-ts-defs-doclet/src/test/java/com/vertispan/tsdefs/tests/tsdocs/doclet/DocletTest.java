@@ -181,6 +181,13 @@ public class DocletTest {
         .as("a link to an accessor with a declared name uses that name as written")
         .contains(
             "Accessor with a declared name: {@link probe.Target.settings | Target.settings}.");
+    // typedoc shows an unresolved link's whole body as text, label and all.
+    softly
+        .assertThat(definitions)
+        .as("links to types and members the doclet does not emit get no label")
+        .contains(
+            "Not emitted: {@link java.lang.String}, {@link java.util.List.size}, {@link Promise},"
+                + " {@link probe.Target.hidden}.");
     softly
         .assertThat(declaration(definitions, "class Target"))
         .as("unlabeled links within Target keep the type name")
