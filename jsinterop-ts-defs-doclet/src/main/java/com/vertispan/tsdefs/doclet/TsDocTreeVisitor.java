@@ -24,6 +24,7 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import com.vertispan.tsdefs.impl.Formatting;
 import com.vertispan.tsdefs.impl.HasProcessorEnv;
 import com.vertispan.tsdefs.impl.builders.TsElement;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.lang.model.element.Element;
@@ -47,13 +48,17 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitLink(LinkTree node, Element element) {
-    String label =
-        node.getLabel().isEmpty()
-            ? getElementFromReference(node.getReference(), element)
-                .map(this::defaultLabel)
-                .orElse("")
-            : String.valueOf(node.getLabel().get(0));
-    return "{@link " + visit(node.getReference(), element) + formatLabel(label) + "}";
+    String label = node.getLabel().isEmpty() ? "" : String.valueOf(node.getLabel().get(0));
+    return formatLink(node.getReference(), label, element);
+  }
+
+  /** A TSDoc link to the reference, with the given label or else a default one. */
+  private String formatLink(ReferenceTree reference, String label, Element element) {
+    String text =
+        label.trim().isEmpty()
+            ? getElementFromReference(reference, element).map(this::defaultLabel).orElse("")
+            : label;
+    return "{@link " + visit(reference, element) + formatLabel(text) + "}";
   }
 
   @Override
@@ -132,14 +137,19 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitSee(SeeTree node, Element element) {
+    List<? extends DocTree> parts = node.getReference();
+    // A resolvable reference, then its optional label; otherwise a quoted string or HTML.
+    if (!parts.isEmpty()
+        && parts.get(0).getKind() == DocTree.Kind.REFERENCE
+        && getElementFromReference(parts.get(0), element).isPresent()) {
+      String label =
+          parts.subList(1, parts.size()).stream()
+              .map(docTree -> visit(docTree, element))
+              .collect(Collectors.joining());
+      return "@see " + formatLink((ReferenceTree) parts.get(0), label, element);
+    }
     return "@see "
-        + node.getReference().stream()
-            .map(
-                docTree ->
-                    getElementFromReference(docTree, element)
-                        .map(refElement -> "{@link " + docTree.accept(this, element) + "}")
-                        .orElse(docTree.accept(this, element)))
-            .collect(Collectors.joining());
+        + parts.stream().map(docTree -> visit(docTree, element)).collect(Collectors.joining());
   }
 
   @Override
