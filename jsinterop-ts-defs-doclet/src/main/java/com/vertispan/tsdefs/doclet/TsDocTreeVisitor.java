@@ -58,35 +58,26 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     return getElementFromReference(node, element)
         .map(
             referencedElement -> {
-              if (ElementKind.METHOD == referencedElement.getKind()) {
-                TsElement tsElement = TsElement.of(element, env);
-                TsElement refTsElement = TsElement.of(referencedElement, env);
-                TsElement parentTsElement =
-                    TsElement.of(referencedElement.getEnclosingElement(), env);
-
-                String namespace = tsElement.getNamespace();
-                String refNamespace = refTsElement.getNamespace();
-                String parentNamespace = parentTsElement.getNamespace();
-
-                boolean isSetterOrGetter = refTsElement.isSetter() || refTsElement.isGetter();
-
-                String name =
-                    isSetterOrGetter
-                        ? Formatting.nonGetSetName(refTsElement.getName())
-                        : refTsElement.getName();
-                String parentName = parentTsElement.getName();
-                if (refNamespace.equals(parentNamespace)) {
-                  String fullName = refNamespace + "." + parentName + "." + name;
-                  return fullName
-                      .replace(namespace + ".", "")
-                      .replace(tsElement.getName() + ".", "");
-                } else {
-                  return refNamespace + "." + parentNamespace + "." + name;
-                }
+              ElementKind kind = referencedElement.getKind();
+              if (ElementKind.METHOD == kind || ElementKind.FIELD == kind) {
+                return formatMemberName(TsElement.of(referencedElement, env));
               }
               return formatName(TsElement.of(referencedElement, env));
             })
         .orElse(node.getSignature());
+  }
+
+  /** The member's JS path: its own namespace if it declares one, otherwise its type's path. */
+  private String formatMemberName(TsElement member) {
+    String name =
+        member.isSetter() || member.isGetter()
+            ? Formatting.nonGetSetName(member.getName())
+            : member.getName();
+    String owner =
+        member
+            .getDeclaredNamespace()
+            .orElseGet(() -> formatName(TsElement.of(member.element().getEnclosingElement(), env)));
+    return owner.isEmpty() ? name : (owner + "." + name);
   }
 
   private Optional<Element> getElementFromReference(DocTree node, Element element) {
