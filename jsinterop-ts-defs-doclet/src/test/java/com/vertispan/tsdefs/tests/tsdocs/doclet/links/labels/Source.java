@@ -40,6 +40,10 @@ public class Source {
   @JsMethod
   public void notEmitted() {}
 
+  /** Nested: {@link JsTarget.Inner}, {@link JsTarget.Inner#go()}. */
+  @JsMethod
+  public void nestedLinks() {}
+
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod
   public void constructorLink() {}

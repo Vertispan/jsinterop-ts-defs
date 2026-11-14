@@ -41,6 +41,12 @@ public class JsTarget {
 
   private void hidden() {}
 
+  /** Emitted outside Target, though GWT nests it inside: links to it stay unlabeled. */
+  @JsType
+  public static class Inner {
+    public void go() {}
+  }
+
   /** Same class: method {@link #start()}, field {@link #BAR}. */
   @JsMethod
   public void self() {}

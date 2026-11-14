@@ -192,6 +192,10 @@ public class DocletTest {
         .contains(
             "Wrapped label: {@link probe.Target.go | a label long enough that the formatter"
                 + " wraps it onto the next line}.");
+    softly
+        .assertThat(definitions)
+        .as("links to a nested type, emitted elsewhere than the link points, get no label")
+        .contains("Nested: {@link probe.Target.Inner}, {@link probe.Target.Inner.go}.");
     // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)
