@@ -90,6 +90,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     boolean nested = ElementKind.PACKAGE != type.getEnclosingElement().getKind();
     return docletEnv.isIncluded(type)
         && !nested
+        && !tsType.isTsIgnored()
         && tsType.isExportable()
         && !skippedNative
         && (!isMember(referencedElement) || TsElement.of(referencedElement, env).isExportable());
