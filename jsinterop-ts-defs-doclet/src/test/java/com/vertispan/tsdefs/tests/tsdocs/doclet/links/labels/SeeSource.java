@@ -30,6 +30,7 @@ public class SeeSource {
    * @see JsTarget#start() the starter
    * @see "a quoted string"
    * @see <a href="https://example.com">an html link</a>
+   * @see Missing#thing the missing label
    */
   @JsMethod
   public void seeTags() {}

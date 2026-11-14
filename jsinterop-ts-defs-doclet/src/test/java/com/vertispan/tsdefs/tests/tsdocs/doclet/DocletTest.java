@@ -185,6 +185,10 @@ public class DocletTest {
         .assertThat(definitions)
         .as("a link to a constructor links to its type")
         .contains("Constructor: {@link probe.Target | Target}.");
+    softly
+        .assertThat(definitions)
+        .as("an inline label keeps all its parts, as an @see label does")
+        .contains("Label with a tag: {@link probe.Target.go | the <code>go</code> call}.");
     // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)
@@ -205,7 +209,8 @@ public class DocletTest {
         .contains("@see {@link probe.Target | Target}")
         .contains("@see {@link probe.Target.go | the starter}")
         .contains("@see \"a quoted string\"")
-        .contains("@see <a href=\"https://example.com\">an html link</a>");
+        .contains("@see <a href=\"https://example.com\">an html link</a>")
+        .contains("@see Missing#thing the missing label");
     softly.assertAll();
   }
 
