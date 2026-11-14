@@ -85,7 +85,11 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     TsElement tsType = TsElement.of(type, env);
     JsType jsType = type.getAnnotation(JsType.class);
     boolean skippedNative = nonNull(jsType) && jsType.isNative() && !tsType.isTsInterface();
+    // TODO: the emitter declares a nested type outside its enclosing type, where GWT nests it,
+    // so links to it don't resolve; label them once that is fixed.
+    boolean nested = ElementKind.PACKAGE != type.getEnclosingElement().getKind();
     return docletEnv.isIncluded(type)
+        && !nested
         && tsType.isExportable()
         && !skippedNative
         && (!isMember(referencedElement) || TsElement.of(referencedElement, env).isExportable());
