@@ -43,8 +43,4 @@ public class Source {
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod
   public void constructorLink() {}
-
-  /** Label with a tag: {@link JsTarget#start() the {@code go} call}. */
-  @JsMethod
-  public void taggedLabel() {}
 }

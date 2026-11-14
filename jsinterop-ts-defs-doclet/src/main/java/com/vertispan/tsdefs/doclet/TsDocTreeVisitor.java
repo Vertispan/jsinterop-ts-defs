@@ -48,21 +48,33 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitLink(LinkTree node, Element element) {
-    String label = node.getLabel().isEmpty() ? "" : String.valueOf(node.getLabel().get(0));
-    return formatLink(node.getReference(), label, element);
+    ReferenceTree reference = node.getReference();
+    List<? extends DocTree> label = node.getLabel();
+    // TODO: newer JDKs split a label with inline tags into parts; only the first is kept.
+    return formatLink(
+        reference,
+        getElementFromReference(reference, element),
+        label.isEmpty() ? label : label.subList(0, 1),
+        element);
   }
 
   /** A TSDoc link to the reference, with the given label or else a default one. */
-  private String formatLink(ReferenceTree reference, String label, Element element) {
+  private String formatLink(
+      ReferenceTree reference,
+      Optional<Element> target,
+      List<? extends DocTree> labelParts,
+      Element element) {
+    String label = visitAll(labelParts, element);
     // typedoc shows an unresolved link's whole body as text, so only label what it can resolve.
-    String text =
-        label.trim().isEmpty()
-            ? getElementFromReference(reference, element)
-                .filter(this::isEmitted)
-                .map(this::defaultLabel)
-                .orElse("")
-            : label;
-    return "{@link " + visit(reference, element) + formatLabel(text) + "}";
+    if (label.trim().isEmpty()) {
+      label = target.filter(this::isEmitted).map(this::defaultLabel).orElse("");
+    }
+    String path = target.map(this::formatPath).orElse(reference.getSignature());
+    return "{@link " + path + (label.isEmpty() ? "" : " | " + label) + "}";
+  }
+
+  private String visitAll(List<? extends DocTree> docTrees, Element element) {
+    return docTrees.stream().map(docTree -> visit(docTree, element)).collect(Collectors.joining());
   }
 
   /** Whether this doclet run emits the referenced type, or the member and its type. */
@@ -80,17 +92,17 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   @Override
   public String visitReference(ReferenceTree node, Element element) {
-    return getElementFromReference(node, element)
-        .map(
-            referencedElement -> {
-              if (isMember(referencedElement)) {
-                TsElement member = TsElement.of(referencedElement, env);
-                String owner = memberOwner(member);
-                return owner.isEmpty() ? memberName(member) : (owner + "." + memberName(member));
-              }
-              return formatName(TsElement.of(referencedElement, env));
-            })
-        .orElse(node.getSignature());
+    return getElementFromReference(node, element).map(this::formatPath).orElse(node.getSignature());
+  }
+
+  /** The referenced type's or member's JS path. */
+  private String formatPath(Element referencedElement) {
+    if (isMember(referencedElement)) {
+      TsElement member = TsElement.of(referencedElement, env);
+      String owner = memberOwner(member);
+      return owner.isEmpty() ? memberName(member) : (owner + "." + memberName(member));
+    }
+    return formatName(TsElement.of(referencedElement, env));
   }
 
   /** The type's JS name, or for a member its type's JS name and its own, e.g. "Foo.bar()". */
@@ -119,9 +131,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   /** The JS path a member hangs from: its own namespace if it declares one, else its type's. */
   private String memberOwner(TsElement member) {
-    return member
-        .getDeclaredNamespace()
-        .orElseGet(() -> formatName(TsElement.of(member.element().getEnclosingElement(), env)));
+    return member.getDeclaredNamespace().orElseGet(() -> formatName(member.parent()));
   }
 
   private static String lastSegment(String path) {
@@ -145,28 +155,21 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     return namespace.isEmpty() ? jsName : (namespace + "." + jsName);
   }
 
-  private String formatLabel(String label) {
-    if (nonNull(label) && !label.trim().isEmpty()) {
-      return " | " + label;
-    }
-    return "";
-  }
-
   @Override
   public String visitSee(SeeTree node, Element element) {
     List<? extends DocTree> parts = node.getReference();
-    // A resolvable reference, then its optional label; otherwise a quoted string or HTML.
-    if (!parts.isEmpty()
-        && parts.get(0).getKind() == DocTree.Kind.REFERENCE
-        && getElementFromReference(parts.get(0), element).isPresent()) {
-      String label =
-          parts.subList(1, parts.size()).stream()
-              .map(docTree -> visit(docTree, element))
-              .collect(Collectors.joining());
-      return "@see " + formatLink((ReferenceTree) parts.get(0), label, element);
+    if (parts.isEmpty() || parts.get(0).getKind() != DocTree.Kind.REFERENCE) {
+      // A quoted string or HTML.
+      return "@see " + visitAll(parts, element);
     }
-    return "@see "
-        + parts.stream().map(docTree -> visit(docTree, element)).collect(Collectors.joining());
+    ReferenceTree reference = (ReferenceTree) parts.get(0);
+    List<? extends DocTree> labelParts = parts.subList(1, parts.size());
+    Optional<Element> target = getElementFromReference(reference, element);
+    if (target.isPresent()) {
+      return "@see " + formatLink(reference, target, labelParts, element);
+    }
+    String label = visitAll(labelParts, element);
+    return "@see " + reference.getSignature() + (label.isEmpty() ? "" : " " + label);
   }
 
   @Override
