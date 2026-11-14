@@ -67,7 +67,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     // typedoc ends a link's text at a line break, so a wrapped label goes on one line.
     String label = visitAll(labelParts, element).replaceAll("\\s+", " ").trim();
     // typedoc shows an unresolved link's whole body as text, so only label what it can resolve.
-    if (label.trim().isEmpty()) {
+    if (label.isEmpty()) {
       label = target.filter(this::isEmitted).map(this::defaultLabel).orElse("");
     }
     String path = target.map(this::formatPath).orElse(reference.getSignature());
@@ -78,7 +78,10 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
     return docTrees.stream().map(docTree -> visit(docTree, element)).collect(Collectors.joining());
   }
 
-  /** Whether this doclet run emits the referenced type, or the member and its type. */
+  /**
+   * Whether this doclet run emits the referenced type, or the member and its type, so typedoc can
+   * resolve a link to it. An approximation of the emitter's own rules.
+   */
   private boolean isEmitted(Element referencedElement) {
     Element type =
         isMember(referencedElement) ? referencedElement.getEnclosingElement() : referencedElement;
@@ -96,22 +99,19 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
         && (!isMember(referencedElement) || TsElement.of(referencedElement, env).isExportable());
   }
 
-  @Override
-  public String visitReference(ReferenceTree node, Element element) {
-    return getElementFromReference(node, element).map(this::formatPath).orElse(node.getSignature());
-  }
-
   /** The referenced type's or member's JS path. */
   private String formatPath(Element referencedElement) {
     if (isMember(referencedElement)) {
       TsElement member = TsElement.of(referencedElement, env);
-      String owner = memberOwner(member);
-      return owner.isEmpty() ? memberName(member) : (owner + "." + memberName(member));
+      return qualify(memberOwner(member), memberName(member));
     }
     return formatName(TsElement.of(referencedElement, env));
   }
 
-  /** The type's JS name, or for a member its type's JS name and its own, e.g. "Foo.bar()". */
+  /**
+   * The type's JS name, or for a member the last segment of its owner and its own name, e.g.
+   * "Foo.bar()".
+   */
   private String defaultLabel(Element referencedElement) {
     if (!isMember(referencedElement)) {
       return lastSegment(formatName(TsElement.of(referencedElement, env)));
@@ -123,7 +123,10 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
         && !member.isSetter()) {
       name += "()";
     }
-    String owner = lastSegment(memberOwner(member));
+    return qualify(lastSegment(memberOwner(member)), name);
+  }
+
+  private static String qualify(String owner, String name) {
     return owner.isEmpty() ? name : (owner + "." + name);
   }
 
@@ -155,10 +158,8 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
         .map(e -> ElementKind.CONSTRUCTOR == e.getKind() ? e.getEnclosingElement() : e);
   }
 
-  public String formatName(TsElement tsElement) {
-    String namespace = tsElement.getNamespace();
-    String jsName = tsElement.getFqName();
-    return namespace.isEmpty() ? jsName : (namespace + "." + jsName);
+  private String formatName(TsElement tsElement) {
+    return qualify(tsElement.getNamespace(), tsElement.getFqName());
   }
 
   @Override
