@@ -28,6 +28,10 @@ public class Source {
   @JsMethod
   public void links() {}
 
+  /** Accessor with a declared name: {@link JsTarget#getSettings()}. */
+  @JsMethod
+  public void declaredAccessor() {}
+
   /**
    * See tags.
    *

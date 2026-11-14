@@ -177,6 +177,11 @@ public class DocletTest {
         .contains("{@link probe.all | probe.all()}")
         .contains("{@link probe.Target.go | the starter}");
     softly
+        .assertThat(definitions)
+        .as("a link to an accessor with a declared name uses that name as written")
+        .contains(
+            "Accessor with a declared name: {@link probe.Target.settings | Target.settings}.");
+    softly
         .assertThat(declaration(definitions, "class Target"))
         .as("unlabeled links within Target keep the type name")
         .contains("{@link probe.Target.go | Target.go()}")

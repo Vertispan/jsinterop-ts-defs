@@ -31,6 +31,12 @@ public class JsTarget {
     return 0;
   }
 
+  /** A declared accessor name keeps its "set" prefix. */
+  @JsProperty(name = "settings")
+  public double getSettings() {
+    return 0;
+  }
+
   /** Same class: method {@link #start()}, field {@link #BAR}. */
   @JsMethod
   public void self() {}
