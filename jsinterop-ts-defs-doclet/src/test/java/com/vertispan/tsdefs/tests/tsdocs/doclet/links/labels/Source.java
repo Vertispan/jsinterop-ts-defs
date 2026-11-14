@@ -43,17 +43,4 @@ public class Source {
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod
   public void constructorLink() {}
-
-  /**
-   * See tags.
-   *
-   * @see JsTarget#start()
-   * @see JsTarget#BAR
-   * @see JsTarget
-   * @see JsTarget#start() the starter
-   * @see "a quoted string"
-   * @see <a href="https://example.com">an html link</a>
-   */
-  @JsMethod
-  public void seeTags() {}
 }

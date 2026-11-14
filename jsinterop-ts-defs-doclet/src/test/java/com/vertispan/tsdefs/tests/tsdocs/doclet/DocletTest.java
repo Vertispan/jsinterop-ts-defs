@@ -198,8 +198,8 @@ public class DocletTest {
         .contains("{@link probe.Target.go | Target.go()}")
         .contains("{@link probe.Target.BAR | Target.BAR}");
     softly
-        .assertThat(declaration(definitions, "class Source"))
-        .as("@see tags in Source label links the same way")
+        .assertThat(declaration(definitions, "class SeeSource"))
+        .as("@see tags in SeeSource label links the same way")
         .contains("@see {@link probe.Target.go | Target.go()}")
         .contains("@see {@link probe.Target.BAR | Target.BAR}")
         .contains("@see {@link probe.Target | Target}")
@@ -218,17 +218,19 @@ public class DocletTest {
             Paths.get("target/test-classes/links/issue158/types.d.ts"), StandardCharsets.UTF_8);
 
     SoftAssertions softly = new SoftAssertions();
+    // The global class is not indented, so declaration() can't find it; match whole sentences.
     softly
         .assertThat(definitions)
         .as("links from the global class probe to Target")
-        .contains("{@link probe.Target.go | Target.go()}")
-        .contains("{@link probe.Target.BAR | Target.BAR}")
-        .contains("{@link probe.Target | Target}");
+        .contains(
+            "Links from the global class: method {@link probe.Target.go | Target.go()}, field"
+                + " {@link probe.Target.BAR | Target.BAR}, class {@link probe.Target | Target}.");
     softly
         .assertThat(definitions)
         .as("links from Target to the global class probe")
-        .contains("{@link probe.all | probe.all()}")
-        .contains("{@link probe | probe}");
+        .contains(
+            "Links to the global class: method {@link probe.all | probe.all()}, class {@link"
+                + " probe | probe}.");
     softly.assertAll();
   }
 
