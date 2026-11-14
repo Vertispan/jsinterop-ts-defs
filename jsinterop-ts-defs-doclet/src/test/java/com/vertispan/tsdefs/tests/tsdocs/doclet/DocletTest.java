@@ -181,6 +181,15 @@ public class DocletTest {
         .as("unlabeled links within Target keep the type name")
         .contains("{@link probe.Target.go | Target.go()}")
         .contains("{@link probe.Target.BAR | Target.BAR}");
+    softly
+        .assertThat(declaration(definitions, "class Source"))
+        .as("@see tags in Source label links the same way")
+        .contains("@see {@link probe.Target.go | Target.go()}")
+        .contains("@see {@link probe.Target.BAR | Target.BAR}")
+        .contains("@see {@link probe.Target | Target}")
+        .contains("@see {@link probe.Target.go | the starter}")
+        .contains("@see \"a quoted string\"")
+        .contains("@see <a href=\"https://example.com\">an html link</a>");
     softly.assertAll();
   }
 
