@@ -33,6 +33,9 @@ public class JsTarget {
     return 0;
   }
 
+  @JsProperty
+  public void setSize(double size) {}
+
   /** A declared accessor name keeps its "set" prefix. */
   @JsProperty(name = "settings")
   public double getSettings() {

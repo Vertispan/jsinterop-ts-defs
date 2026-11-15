@@ -182,6 +182,10 @@ public class DocletTest {
         .contains("{@link probe.Target.go | the starter}");
     softly
         .assertThat(definitions)
+        .as("a link to a setter names the property, without parentheses")
+        .contains("Setter: {@link probe.Target.size | Target.size}.");
+    softly
+        .assertThat(definitions)
         .as("a link to an accessor with a declared name uses that name as written")
         .contains(
             "Accessor with a declared name: {@link probe.Target.settings | Target.settings}.");

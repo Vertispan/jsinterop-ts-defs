@@ -29,6 +29,10 @@ public class Source {
   @JsMethod
   public void links() {}
 
+  /** Setter: {@link JsTarget#setSize(double)}. */
+  @JsMethod
+  public void setterLink() {}
+
   /** Accessor with a declared name: {@link JsTarget#getSettings()}. */
   @JsMethod
   public void declaredAccessor() {}
