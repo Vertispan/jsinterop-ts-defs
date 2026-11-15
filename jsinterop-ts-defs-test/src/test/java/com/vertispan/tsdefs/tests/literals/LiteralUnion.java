@@ -26,14 +26,14 @@ import jsinterop.base.Js;
 
 @JsType(isNative = true, namespace = JsPackage.GLOBAL, name = "?")
 @TsUnion
-public class LiteralUnion {
-  @JsOverlay @TsUnionMember @TsLiteral public static final String ONE = "one";
+public interface LiteralUnion {
+  @JsOverlay @TsUnionMember @TsLiteral String ONE = "one";
 
-  @JsOverlay @TsUnionMember @TsLiteral public static final String TWO = "two";
+  @JsOverlay @TsUnionMember @TsLiteral String TWO = "two";
 
   @JsOverlay
   @TsUnionMember
-  public JsArray<String> asMany() {
+  default JsArray<String> asMany() {
     return Js.cast(this);
   }
 }
