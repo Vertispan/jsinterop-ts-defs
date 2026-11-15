@@ -152,6 +152,7 @@ public class DocletTest {
             Paths.get("target/test-classes/links/issue139/types.d.ts"), StandardCharsets.UTF_8);
 
     SoftAssertions softly = new SoftAssertions();
+    // #baz() and #baz render alike, so each contains() covers both forms.
     softly
         .assertThat(declaration(definitions, "class Foo"))
         .as("links from Foo to its own methods")
@@ -169,7 +170,32 @@ public class DocletTest {
   }
 
   @Test
-  public void testDefaultLinkLabels() throws IOException {
+  public void testIssue158() throws IOException {
+    testDocs("links.issue158");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue158/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    // The global class is not indented, so declaration() can't find it; match whole sentences.
+    softly
+        .assertThat(definitions)
+        .as("links from the global class probe to Target")
+        .contains(
+            "Links from the global class: method {@link probe.Target.go | Target.go()}, field"
+                + " {@link probe.Target.BAR | Target.BAR}, class {@link probe.Target | Target}.");
+    softly
+        .assertThat(definitions)
+        .as("links from Target to the global class probe")
+        .contains(
+            "Links to the global class: method {@link probe.all | probe.all()}, class {@link"
+                + " probe | probe}.");
+    softly.assertAll();
+  }
+
+  @Test
+  public void testLinkLabels() throws IOException {
     testDocs("links.labels");
 
     String definitions =
@@ -205,7 +231,7 @@ public class DocletTest {
         .assertThat(definitions)
         .as("a label containing HTML is kept whole")
         .contains("HTML label: {@link probe.Target.go | start <b>bold</b>}.");
-    // typedoc ends a link's text at a line break.
+    // Only a test while the formatter keeps the fixture's label wrapped, as for @see below.
     softly
         .assertThat(definitions)
         .as("a label wrapped across javadoc lines is emitted on one line")
@@ -219,7 +245,7 @@ public class DocletTest {
     softly
         .assertThat(definitions)
         .as("links to a @TsIgnore type and its members get no label")
-        .contains("Ignored: {@link probe.Ignored}, {@link probe.Ignored.inherited}.");
+        .contains("Ignored: {@link probe.Ignored}, {@link probe.Ignored.member}.");
     softly
         .assertThat(definitions)
         .as("a link to a type outside this doclet run gets no label")
@@ -237,7 +263,6 @@ public class DocletTest {
         .assertThat(definitions)
         .as("a native @TsInterface is emitted, so its links are labeled")
         .contains("Native TsInterface: {@link probe.Shape | Shape}.");
-    // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)
         .as("links to types and members the doclet does not emit get no label")
@@ -262,31 +287,6 @@ public class DocletTest {
         .contains(
             "@see {@link probe.Target.go | a see label that is long enough that the formatter"
                 + " has to wrap it onto the next line}");
-    softly.assertAll();
-  }
-
-  @Test
-  public void testIssue158() throws IOException {
-    testDocs("links.issue158");
-
-    String definitions =
-        Files.readString(
-            Paths.get("target/test-classes/links/issue158/types.d.ts"), StandardCharsets.UTF_8);
-
-    SoftAssertions softly = new SoftAssertions();
-    // The global class is not indented, so declaration() can't find it; match whole sentences.
-    softly
-        .assertThat(definitions)
-        .as("links from the global class probe to Target")
-        .contains(
-            "Links from the global class: method {@link probe.Target.go | Target.go()}, field"
-                + " {@link probe.Target.BAR | Target.BAR}, class {@link probe.Target | Target}.");
-    softly
-        .assertThat(definitions)
-        .as("links from Target to the global class probe")
-        .contains(
-            "Links to the global class: method {@link probe.all | probe.all()}, class {@link"
-                + " probe | probe}.");
     softly.assertAll();
   }
 

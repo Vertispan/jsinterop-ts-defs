@@ -49,7 +49,7 @@ public class Source {
   @JsMethod
   public void nestedLinks() {}
 
-  /** Ignored: {@link Ignored}, {@link Ignored#inherited()}. */
+  /** Ignored: {@link Ignored}, {@link Ignored#member()}. */
   @JsMethod
   public void ignoredLinks() {}
 

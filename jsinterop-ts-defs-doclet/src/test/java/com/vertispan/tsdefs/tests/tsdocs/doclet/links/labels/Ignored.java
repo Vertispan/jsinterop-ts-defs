@@ -22,5 +22,5 @@ import jsinterop.annotations.JsType;
 @TsIgnore
 @JsType(namespace = "probe", name = "Ignored")
 public class Ignored {
-  public void inherited() {}
+  public void member() {}
 }

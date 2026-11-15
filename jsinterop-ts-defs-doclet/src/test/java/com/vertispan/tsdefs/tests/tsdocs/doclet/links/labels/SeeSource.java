@@ -18,7 +18,7 @@ package com.vertispan.tsdefs.tests.tsdocs.doclet.links.labels;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
 
-/** Targets of Source's inline links, as see tags, so each form is tested on its own. */
+/** Source's link forms repeated as see tags, tested separately. */
 @JsType(namespace = "probe", name = "SeeSource")
 public class SeeSource {
   /**

@@ -50,7 +50,8 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
   public String visitLink(LinkTree node, Element element) {
     ReferenceTree reference = node.getReference();
     // TODO: JDK 11's parser leaves inline tags in a label, such as {@code}, as raw text, and
-    // drops the space after an HTML end tag; JDK 17+ parses both. Drop this with JDK 11.
+    // drops the space after an HTML end tag; JDK 17+ parses both. On 17, test a label with
+    // {@code} in it, then remove this note.
     return formatLink(
         reference, getElementFromReference(reference, element), node.getLabel(), element);
   }
@@ -77,7 +78,8 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
 
   /**
    * Whether this doclet run emits the referenced type, or the member and its type, so typedoc can
-   * resolve a link to it. An approximation of the emitter's own rules.
+   * resolve a link to it. Approximates the element selection in TsDoclet.run and the type
+   * visitors' @TsIgnore checks rather than sharing them, so it can drift from them.
    */
   private boolean isEmitted(Element referencedElement) {
     Element type =
@@ -162,7 +164,7 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
   @Override
   public String visitSee(SeeTree node, Element element) {
     List<? extends DocTree> parts = node.getReference();
-    if (parts.isEmpty() || parts.get(0).getKind() != DocTree.Kind.REFERENCE) {
+    if (parts.isEmpty() || DocTree.Kind.REFERENCE != parts.get(0).getKind()) {
       // A quoted string or HTML.
       return "@see " + visitAll(parts, element);
     }
