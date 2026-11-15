@@ -15,6 +15,7 @@
  */
 package com.vertispan.tsdefs.tests.tsdocs.doclet.links.labels;
 
+import com.vertispan.tsdefs.tests.tsdocs.doclet.links.issue139.Foo;
 import elemental2.promise.Promise;
 import jsinterop.annotations.JsMethod;
 import jsinterop.annotations.JsType;
@@ -55,6 +56,22 @@ public class Source {
   /** HTML label: {@link JsTarget#start() start <b>bold</b>}. */
   @JsMethod
   public void htmlLabel() {}
+
+  /** Outside the run: {@link Foo}. */
+  @JsMethod
+  public void outsideRunLink() {}
+
+  /** Not exportable: {@link Plain}. */
+  @JsMethod
+  public void plainLink() {}
+
+  /** Native: {@link NativeThing}. */
+  @JsMethod
+  public void nativeLink() {}
+
+  /** Native TsInterface: {@link NativeShape}. */
+  @JsMethod
+  public void nativeTsInterfaceLink() {}
 
   /** Constructor: {@link JsTarget#JsTarget()}. */
   @JsMethod

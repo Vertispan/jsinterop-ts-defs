@@ -213,6 +213,23 @@ public class DocletTest {
         .assertThat(definitions)
         .as("links to a @TsIgnore type and its members get no label")
         .contains("Ignored: {@link probe.Ignored}, {@link probe.Ignored.inherited}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a type outside this doclet run gets no label")
+        .contains("Outside the run: {@link probe.Foo}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a plain class with nothing exported gets no label")
+        .contains(
+            "Not exportable: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.links.labels.Plain}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a native type gets no label")
+        .contains("Native: {@link Object}.");
+    softly
+        .assertThat(definitions)
+        .as("a native @TsInterface is emitted, so its links are labeled")
+        .contains("Native TsInterface: {@link probe.Shape | Shape}.");
     // typedoc shows an unresolved link's whole body as text, label and all.
     softly
         .assertThat(definitions)
