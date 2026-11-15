@@ -86,7 +86,11 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
         isMember(referencedElement) ? referencedElement.getEnclosingElement() : referencedElement;
     TsElement tsType = TsElement.of(type, env);
     JsType jsType = type.getAnnotation(JsType.class);
-    boolean skippedNative = nonNull(jsType) && jsType.isNative() && !tsType.isTsInterface();
+    boolean skippedNative =
+        nonNull(jsType)
+            && jsType.isNative()
+            && !tsType.isTsInterface()
+            && !tsType.isExplicitUnionType();
     // TODO(#159): the emitter declares a nested type outside its enclosing type, where GWT nests
     // it, so links to it don't resolve; label them once that is fixed.
     boolean nested = ElementKind.PACKAGE != type.getEnclosingElement().getKind();
@@ -158,6 +162,10 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
   }
 
   private String formatName(TsElement tsElement) {
+    if (tsElement.isUnionType()) {
+      // A union exists in TypeScript only at its @TsUnion name; its JsType name is for Java.
+      return qualify(tsElement.getExplicitUnionNamespace(), tsElement.getExplicitUnionName());
+    }
     return qualify(tsElement.getNamespace(), tsElement.getFqName());
   }
 
