@@ -26,9 +26,18 @@ public class Foo {
   @JsProperty(namespace = "probe.Foo")
   public static final double BAZ = -3;
 
+  @JsProperty(namespace = "probe.Other")
+  public static final double QUX = -4;
+
   /** Returns {@link #BAR} or {@link #BAZ}. */
   @JsMethod
   public double size() {
     return BAR;
+  }
+
+  /** Declared elsewhere: {@link #QUX}. */
+  @JsMethod
+  public double elsewhere() {
+    return QUX;
   }
 }

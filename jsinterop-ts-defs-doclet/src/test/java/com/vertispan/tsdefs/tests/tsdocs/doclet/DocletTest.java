@@ -129,6 +129,10 @@ public class DocletTest {
         .as("links from Bar to Foo's fields")
         .contains("{@link probe.Foo.BAR | Foo.BAR}")
         .contains("{@link probe.Foo.BAZ | Foo.BAZ}");
+    softly
+        .assertThat(definitions)
+        .as("a field's declared namespace, not its type's path, is the link's owner")
+        .contains("Declared elsewhere: {@link probe.Other.QUX | Other.QUX}.");
     softly.assertAll();
   }
 
