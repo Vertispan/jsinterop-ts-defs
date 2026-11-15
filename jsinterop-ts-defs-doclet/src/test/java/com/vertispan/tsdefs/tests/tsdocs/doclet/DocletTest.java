@@ -78,6 +78,13 @@ public class DocletTest {
   @Test
   public void testTypesLinks() throws IOException {
     testDocs("links.types");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/types/types.d.ts"), StandardCharsets.UTF_8);
+    assertThat(definitions)
+        .as("an unresolved link keeps its javadoc signature, unlabeled")
+        .contains("Testing a link to none existing type {@link JsTypeNotExist}");
   }
 
   @Test
