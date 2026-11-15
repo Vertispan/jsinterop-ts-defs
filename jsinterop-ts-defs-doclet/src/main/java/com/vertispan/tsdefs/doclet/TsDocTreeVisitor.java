@@ -49,13 +49,10 @@ public class TsDocTreeVisitor extends SimpleDocTreeVisitor<String, Element> {
   @Override
   public String visitLink(LinkTree node, Element element) {
     ReferenceTree reference = node.getReference();
-    List<? extends DocTree> label = node.getLabel();
-    // TODO: newer JDKs split a label with inline tags into parts; only the first is kept.
+    // TODO: JDK 11's parser leaves inline tags in a label, such as {@code}, as raw text, and
+    // drops the space after an HTML end tag; JDK 17+ parses both. Drop this with JDK 11.
     return formatLink(
-        reference,
-        getElementFromReference(reference, element),
-        label.isEmpty() ? label : label.subList(0, 1),
-        element);
+        reference, getElementFromReference(reference, element), node.getLabel(), element);
   }
 
   /** A TSDoc link to the reference, with the given label or else a default one. */

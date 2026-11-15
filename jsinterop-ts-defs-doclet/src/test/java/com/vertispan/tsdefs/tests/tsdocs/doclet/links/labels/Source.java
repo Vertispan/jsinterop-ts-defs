@@ -48,7 +48,7 @@ public class Source {
   @JsMethod
   public void ignoredLinks() {}
 
-  /** HTML label: {@link JsTarget#start() <b>bold</b> start}. */
+  /** HTML label: {@link JsTarget#start() start <b>bold</b>}. */
   @JsMethod
   public void htmlLabel() {}
 

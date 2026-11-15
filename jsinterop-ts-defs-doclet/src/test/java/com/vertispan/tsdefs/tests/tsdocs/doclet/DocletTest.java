@@ -185,10 +185,11 @@ public class DocletTest {
         .assertThat(definitions)
         .as("a link to a constructor links to its type")
         .contains("Constructor: {@link probe.Target | Target}.");
+    // TODO: on JDK 17+, put text after the </b>; JDK 11's parser drops the space before it.
     softly
         .assertThat(definitions)
         .as("a label containing HTML is kept whole")
-        .contains("HTML label: {@link probe.Target.go | <b>bold</b> start}.");
+        .contains("HTML label: {@link probe.Target.go | start <b>bold</b>}.");
     // typedoc ends a link's text at a line break.
     softly
         .assertThat(definitions)
