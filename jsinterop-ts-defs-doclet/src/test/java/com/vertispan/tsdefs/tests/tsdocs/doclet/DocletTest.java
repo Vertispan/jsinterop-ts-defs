@@ -362,6 +362,31 @@ public class DocletTest {
         .contains("getExplicitUnion():ExplicitParamUnion|null|undefined;")
         .contains(
             "useExplicitUnion(value:ExplicitUnion<ExplicitParamUnion>):ExplicitUnion<ExplicitParamUnion>;");
+
+    // A union exists in TypeScript only at its @TsUnion name; its JsType name is for Java.
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(definitions)
+        .as("a link to a named union in a namespace targets the TS alias")
+        .contains(
+            "Namespaced: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.union.NamespacedExplicitUnion"
+                + " | NamespacedExplicitUnion}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a named union in the global namespace targets the TS alias")
+        .contains("Global: {@link ExplicitParamUnion | ExplicitParamUnion}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a named union ignores its JsType name")
+        .contains(
+            "Named JsType: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.union.StringNamedUnion"
+                + " | StringNamedUnion}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to an anonymous union, which has no declaration, gets no label")
+        .contains(
+            "Anonymous: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.union.AnonymousUnion}.");
+    softly.assertAll();
   }
 
   @Test
