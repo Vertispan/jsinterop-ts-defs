@@ -19,10 +19,11 @@ import com.vertispan.tsdefs.annotations.TsName;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
+import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 
 /** Verifies that TsName overrides JsType naming for an explicit union. */
-@JsType(isNative = true, name = "IgnoredJsTypeUnionName", namespace = "ignored.namespace")
+@JsType(isNative = true, name = "Boolean", namespace = JsPackage.GLOBAL)
 @TsName(name = "TsNamedUnion", namespace = "com.vertispan.tsdefs.tests.tsunion")
 @TsUnion(anonymous = false)
 public interface JsTypeAndTsNameUnion {

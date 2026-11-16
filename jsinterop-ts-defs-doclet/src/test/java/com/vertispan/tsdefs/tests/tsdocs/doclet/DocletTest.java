@@ -78,6 +78,13 @@ public class DocletTest {
   @Test
   public void testTypesLinks() throws IOException {
     testDocs("links.types");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/types/types.d.ts"), StandardCharsets.UTF_8);
+    assertThat(definitions)
+        .as("an unresolved link keeps its javadoc signature, unlabeled")
+        .contains("Testing a link to none existing type {@link JsTypeNotExist}");
   }
 
   @Test
@@ -108,6 +115,179 @@ public class DocletTest {
   @Test
   public void testIssue117() throws IOException {
     testDocs("docs.issue117");
+  }
+
+  @Test
+  public void testIssue136() throws IOException {
+    testDocs("links.issue136");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue136/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(declaration(definitions, "class Foo"))
+        .as("links from Foo to its own fields")
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Foo.BAZ | Foo.BAZ}");
+    softly
+        .assertThat(declaration(definitions, "class Bar"))
+        .as("links from Bar to Foo's fields")
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Foo.BAZ | Foo.BAZ}");
+    softly
+        .assertThat(definitions)
+        .as("a field's declared namespace, not its type's path, is the link's owner")
+        .contains("Declared elsewhere: {@link probe.Other.QUX | Other.QUX}.");
+    softly.assertAll();
+  }
+
+  @Test
+  public void testIssue139() throws IOException {
+    testDocs("links.issue139");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue139/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    // #baz() and #baz render alike, so each contains() covers both forms.
+    softly
+        .assertThat(declaration(definitions, "class Foo"))
+        .as("links from Foo to its own methods")
+        .contains("{@link probe.Foo.baz | Foo.baz()}")
+        .contains("{@link probe.Foo.scale | Foo.scale()}")
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Bar | Bar}");
+    softly
+        .assertThat(declaration(definitions, "class Bar"))
+        .as("links from Bar to Foo's methods")
+        .contains("{@link probe.Foo.baz | Foo.baz()}")
+        .contains("{@link probe.Foo.BAR | Foo.BAR}")
+        .contains("{@link probe.Foo | Foo}");
+    softly.assertAll();
+  }
+
+  @Test
+  public void testIssue158() throws IOException {
+    testDocs("links.issue158");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/issue158/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    // The global class is not indented, so declaration() can't find it; match whole sentences.
+    softly
+        .assertThat(definitions)
+        .as("links from the global class probe to Target")
+        .contains(
+            "Links from the global class: method {@link probe.Target.go | Target.go()}, field"
+                + " {@link probe.Target.BAR | Target.BAR}, class {@link probe.Target | Target}.");
+    softly
+        .assertThat(definitions)
+        .as("links from Target to the global class probe")
+        .contains(
+            "Links to the global class: method {@link probe.all | probe.all()}, class {@link"
+                + " probe | probe}.");
+    softly.assertAll();
+  }
+
+  @Test
+  public void testLinkLabels() throws IOException {
+    testDocs("links.labels");
+
+    String definitions =
+        Files.readString(
+            Paths.get("target/test-classes/links/labels/types.d.ts"), StandardCharsets.UTF_8);
+
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(declaration(definitions, "class Source"))
+        .as("unlabeled links from Source get the JS type and member name")
+        .contains("{@link probe.Target.go | Target.go()}")
+        .contains("{@link probe.scale | probe.scale()}")
+        .contains("{@link probe.Target.BAR | Target.BAR}")
+        .contains("{@link probe.Target.size | Target.size}")
+        .contains("{@link probe.Target | Target}")
+        .contains("{@link probe.all | probe.all()}")
+        .contains("{@link probe.Target.go | the starter}");
+    softly
+        .assertThat(definitions)
+        .as("a link to a setter names the property, without parentheses")
+        .contains("Setter: {@link probe.Target.size | Target.size}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to an accessor with a declared name uses that name as written")
+        .contains(
+            "Accessor with a declared name: {@link probe.Target.settings | Target.settings}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a constructor links to its type")
+        .contains("Constructor: {@link probe.Target | Target}.");
+    // TODO: on JDK 17+, put text after the </b>; JDK 11's parser drops the space before it.
+    softly
+        .assertThat(definitions)
+        .as("a label containing HTML is kept whole")
+        .contains("HTML label: {@link probe.Target.go | start <b>bold</b>}.");
+    // Only a test while the formatter keeps the fixture's label wrapped, as for @see below.
+    softly
+        .assertThat(definitions)
+        .as("a label wrapped across javadoc lines is emitted on one line")
+        .contains(
+            "Wrapped label: {@link probe.Target.go | a label long enough that the formatter"
+                + " wraps it onto the next line}.");
+    softly
+        .assertThat(definitions)
+        .as("links to a nested type, emitted elsewhere than the link points, get no label")
+        .contains("Nested: {@link probe.Target.Inner}, {@link probe.Target.Inner.go}.");
+    softly
+        .assertThat(definitions)
+        .as("links to a @TsIgnore type and its members get no label")
+        .contains("Ignored: {@link probe.Ignored}, {@link probe.Ignored.member}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a type outside this doclet run gets no label")
+        .contains("Outside the run: {@link probe.Foo}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a plain class with nothing exported gets no label")
+        .contains(
+            "Not exportable: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.links.labels.Plain}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a native type gets no label")
+        .contains("Native: {@link Object}.");
+    softly
+        .assertThat(definitions)
+        .as("a native @TsInterface is emitted, so its links are labeled")
+        .contains("Native TsInterface: {@link probe.Shape | Shape}.");
+    softly
+        .assertThat(definitions)
+        .as("links to types and members the doclet does not emit get no label")
+        .contains(
+            "Not emitted: {@link java.lang.String}, {@link java.util.List.size}, {@link Promise},"
+                + " {@link probe.Target.hidden}.");
+    softly
+        .assertThat(declaration(definitions, "class Target"))
+        .as("unlabeled links within Target keep the type name")
+        .contains("{@link probe.Target.go | Target.go()}")
+        .contains("{@link probe.Target.BAR | Target.BAR}");
+    softly
+        .assertThat(declaration(definitions, "class SeeSource"))
+        .as("@see tags in SeeSource label links the same way")
+        .contains("@see {@link probe.Target.go | Target.go()}")
+        .contains("@see {@link probe.Target.BAR | Target.BAR}")
+        .contains("@see {@link probe.Target | Target}")
+        .contains("@see {@link probe.Target.go | the starter}")
+        .contains("@see \"a quoted string\"")
+        .contains("@see <a href=\"https://example.com\">an html link</a>")
+        .contains("@see Missing#thing the missing label")
+        .contains(
+            "@see {@link probe.Target.go | a see label that is long enough that the formatter"
+                + " has to wrap it onto the next line}");
+    softly.assertAll();
   }
 
   @Test
@@ -182,6 +362,31 @@ public class DocletTest {
         .contains("getExplicitUnion():ExplicitParamUnion|null|undefined;")
         .contains(
             "useExplicitUnion(value:ExplicitUnion<ExplicitParamUnion>):ExplicitUnion<ExplicitParamUnion>;");
+
+    // A union exists in TypeScript only at its @TsUnion name; its JsType name is for Java.
+    SoftAssertions softly = new SoftAssertions();
+    softly
+        .assertThat(definitions)
+        .as("a link to a named union in a namespace targets the TS alias")
+        .contains(
+            "Namespaced: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.union.NamespacedExplicitUnion"
+                + " | NamespacedExplicitUnion}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a named union in the global namespace targets the TS alias")
+        .contains("Global: {@link ExplicitParamUnion | ExplicitParamUnion}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to a named union ignores its JsType name")
+        .contains(
+            "Named JsType: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.union.StringNamedUnion"
+                + " | StringNamedUnion}.");
+    softly
+        .assertThat(definitions)
+        .as("a link to an anonymous union, which has no declaration, gets no label")
+        .contains(
+            "Anonymous: {@link com.vertispan.tsdefs.tests.tsdocs.doclet.union.AnonymousUnion}.");
+    softly.assertAll();
   }
 
   @Test

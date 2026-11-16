@@ -18,10 +18,14 @@ package com.vertispan.tsdefs.tests.tsunion;
 import com.vertispan.tsdefs.annotations.TsUnion;
 import com.vertispan.tsdefs.annotations.TsUnionMember;
 import jsinterop.annotations.JsOverlay;
+import jsinterop.annotations.JsPackage;
 import jsinterop.annotations.JsType;
 
-/** Verifies that an explicit union ignores the JsType name and namespace. */
-@JsType(isNative = true, name = "IgnoredJsTypeName", namespace = "ignored.namespace")
+/**
+ * Verifies that an explicit union ignores the JsType name and namespace, here the JS type its
+ * members share.
+ */
+@JsType(isNative = true, name = "String", namespace = JsPackage.GLOBAL)
 @TsUnion(anonymous = false)
 public interface JavaNamedExplicitUnion {
   @JsOverlay
